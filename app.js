@@ -1,3 +1,6 @@
+// const express = require('express');
+// const app = express();
+const requestmaker = require('request');
 const dotenv = require('dotenv');
 const botgram = require('botgram');
 
@@ -24,10 +27,6 @@ bot.message(function (msg, reply, next) {
   }
 });
 sendTextToTelegram(adminChatId, "Bot running");
-
-// const express = require('express');
-// const app = express();
-const requestmaker = require('request');
 
 // app.get('/home', (req, res) => {
 //   res.send('Hello, World!');
