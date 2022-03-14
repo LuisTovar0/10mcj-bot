@@ -31,7 +31,7 @@ app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
 
-app.listen(15000, () => {
+app.listen(process.env.PORT || 15000, () => {
   sendTextToTelegram(adminChatId, "Bot running");
 });
 app.use(express.json());
