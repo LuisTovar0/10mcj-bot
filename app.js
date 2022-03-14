@@ -20,6 +20,7 @@ bot.message(function (msg, reply, next) {
     reply.message(msg);
   } catch (err) {
     reply.text("Couldn't resend that.");
+    sendTextToTelegram(adminChatId, 'fail');
   }
 });
 
@@ -27,7 +28,7 @@ const express = require('express');
 const app = express();
 const requestmaker = require('request');
 
-app.get('/', (req, res) => {
+app.get('/home', (req, res) => {
   res.send('Hello, World!');
 });
 
