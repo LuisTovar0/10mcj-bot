@@ -10,9 +10,14 @@ else console.log('your bot token: ' + botToken);
 const bot = botgram(botToken);
 
 bot.command("start", function (msg, reply, next) {
-  console.log("Received a /start command from", msg.from.username);
+  reply.text('Bem-vindo');
 });
 
-bot.text(function (msg, reply, next) {
-  console.log("Received a text message:", msg.text);
+bot.message(function (msg, reply, next) {
+  reply.text("You said:");
+  try {
+    reply.message(msg);
+  } catch (err) {
+    reply.text("Couldn't resend that.");
+  }
 });
