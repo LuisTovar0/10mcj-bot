@@ -1,0 +1,11 @@
+{
+  "name": "10mcj-bot",
+  "main": "app.js",
+  "scripts": {
+    "start": "node ."
+  },
+  "dependencies": {
+    "botgram": "^2.2.0",
+    "dotenv": "^16.0.0"
+  }
+}
