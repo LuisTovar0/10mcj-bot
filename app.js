@@ -39,16 +39,16 @@ app.use(express.json());
 function sendTextToTelegram(chatId, message) {
   message = encodeURI(message);
   const response = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}`;
-  console.log(response);
+  console.log('posted: ' + response);
   requestmaker(response);
 }
 
-app.post('/' + botToken,
-  function (request, response) {
-    response.set('Content-Type', 'application/json');
-    console.log(request.body);
-    const userText = request.body.message.text;
-    const chatId = request.body.message.chat.id;
-    sendTextToTelegram(chatId, userText);
-    response.end();
-  });
+app.post('/' + botToken, function (request, response) {
+  response.set('Content-Type', 'application/json');
+  console.log(request.body);
+  const userText = request.body.message.text;
+  const chatId = request.body.message.chat.id;
+  sendTextToTelegram(chatId, userText);
+  sendTextToTelegram(chatId, 'lol 😂');
+  response.end();
+});
