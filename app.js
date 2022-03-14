@@ -23,19 +23,20 @@ bot.message(function (msg, reply, next) {
     sendTextToTelegram(adminChatId, 'fail');
   }
 });
+sendTextToTelegram(adminChatId, "Bot running");
 
-const express = require('express');
-const app = express();
+// const express = require('express');
+// const app = express();
 const requestmaker = require('request');
 
-app.get('/home', (req, res) => {
-  res.send('Hello, World!');
-});
-
-app.listen(process.env.PORT || 15000, () => {
-  sendTextToTelegram(adminChatId, "Bot running");
-});
-app.use(express.json());
+// app.get('/home', (req, res) => {
+//   res.send('Hello, World!');
+// });
+//
+// app.listen(process.env.PORT || 15000, () => {
+//   sendTextToTelegram(adminChatId, "Bot running");
+// });
+// app.use(express.json());
 
 function sendTextToTelegram(chatId, message) {
   message = encodeURI(message);
