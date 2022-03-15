@@ -1,8 +1,9 @@
 {
   "name": "10mcj-bot",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js"
+    "start": "node .",
+    "dev": "nodemon ."
   },
   "dependencies": {
     "botgram": "^2.2.0",
