@@ -4,7 +4,7 @@ export default (text) => {
 
   let url = split[0].trim(), desc = split[2].replace('*', '').replace('*', '').trim(),
     date = new Date(), day = date.getDay(), month = date.getMonth() + 1;
-  if (date.getHours() > 10) {
+  if (date.getHours() > 14) {
     let tomorrow = new Date();
     tomorrow.setDate(date.getDate() + 1);
     day = tomorrow.getDate();

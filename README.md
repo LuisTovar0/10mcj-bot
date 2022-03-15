@@ -1,3 +1,3 @@
 # 10mcj-bot
 
-![Flowchart](../../wiki/Flowchart.svg)
+![Flowchart](../../wiki/Flowchart.png)
