@@ -1,13 +1,17 @@
 {
   "name": "10mcj-bot",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "dependencies": {
     "botgram": "^2.2.0",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
     "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
   },
   "type": "module"
 }
