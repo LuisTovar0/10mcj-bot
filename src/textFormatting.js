@@ -10,6 +10,9 @@ export default (text) => {
     day = tomorrow.getDate();
   }
 
-  return day + '-' + (month < 10 ? '0' : '') + month + '-' + date.getFullYear().toString().substring(2, 4) +
+  const telegramStr = day + '-' + (month < 10 ? '0' : '') + month + '-' + date.getFullYear().toString().substring(2, 4) +
     '\n\n*' + desc + '*\n\n[▶️ YouTube](' + url + ')          [🌐 +Info](https://10minutoscomjesus.org/)';
+  // const signalStr = day + '-' + (month < 10 ? '0' : '') + month + '-' + date.getFullYear().toString().substring(2, 4);
+
+  return {telegram: telegramStr, signal: null/*signalStr*/};
 }
