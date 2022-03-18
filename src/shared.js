@@ -2,6 +2,10 @@ import request from "request";
 
 export const audiosFolder = './audios/';
 
+export function hasEntries(obj) {
+  return Object.entries(obj).length;
+}
+
 export function sendMessage(chatId, message) {
   apiMethod('sendMessage', {chat_id: chatId, text: message});
 }

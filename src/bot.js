@@ -4,7 +4,7 @@ import del from "del";
 import botgram from "botgram";
 
 import {saveAudio} from "./audio.js";
-import {audiosFolder, sendMessage} from "./shared.js";
+import {audiosFolder, hasEntries, sendMessage} from "./shared.js";
 import {textFormattingPT} from "./textFormatting.js";
 
 export default (botToken, adminChatId) => {
@@ -44,15 +44,21 @@ export default (botToken, adminChatId) => {
         command: `pt`,
         data: {
           audio: false,
-          text: ``
+          text: {}
         }
       };
       reply.text(`okapa. que venham o áudio e o texto`);
     } else reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
   }));
 
-  bot.command(`en`, (mag, reply) => reply.text(`_*Not yet implemented*_`));
-  bot.command(`es`, (msg, reply) => reply.text(`_*Aun no implementado*_`));
+  bot.command(`en`, (mag, reply) => {
+    reply.html(`<b><i>Not yet implemented</i></b>\n/info`);
+    reply.text(`\u{1F937}\u{200D}\u{2642}\u{FE0F}`);
+  });
+  bot.command(`es`, (msg, reply) => {
+    reply.html(`<b><i>Aun no implementado</i></b>\n/info`);
+    reply.text(`\u{1F937}\u{200D}\u{2642}\u{FE0F}`);
+  });
 
   bot.command(`cancel`, (msg, reply) => wrapper(reply, async () => {
     await deleteUserData(msg.chat.id);
@@ -61,41 +67,71 @@ export default (botToken, adminChatId) => {
   //#endregion
 
   //#region message treatment
-  bot.audio(async (msg, reply) => await wrapper(reply, () => {
+  bot.audio(async (msg, reply) => await wrapper(reply, async () => {
     const chatId = msg.chat.id;
-    if (memory[chatId] !== undefined) { // /telegram command was used
-      if (!memory[chatId].data.audio) { // audio hasn't been sent
-        reply.text(`péràí`);
+    if (!memory[chatId]) {
+      // a command has not been used
+      reply.text(`só processo áudios para serem mandados para o Telegram, por isso tens de usar o comando /pt primeiro`);
+      return;
+    }
+
+    switch (memory[chatId].command) {
+      case `pt`:
+        if (memory[chatId].data.audio) {
+          // audio was already received
+          reply.text(`já tinhas mandado áudio. manda aí texto`);
+          return;
+        }
+
+        reply.text(`péràí...`);
+        reply.text(`\u{1F4E5}`);
         const eventEmitter = new EventEmitter();
         eventEmitter.on(`downloaded audio`, async () => {
           // to be executed after the audio download
           memory[chatId].data.audio = true;
-          reply.text(`já tá. ganda meditação`);
-          if (memory[chatId].data.text) await joinAudioAndText(chatId, reply);
+          if (hasEntries(memory[chatId].data.text)) await joinAudioAndText(chatId, reply);
+          else reply.text(`já tá. ganda meditação`);
         });
         saveAudio(bot, msg.file, audiosFolder + chatId, eventEmitter);
-      } else reply.text(`já tinhas mandado áudio. manda aí texto`);
-    } else reply.text(`só processo áudios para serem mandados para o Telegram, por isso tens de usar o comando /pt primeiro`);
+        break;
+      default:
+        reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
+    }
   }));
 
   bot.text(async (msg, reply) => await wrapper(reply, async () => {
-    let info = memory[msg.chat.id];
-    if (info) {
-      console.log(info.data);
-      if (info.data.text)
-        throw new Error(`já tinhas mandado texto, agora tens de mandar áudio`);
-      const texts = textFormattingPT(msg.text);
-      memory[msg.chat.id].data.text = texts.telegram;
-      await joinAudioAndText(msg.chat.id, reply);
-      textWithLinks(reply, texts.signal);
-    } else {
+    const chatId = msg.chat.id;
+    if (!memory[chatId]) {
+      // if a command hasn't been used, just return the formatted texts
       try {
+        reply.text(`You should use a command before sending text.`);
         const texts = textFormattingPT(msg.text);
         textWithLinks(reply, texts.telegram);
         textWithLinks(reply, texts.signal);
+        return;
       } catch (e) {
-        throw new Error('Invalid text. Please use a command.');
+        throw new Error(`Invalid text. Please use a command.`);
       }
+    }
+
+    switch (memory[chatId].command) {
+      case `pt`:
+        console.log(memory[chatId].data);
+        if (memory[chatId].data.audio) {
+          // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
+          memory[chatId].data.text = textFormattingPT(msg.text);
+          await joinAudioAndText(chatId, reply);
+        } else {
+          // if we don't have audio but already have text, let the user know
+          if (hasEntries(memory[chatId].data.text))
+            throw new Error(`já tinhas mandado texto, agora tens de mandar áudio\nou então /cancel`);
+          const texts = textFormattingPT(msg.text);
+          memory[chatId].data.text = texts;
+          reply.text(`boa escolha de emojis ${texts.descr.split(` `)[0]}`);
+        }
+        break;
+      default:
+        reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
     }
   }));
 
@@ -105,7 +141,9 @@ export default (botToken, adminChatId) => {
       throw new Error(`\u{26D4} not allowed. this situation will be reported to my master. \u{26D4}`);
     }
 
-    reply.text(`nothin's testin`);
+    // reply.text(`nothin's testin`);
+    if (Object.entries({}).length) reply.text(true);
+    else reply.text(false);
   }));
   //#endregion
 
@@ -116,20 +154,22 @@ export default (botToken, adminChatId) => {
     try {
       await call();
     } catch (e) {
-      reply.text(`Uia, isso não deu`);
+      reply.text(`An error happened.`);
       reply.text(e.message);
       console.log(e.stack);
     }
   }
 
   async function joinAudioAndText(chatId, reply) {
-    const textToSend = memory[chatId].data.text;
-    const toSendSplit = textToSend.split(`\n`);
-    const badTitle = toSendSplit[2];
+    const badTitle = memory[chatId].data.text.descr;
     const title = badTitle.substring(badTitle.indexOf(` `) + 1, badTitle.length - 1);
     const file = fs.createReadStream(audiosFolder + chatId);
     reply.sendGeneric("sendAudio",
-      {audio: file, performer: toSendSplit[0], title: title, caption: textToSend, parse_mode: `Markdown`});
+      {
+        audio: file, performer: memory[chatId].data.text.date, title: title,
+        caption: memory[chatId].data.text.telegram, parse_mode: `Markdown`
+      });
+    textWithLinks(reply, memory[chatId].data.text.signal);
     await deleteUserData(chatId);
   }
 
