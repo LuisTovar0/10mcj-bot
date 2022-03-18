@@ -15,48 +15,48 @@ export default (botToken, adminChatId) => {
   //#region commands
 
   //#region info commands
-  bot.command('start', (msg, reply) => reply.text(`Welcome, fellow 10MwJ admin!\nBem-vindo, co-administrador dos 10McJ!\n\
+  bot.command(`start`, (msg, reply) => reply.text(`Welcome, fellow 10MwJ admin!\nBem-vindo, co-administrador dos 10McJ!\n\
  Bienvenido, administrador de 10McJ!`));
 
-  bot.command('info', (msg, reply) => reply.text('/info_en instructions\n/info_pt instruções\n/info_es instrucciones'));
+  bot.command(`info`, (msg, reply) => reply.text(`/info_en instructions\n/info_pt instruções\n/info_es instrucciones`));
 
-  bot.command('info_pt', (msg, reply) => reply.text(`Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto\
+  bot.command(`info_pt`, (msg, reply) => reply.text(`Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto\
  e um áudio separadamente, por qualquer ordem, e eu respondo com tudo formatado.\n\nSempre que estiver confuso, usa\
  /cancel; isso vai apagar todos os registos feitos sobre o chat contigo, para poderes começar de novo.\n\nPara saberes\
  que informações estão guardadas sobre o teu chat, /mystatus`));
 
-  bot.command('info_en', (msg, reply) => reply.markdown(`*Formatting for English 10MwJ is not yet implemented.*\n\n\
+  bot.command(`info_en`, (msg, reply) => reply.markdown(`*Formatting for English 10MwJ is not yet implemented.*\n\n\
  Use /en for a formatting. You should send a text and an audio separately, in any order, and I'll respond with the formats.\
  \n\nIf it gets confusing, use /cancel; that'll delete all records of your chat with the bot.\n\nTo know what is recorded\
  about your chat, /mystatus`));
 
-  bot.command('info_es', (msg, reply) => reply.markdown(`*Formatación para 10McJ España no está todavía implementada.*\n\n\
+  bot.command(`info_es`, (msg, reply) => reply.markdown(`*Formatación para 10McJ España no está todavía implementada.*\n\n\
  Usa /es para una formatación. Debes enviar un texto y un audio separadamente, en cualquier orden, y respondré con las \
  formataciones.\n\nCuando esté confuso, usa /cancel; eso va a apagar todos los registros del bot con tu chat, para que \
  puedas empezar de nuevo.\n\nPara saber lo que grabó el bot sobre tu chat, /mystatus`));
 
-  bot.command('mystatus', (msg, reply) => reply.text(JSON.stringify(memory[msg.chat.id] || {}, null, 3)));
+  bot.command(`mystatus`, (msg, reply) => reply.text(JSON.stringify(memory[msg.chat.id] || {}, null, 3)));
   //#endregion
 
-  bot.command('pt', (msg, reply) => wrapper(reply, () => {
+  bot.command(`pt`, (msg, reply) => wrapper(reply, () => {
     if (!memory[msg.chat.id]) {
       memory[msg.chat.id] = {
-        command: 'pt',
+        command: `pt`,
         data: {
           audio: false,
-          text: ''
+          text: ``
         }
       };
-      reply.text('okapa. que venham o áudio e o texto');
-    } else reply.text('Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel');
+      reply.text(`okapa. que venham o áudio e o texto`);
+    } else reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
   }));
 
-  bot.command('en', (mag, reply) => reply.text('_*Not yet implemented*_'));
-  bot.command('es', (msg, reply) => reply.text('_*Aun no implementado*_'));
+  bot.command(`en`, (mag, reply) => reply.text(`_*Not yet implemented*_`));
+  bot.command(`es`, (msg, reply) => reply.text(`_*Aun no implementado*_`));
 
-  bot.command('cancel', (msg, reply) => wrapper(reply, async () => {
+  bot.command(`cancel`, (msg, reply) => wrapper(reply, async () => {
     await deleteUserData(msg.chat.id);
-    reply.text('Ok irmom 🗿 registos apagados');
+    reply.text(`Ok irmom \u{1F5FF} registos apagados`);
   }));
   //#endregion
 
@@ -65,17 +65,17 @@ export default (botToken, adminChatId) => {
     const chatId = msg.chat.id;
     if (memory[chatId] !== undefined) { // /telegram command was used
       if (!memory[chatId].data.audio) { // audio hasn't been sent
-        reply.text('péràí');
+        reply.text(`péràí`);
         const eventEmitter = new EventEmitter();
-        eventEmitter.on('downloaded audio', async () => {
+        eventEmitter.on(`downloaded audio`, async () => {
           // to be executed after the audio download
           memory[chatId].data.audio = true;
-          reply.text('já tá. ganda meditação');
+          reply.text(`já tá. ganda meditação`);
           if (memory[chatId].data.text) await joinAudioAndText(chatId, reply);
         });
         saveAudio(bot, msg.file, audiosFolder + chatId, eventEmitter);
-      } else reply.text('já tinhas mandado áudio. manda aí texto');
-    } else reply.text('só processo áudios para serem mandados para o Telegram, por isso tens de usar o comando /pt primeiro');
+      } else reply.text(`já tinhas mandado áudio. manda aí texto`);
+    } else reply.text(`só processo áudios para serem mandados para o Telegram, por isso tens de usar o comando /pt primeiro`);
   }));
 
   bot.text((msg, reply) => wrapper(reply, async () => {
@@ -83,7 +83,7 @@ export default (botToken, adminChatId) => {
     if (info) {
       console.log(info.data);
       if (info.data.text)
-        throw new Error('já tinhas mandado texto, agora tens de mandar áudio');
+        throw new Error(`já tinhas mandado texto, agora tens de mandar áudio`);
       memory[msg.chat.id].data.text = textFormatting(msg.text).telegram;
       await joinAudioAndText(msg.chat.id, reply);
     } else {
@@ -92,13 +92,14 @@ export default (botToken, adminChatId) => {
     }
   }));
 
-  bot.command('debug', (msg, reply) => wrapper(reply, () => {
+  bot.command(`debug`, (msg, reply) => wrapper(reply, () => {
     if (msg.chat.id.toString() !== adminChatId.toString()) {
-      sendMessage(adminChatId, 'user @' + msg.chat.username + ' tried to use debug');
-      throw new Error('not allowed. this situation will be reported to my master.');
+      sendMessage(adminChatId, `user @${msg.chat.username} tried to use debug \u{1F624}`);
+      throw new Error(`\u{26D4} not allowed. this situation will be reported to my master. \u{26D4}`);
     }
 
-    reply.text('nothin\'s testin');
+    // reply.text(`nothin's testin`);
+    reply.text(`\u{1FAE0}`);
   }));
   //#endregion
 
@@ -109,7 +110,7 @@ export default (botToken, adminChatId) => {
     try {
       call();
     } catch (e) {
-      reply.text('Uia, isso não deu.');
+      reply.text(`Uia, isso não deu`);
       reply.text(e.message);
       console.log(e.stack);
     }
@@ -117,12 +118,12 @@ export default (botToken, adminChatId) => {
 
   async function joinAudioAndText(chatId, reply) {
     const textToSend = memory[chatId].data.text;
-    const toSendSplit = textToSend.split('\n');
+    const toSendSplit = textToSend.split(`\n`);
     const badTitle = toSendSplit[2];
-    const title = badTitle.substring(badTitle.indexOf(' ') + 1, badTitle.length - 1);
+    const title = badTitle.substring(badTitle.indexOf(` `) + 1, badTitle.length - 1);
     const file = fs.createReadStream(audiosFolder + chatId);
     reply.sendGeneric("sendAudio",
-      {audio: file, performer: toSendSplit[0], title: title, caption: textToSend, parse_mode: 'Markdown'});
+      {audio: file, performer: toSendSplit[0], title: title, caption: textToSend, parse_mode: `Markdown`});
     await deleteUserData(chatId);
   }
 

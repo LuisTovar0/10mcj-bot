@@ -11,7 +11,7 @@ export default (text) => {
   }
 
   const telegramStr = day + '-' + (month < 10 ? '0' : '') + month + '-' + date.getFullYear().toString().substring(2, 4) +
-    '\n\n*' + desc + '*\n\n[▶️ YouTube](' + url + ')          [🌐 +Info](https://10minutoscomjesus.org/)';
+    '\n\n*' + desc + '*\n\n[\u{25B6} YouTube](' + url + ')          [\u{1F310} +Info](https://10minutoscomjesus.org/)';
   // const signalStr = day + '-' + (month < 10 ? '0' : '') + month + '-' + date.getFullYear().toString().substring(2, 4);
 
   return {telegram: telegramStr, signal: null/*signalStr*/};
