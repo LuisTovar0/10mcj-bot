@@ -15,25 +15,24 @@ export default (botToken, adminChatId) => {
   //#region commands
 
   //#region info commands
-  bot.command(`start`, (msg, reply) => reply.text(`Welcome, fellow 10MwJ admin!\nBem-vindo, co-administrador dos 10McJ!\n\
- Bienvenido, administrador de 10McJ!`));
+  bot.command(`start`, (msg, reply) => reply.text(`
+Bem-vindo, co-administrador dos @dezmincomjesus!
+Welcome, fellow @tenminuteswithjesus admin!
+Bienvenido, compañero administrador de @diezminutos!
+Bienvenue, ami administrateur de @dixminutesavecjesus!
+Willkommen, kollege des @zehnmmj!
 
-  bot.command(`info`, (msg, reply) => reply.text(`/info_en instructions\n/info_pt instruções\n/info_es instrucciones`));
+Contact @tovawr for an implementation in your language!
+Currently available languages: /pt
 
-  bot.command(`info_pt`, (msg, reply) => reply.text(`Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto\
- e um áudio separadamente, por qualquer ordem, e eu respondo com tudo formatado.\n\nSempre que estiver confuso, usa\
- /cancel; isso vai apagar todos os registos feitos sobre o chat contigo, para poderes começar de novo.\n\nPara saberes\
- que informações estão guardadas sobre o teu chat, /mystatus`));
+Anytime you do something you didn't mean to, use the /cancel command!`));
 
-  bot.command(`info_en`, (msg, reply) => reply.markdown(`*Formatting for English 10MwJ is not yet implemented.*\n\n\
- Use /en for a formatting. You should send a text and an audio separately, in any order, and I'll respond with the formats.\
- \n\nIf it gets confusing, use /cancel; that'll delete all records of your chat with the bot.\n\nTo know what is recorded\
- about your chat, /mystatus`));
+  bot.command(`info`, (msg, reply) => reply.text(`/info_pt instruções\n\nContact @tovawr for an implementation in your language!`));
 
-  bot.command(`info_es`, (msg, reply) => reply.markdown(`*Formatación para 10McJ España no está todavía implementada.*\n\n\
- Usa /es para una formatación. Debes enviar un texto y un audio separadamente, en cualquier orden, y respondré con las \
- formataciones.\n\nCuando esté confuso, usa /cancel; eso va a apagar todos los registros del bot con tu chat, para que \
- puedas empezar de nuevo.\n\nPara saber lo que grabó el bot sobre tu chat, /mystatus`));
+  bot.command(`info_pt`, (msg, reply) => reply.text(`Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto \
+e um áudio separadamente, por qualquer ordem, e eu respondo com tudo formatado.\n\nSempre que isto ficar confuso, usa \
+/cancel; isso vai apagar todos os registos feitos sobre o teu chat, para poderes começar de novo.\n\nPara saberes \
+que informações estão guardadas sobre o teu chat, /mystatus`));
 
   bot.command(`mystatus`, (msg, reply) => reply.text(JSON.stringify(memory[msg.chat.id] || {}, null, 3)));
   //#endregion
@@ -41,22 +40,16 @@ export default (botToken, adminChatId) => {
   bot.command(`pt`, async (msg, reply) => await wrapper(reply, () => {
     if (!memory[msg.chat.id]) {
       memory[msg.chat.id] = {
-        command: `pt`,
-        data: {
-          audio: false,
-          text: {}
+        command: `pt`, data: {
+          audio: false, text: {}
         }
       };
       reply.text(`okapa. que venham o áudio e o texto`);
     } else reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
   }));
 
-  bot.command(`en`, (mag, reply) => {
+  bot.command(`en`, `fr`, `es`, `de`, (mag, reply) => {
     reply.html(`<b><i>Not yet implemented</i></b>\n/info`);
-    reply.text(`\u{1F937}\u{200D}\u{2642}\u{FE0F}`);
-  });
-  bot.command(`es`, (msg, reply) => {
-    reply.html(`<b><i>Aun no implementado</i></b>\n/info`);
     reply.text(`\u{1F937}\u{200D}\u{2642}\u{FE0F}`);
   });
 
