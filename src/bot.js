@@ -5,7 +5,7 @@ import botgram from "botgram";
 
 import {saveAudio} from "./audio.js";
 import {audiosFolder, sendMessage} from "./shared.js";
-import textFormatting from "./textFormatting.js";
+import {textFormattingPT} from "./textFormatting.js";
 
 export default (botToken, adminChatId) => {
 
@@ -38,7 +38,7 @@ export default (botToken, adminChatId) => {
   bot.command(`mystatus`, (msg, reply) => reply.text(JSON.stringify(memory[msg.chat.id] || {}, null, 3)));
   //#endregion
 
-  bot.command(`pt`, (msg, reply) => wrapper(reply, () => {
+  bot.command(`pt`, async (msg, reply) => await wrapper(reply, () => {
     if (!memory[msg.chat.id]) {
       memory[msg.chat.id] = {
         command: `pt`,
@@ -61,7 +61,7 @@ export default (botToken, adminChatId) => {
   //#endregion
 
   //#region message treatment
-  bot.audio((msg, reply) => wrapper(reply, () => {
+  bot.audio(async (msg, reply) => await wrapper(reply, () => {
     const chatId = msg.chat.id;
     if (memory[chatId] !== undefined) { // /telegram command was used
       if (!memory[chatId].data.audio) { // audio hasn't been sent
@@ -78,37 +78,43 @@ export default (botToken, adminChatId) => {
     } else reply.text(`só processo áudios para serem mandados para o Telegram, por isso tens de usar o comando /pt primeiro`);
   }));
 
-  bot.text((msg, reply) => wrapper(reply, async () => {
+  bot.text(async (msg, reply) => await wrapper(reply, async () => {
     let info = memory[msg.chat.id];
     if (info) {
       console.log(info.data);
       if (info.data.text)
         throw new Error(`já tinhas mandado texto, agora tens de mandar áudio`);
-      memory[msg.chat.id].data.text = textFormatting(msg.text).telegram;
+      const texts = textFormattingPT(msg.text);
+      memory[msg.chat.id].data.text = texts.telegram;
       await joinAudioAndText(msg.chat.id, reply);
+      textWithLinks(reply, texts.signal);
     } else {
-      let textToSend = textFormatting(msg.text).telegram;
-      textWithLinks(reply, textToSend);
+      try {
+        const texts = textFormattingPT(msg.text);
+        textWithLinks(reply, texts.telegram);
+        textWithLinks(reply, texts.signal);
+      } catch (e) {
+        throw new Error('Invalid text. Please use a command.');
+      }
     }
   }));
 
-  bot.command(`debug`, (msg, reply) => wrapper(reply, () => {
+  bot.command(`debug`, async (msg, reply) => await wrapper(reply, () => {
     if (msg.chat.id.toString() !== adminChatId.toString()) {
       sendMessage(adminChatId, `user @${msg.chat.username} tried to use debug \u{1F624}`);
       throw new Error(`\u{26D4} not allowed. this situation will be reported to my master. \u{26D4}`);
     }
 
-    // reply.text(`nothin's testin`);
-    reply.text(`\u{1FAE0}`);
+    reply.text(`nothin's testin`);
   }));
   //#endregion
 
   //#region auxiliar methods
 
   // to make sure exceptions are handled so the bot doesn't stop on errors
-  function wrapper(reply, call) {
+  async function wrapper(reply, call) {
     try {
-      call();
+      await call();
     } catch (e) {
       reply.text(`Uia, isso não deu`);
       reply.text(e.message);

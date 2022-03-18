@@ -1,8 +1,8 @@
-export default (text) => {
-  let split = text.split('\n');
-  if (split.length < 3) throw new Error('bad message: should have 3 paragraphs');
+export function textFormattingPT(text) {
+  let split = text.split(`\n`);
+  if (split.length < 3) throw new Error(`bad message: should have 3 paragraphs`);
 
-  let url = split[0].trim(), desc = split[2].replace('*', '').replace('*', '').trim(),
+  let url = split[0].trim(), desc = split[2].replace(`*`, ``).replace(`*`, ``).trim(),
     date = new Date(), day = date.getDay(), month = date.getMonth() + 1;
   if (date.getHours() > 14) {
     let tomorrow = new Date();
@@ -10,9 +10,11 @@ export default (text) => {
     day = tomorrow.getDate();
   }
 
-  const telegramStr = day + '-' + (month < 10 ? '0' : '') + month + '-' + date.getFullYear().toString().substring(2, 4) +
-    '\n\n*' + desc + '*\n\n[\u{25B6} YouTube](' + url + ')          [\u{1F310} +Info](https://10minutoscomjesus.org/)';
-  // const signalStr = day + '-' + (month < 10 ? '0' : '') + month + '-' + date.getFullYear().toString().substring(2, 4);
+  const telegramStr = `${day}-${(month < 10 ? `0` : ``) + month}-${date.getFullYear().toString().substring(2, 4)}\
+\n\n*${desc}*\n\n[\u{25B6} YouTube](${url})          [\u{1F310} +Info](https://10minutoscomjesus.org/)`;
+  const signalStr = `${day}-${(month < 10 ? `0` : ``) + month}-${date.getFullYear().toString().substring(2, 4)}\
+\n\n${desc}\n\n\u{25B6} YouTube: ${url}\n\n\u{1F4F2} App 10 Minutos com Jesus. Disponível em:\n\u{1F34E} App Store -\
+ https://tinyurl.com/10mcj-ios\n\u{1F47E} Google Play - https://tinyurl.com/10mcj-android\n\n\u{1F310} +Info: https://10minutoscomjesus.org`;
 
-  return {telegram: telegramStr, signal: null/*signalStr*/};
+  return {telegram: telegramStr, signal: signalStr};
 }
