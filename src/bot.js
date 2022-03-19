@@ -4,6 +4,7 @@ import del from "del";
 import botgram from "botgram";
 
 import {saveAudio} from "./audio.js";
+import BotError from "./botError.js";
 import {audiosFolder, hasEntries, sendMessage} from "./shared.js";
 import {textFormattingPT} from "./textFormatting.js";
 
@@ -16,18 +17,19 @@ export default (botToken, adminChatId) => {
 
   //#region info commands
   bot.command(`start`, (msg, reply) => reply.text(`
-Bem-vindo, co-administrador dos @dezmincomjesus!
-Welcome, fellow @tenminuteswithjesus admin!
-Bienvenido, compañero administrador de @diezminutos!
-Bienvenue, ami administrateur de @dixminutesavecjesus!
-Willkommen, kollege des @zehnmmj!
+\u{1F1F5}\u{1F1F9} Bem-vindo, co-administrador dos @dezmincomjesus!
+\u{1F1EC}\u{1F1E7}\u{1F1FA}\u{1F1F8} Welcome, fellow @tenminuteswithjesus admin!
+\u{1F1EA}\u{1F1F8} Bienvenido, compañero administrador de @diezminutos!
+\u{1F1EB}\u{1F1F7} Bienvenue, ami administrateur de @dixminutesavecjesus!
+\u{1F1E9}\u{1F1EA} Willkommen, kollege des @zehnmmj!
 
 Contact @tovawr for an implementation in your language!
 Currently available languages: /pt
 
-Anytime you do something you didn't mean to, use the /cancel command!`));
+Anytime you do something you didn't mean to, use the /cancel command`));
 
-  bot.command(`info`, (msg, reply) => reply.text(`/info_pt instruções\n\nContact @tovawr for an implementation in your language!`));
+  bot.command(`info`, (msg, reply) => reply.text(`/info_pt instruções\n\nContact @tovawr for an implementation in your language!
+Anyway, hit /start for an international welcome message \u{1F30F}`));
 
   bot.command(`info_pt`, (msg, reply) => reply.text(`Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto \
 e um áudio separadamente, por qualquer ordem, e eu respondo com tudo formatado.\n\nSempre que isto ficar confuso, usa \
@@ -99,17 +101,16 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       try {
         reply.text(`You should use a command before sending text.`);
         const texts = textFormattingPT(msg.text);
-        textWithLinks(reply, texts.telegram);
+        markdownWithLinks(reply, texts.telegram);
         textWithLinks(reply, texts.signal);
         return;
       } catch (e) {
-        throw new Error(`Invalid text. Please use a command.`);
+        throw new BotError(`Invalid text. Please use a command.`);
       }
     }
 
     switch (memory[chatId].command) {
       case `pt`:
-        console.log(memory[chatId].data);
         if (memory[chatId].data.audio) {
           // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
           memory[chatId].data.text = textFormattingPT(msg.text);
@@ -117,7 +118,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
         } else {
           // if we don't have audio but already have text, let the user know
           if (hasEntries(memory[chatId].data.text))
-            throw new Error(`já tinhas mandado texto, agora tens de mandar áudio\nou então /cancel`);
+            throw new BotError(`já tinhas mandado texto, agora tens de mandar áudio\nou então /cancel`);
           const texts = textFormattingPT(msg.text);
           memory[chatId].data.text = texts;
           reply.text(`boa escolha de emojis ${texts.descr.split(` `)[0]}`);
@@ -131,7 +132,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
   bot.command(`debug`, async (msg, reply) => await wrapper(reply, () => {
     if (msg.chat.id.toString() !== adminChatId.toString()) {
       sendMessage(adminChatId, `user @${msg.chat.username} tried to use debug \u{1F624}`);
-      throw new Error(`\u{26D4} not allowed. this situation will be reported to my master. \u{26D4}`);
+      throw new BotError(`\u{26D4} not allowed. this situation will be reported to my master. \u{26D4}`);
     }
 
     // reply.text(`nothin's testin`);
@@ -147,21 +148,20 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     try {
       await call();
     } catch (e) {
-      reply.text(`An error happened.`);
-      reply.text(e.message);
+      if (e.name !== "BotError") reply.text(`An error happened.`);
+      textWithLinks(reply, e.message);
       console.log(e.stack);
     }
   }
 
   async function joinAudioAndText(chatId, reply) {
-    const badTitle = memory[chatId].data.text.descr;
-    const title = badTitle.substring(badTitle.indexOf(` `) + 1, badTitle.length - 1);
+    const texts = memory[chatId].data.text;
+    const badTitle = texts.descr.trim();
+    const title = badTitle.substring(badTitle.indexOf(` `) + 1, badTitle.length);
     const file = fs.createReadStream(audiosFolder + chatId);
-    reply.sendGeneric("sendAudio",
-      {
-        audio: file, performer: memory[chatId].data.text.date, title: title,
-        caption: memory[chatId].data.text.telegram, parse_mode: `Markdown`
-      });
+    reply.sendGeneric("sendAudio", {
+      audio: file, performer: texts.date, title: title, caption: texts.telegram, parse_mode: `Markdown`
+    });
     textWithLinks(reply, memory[chatId].data.text.signal);
     await deleteUserData(chatId);
   }
@@ -173,9 +173,13 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     delete memory[chatId];
   }
 
-  function textWithLinks(reply, text) {
+  function markdownWithLinks(reply, text) {
     reply.sendGeneric("sendMessage",
       {text: text, parse_mode: "Markdown", disable_web_page_preview: true});
+  }
+
+  function textWithLinks(reply, text) {
+    reply.sendGeneric("sendMessage", {text: text, disable_web_page_preview: true});
   }
 
   //#endregion
