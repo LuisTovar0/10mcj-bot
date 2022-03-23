@@ -15,7 +15,7 @@ https://youtu.be/dQw4w9WgXcQ\n\n\u{23F9}\u{1F649} *Desliguem o funk que eu não 
       break;
     }
 
-  let date = new Date(), day = date.getDay(), month = date.getMonth() + 1;
+  let date = new Date(), day = date.getDate(), month = date.getMonth() + 1;
   if (date.getHours() > 14) {
     let tomorrow = new Date();
     tomorrow.setDate(date.getDate() + 1);

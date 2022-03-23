@@ -78,16 +78,16 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
           return;
         }
 
-        reply.text(`péràí...`);
+        reply.text(`péràí... a baixar`);
         reply.text(`\u{1F4E5}`);
         const eventEmitter = new EventEmitter();
-        eventEmitter.on(`downloaded audio`, async () => {
+        eventEmitter.on(chatId, async () => {
           // to be executed after the audio download
           memory[chatId].data.audio = true;
           if (hasEntries(memory[chatId].data.text)) await joinAudioAndText(chatId, reply);
           else reply.text(`já tá. ganda meditação`);
         });
-        saveAudio(bot, msg.file, audiosFolder + chatId, eventEmitter);
+        saveAudio(bot, msg, audiosFolder + chatId, eventEmitter);
         break;
       default:
         reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
