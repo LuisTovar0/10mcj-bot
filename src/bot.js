@@ -2,6 +2,7 @@ import fs from "fs";
 import {EventEmitter} from "events";
 import del from "del";
 import botgram from "botgram";
+import mp3Duration from 'mp3-duration';
 
 import {saveAudio} from "./audio.js";
 import BotError from "./botError.js";
@@ -81,7 +82,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
         reply.text(`péràí... a baixar`);
         reply.text(`\u{1F4E5}`);
         const eventEmitter = new EventEmitter();
-        eventEmitter.on(chatId, async () => {
+        eventEmitter.on("downloaded audio " + chatId, async () => {
           // to be executed after the audio download
           memory[chatId].data.audio = true;
           if (hasEntries(memory[chatId].data.text)) await joinAudioAndText(chatId, reply);
@@ -158,12 +159,13 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     const texts = memory[chatId].data.text;
     const badTitle = texts.descr.trim();
     const title = badTitle.substring(badTitle.indexOf(` `) + 1, badTitle.length);
-    const file = fs.createReadStream(audiosFolder + chatId);
-    reply.sendGeneric("sendAudio", {
-      audio: file, performer: texts.date, title: title, caption: texts.telegram, parse_mode: `Markdown`
+    mp3Duration(audiosFolder + chatId, async (err, duration) => {
+      if (err) throw new BotError(`Couldn't retrieve the audio duration.`);
+      const file = fs.createReadStream(audiosFolder + chatId);
+      reply.audio(file, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
+      textWithLinks(reply, memory[chatId].data.text.signal);
+      await deleteUserData(chatId);
     });
-    textWithLinks(reply, memory[chatId].data.text.signal);
-    await deleteUserData(chatId);
   }
 
   async function deleteUserData(chatId) {
