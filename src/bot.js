@@ -9,10 +9,18 @@ import BotError from "./botError.js";
 import {audiosFolder, hasEntries, sendMessage} from "./shared.js";
 import {textFormattingPT} from "./textFormatting.js";
 
-export default (botToken, adminChatId) => {
+export default (botToken, adminChatId, runningEnv) => {
 
   const memory = {};
   const bot = botgram(botToken);
+
+  // middleware
+  bot.all(async (msg, reply, next) => {
+    if (runningEnv === 'dev' && msg.chat.id.toString() !== adminChatId.toString()) {
+      sendMessage(adminChatId, `@${msg.chat.user.name} tried to use the bot while in development.`);
+      sendMessage(msg.chat.id, `Our beautiful devs are developing the bot at the moment. Please don't send messages.`);
+    } else await wrapper(reply, next);
+  });
 
   //#region commands
 
@@ -40,7 +48,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
   bot.command(`mystatus`, (msg, reply) => reply.text(JSON.stringify(memory[msg.chat.id] || {}, null, 3)));
   //#endregion
 
-  bot.command(`pt`, async (msg, reply) => await wrapper(reply, () => {
+  bot.command(`pt`, async (msg, reply) => {
     if (!memory[msg.chat.id]) {
       memory[msg.chat.id] = {
         command: `pt`, data: {
@@ -49,21 +57,21 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       };
       reply.text(`okapa. que venham o áudio e o texto`);
     } else reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
-  }));
+  });
 
   bot.command(`en`, `fr`, `es`, `de`, (mag, reply) => {
     reply.html(`<b><i>Not yet implemented</i></b>\n/info`);
     reply.text(`\u{1F937}\u{200D}\u{2642}\u{FE0F}`);
   });
 
-  bot.command(`cancel`, (msg, reply) => wrapper(reply, async () => {
+  bot.command(`cancel`, async (msg, reply) => {
     await deleteUserData(msg.chat.id);
     reply.text(`Ok irmom \u{1F5FF} registos apagados`);
-  }));
+  });
   //#endregion
 
   //#region message treatment
-  bot.audio(async (msg, reply) => await wrapper(reply, async () => {
+  bot.audio(async (msg, reply) => {
     const chatId = msg.chat.id;
     if (!memory[chatId]) {
       // a command has not been used
@@ -93,9 +101,9 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       default:
         reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
     }
-  }));
+  });
 
-  bot.text(async (msg, reply) => await wrapper(reply, async () => {
+  bot.text(async (msg, reply) => {
     const chatId = msg.chat.id;
     if (!memory[chatId]) {
       // if a command hasn't been used, just return the formatted texts
@@ -106,6 +114,8 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
         textWithLinks(reply, texts.signal);
         return;
       } catch (e) {
+        if (e instanceof BotError)
+          throw e;
         throw new BotError(`Invalid text. Please use a command.`);
       }
     }
@@ -128,18 +138,17 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       default:
         reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
     }
-  }));
+  });
 
-  bot.command(`debug`, async (msg, reply) => await wrapper(reply, () => {
-    if (msg.chat.id.toString() !== adminChatId.toString()) {
-      sendMessage(adminChatId, `user @${msg.chat.username} tried to use debug \u{1F624}`);
-      throw new BotError(`\u{26D4} not allowed. this situation will be reported to my master. \u{26D4}`);
+  bot.command(`debug`, async (msg, reply) => {
+    if (runningEnv !== `dev`) {
+      throw new BotError(`\u{26D4} This command is not allowed in production mode \u{26D4}`);
     }
 
     // reply.text(`nothin's testin`);
     if (Object.entries({}).length) reply.text(true);
     else reply.text(false);
-  }));
+  });
   //#endregion
 
   //#region auxiliar methods

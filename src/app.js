@@ -37,7 +37,7 @@ fs.access(audiosFolder, (error) => {
 //#endregion
 
 // set up and run the bot
-runBot(botToken, adminChatId);
+runBot(botToken, adminChatId, runningEnv);
 
 // inform me that it's running
 sendMessage(adminChatId, 'Bot is running in ' + runningEnv);
