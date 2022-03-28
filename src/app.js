@@ -28,12 +28,16 @@ app.listen(process.env.PORT || 15000, () => sendMessage(adminChatId, 'Site is up
 //#endregion
 
 //#region make sure our audios folder exists, or clean it
-await del(audiosFolder);
-fs.access(audiosFolder, (error) => {
-  if (error) fs.mkdir(audiosFolder, (error) => {
-    if (error) throw error;
+async function newCleanFolder(folderName) {
+  await del(folderName);
+  fs.access(folderName, (error) => {
+    if (error) fs.mkdir(folderName, (error) => {
+      if (error) throw error;
+    });
   });
-});
+}
+
+await newCleanFolder(audiosFolder);
 //#endregion
 
 // set up and run the bot

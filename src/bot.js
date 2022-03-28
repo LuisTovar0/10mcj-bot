@@ -3,7 +3,7 @@ import del from "del";
 import botgram from "botgram";
 import mp3Duration from 'mp3-duration';
 
-import {saveAudio} from "./audio.js";
+import {saveFile} from "./audio.js";
 import BotError from "./botError.js";
 import {audiosFolder, hasEntries, sendMessage} from "./shared.js";
 import {textFormattingPT} from "./textFormatting.js";
@@ -88,7 +88,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
 
         reply.text(`péràí... a baixar`);
         reply.text(`\u{1F4E5}`);
-        saveAudio(bot, msg, audiosFolder + chatId, async () => {
+        saveFile(bot, msg, audiosFolder + chatId, async () => {
           // to be executed after the audio download
           memory[chatId].data.audio = true;
           if (hasEntries(memory[chatId].data.text)) await joinAudioAndText(chatId, reply);
@@ -111,8 +111,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
         textWithLinks(reply, texts.signal);
         return;
       } catch (e) {
-        if (e instanceof BotError)
-          throw e;
+        if (e instanceof BotError) throw e;
         throw new BotError(`Invalid text. Please use a command.`);
       }
     }
