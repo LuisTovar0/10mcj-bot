@@ -1,7 +1,7 @@
 import fs from 'fs';
 import express from 'express';
-import del from "del";
 import dotenv from 'dotenv';
+import newCleanFolder from "newcleanfolder";
 
 import {audiosFolder, sendMessage} from "./shared.js";
 import runBot from "./bot.js";
@@ -27,18 +27,8 @@ app.get('/', (req, res) =>
 app.listen(process.env.PORT || 15000, () => sendMessage(adminChatId, 'Site is up in ' + runningEnv));
 //#endregion
 
-//#region make sure our audios folder exists, or clean it
-async function newCleanFolder(folderName) {
-  await del(folderName);
-  fs.access(folderName, (error) => {
-    if (error) fs.mkdir(folderName, (error) => {
-      if (error) throw error;
-    });
-  });
-}
-
+// make sure our audios folder exists, or clean it
 await newCleanFolder(audiosFolder);
-//#endregion
 
 // set up and run the bot
 runBot(botToken, adminChatId, runningEnv);
