@@ -1,10 +1,10 @@
 import fs from 'fs';
 import express from 'express';
 import dotenv from 'dotenv';
-import newCleanFolder from "newcleanfolder";
 
-import {audiosFolder, sendMessage} from "./shared.js";
-import runBot from "./bot.js";
+import {audiosFolder, sendMessage} from "./shared";
+import runBot from "./bot";
+import del from "del";
 
 //#region the env vars
 if (!dotenv.config()) throw new Error('Could not find .env file!');
@@ -28,7 +28,16 @@ app.listen(process.env.PORT || 15000, () => sendMessage(adminChatId, 'Site is up
 //#endregion
 
 // make sure our audios folder exists, or clean it
-await newCleanFolder(audiosFolder);
+async function newCleanFolder(folderName: string) {
+  await del(folderName);
+  fs.access(folderName, (error) => {
+    if (error) fs.mkdir(folderName, (error) => {
+      if (error) throw error;
+    });
+  });
+}
+
+newCleanFolder(audiosFolder);
 
 // set up and run the bot
 runBot(botToken, adminChatId, runningEnv);

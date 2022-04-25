@@ -1,5 +1,5 @@
 import fs from "fs";
-import BotError from "./botError.js";
+import BotError from "./botError";
 
 export function saveFile(bot, msg, fileName, callback) {
   bot.fileLoad(msg.file, (err, buffer) => {

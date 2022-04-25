@@ -1,6 +1,6 @@
-import BotError from "./botError.js";
+import BotError from "./botError";
 
-export function textFormattingPT(text) {
+export function textFormattingPT(text: string) {
   let split = text.split(`\n`);
   if (split.length < 3)
     throw new BotError(`texto malformado: deve ter pelo menos 3 linhas. por exemplo:

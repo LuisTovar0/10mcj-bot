@@ -3,10 +3,10 @@ import del from "del";
 import botgram from "botgram";
 import mp3Duration from 'mp3-duration';
 
-import {saveFile} from "./audio.js";
-import BotError from "./botError.js";
-import {audiosFolder, hasEntries, sendMessage} from "./shared.js";
-import {textFormattingPT} from "./textFormatting.js";
+import {saveFile} from "./audio";
+import BotError from "./botError";
+import {audiosFolder, hasEntries, sendMessage} from "./shared";
+import {textFormattingPT} from "./textFormatting";
 
 export default (botToken, adminChatId, runningEnv) => {
 
