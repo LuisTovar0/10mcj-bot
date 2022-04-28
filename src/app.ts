@@ -44,6 +44,3 @@ runBot(botToken, adminChatId, runningEnv);
 
 // inform me that it's running
 sendMessage(adminChatId, 'Bot is running in ' + runningEnv);
-
-// for testing if auto deploy is working
-sendMessage(adminChatId, `Auto-deploy worked`);
