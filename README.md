@@ -4,10 +4,7 @@ This bot automates my daily task of formatting a message and some audio properti
 
 You can check out the [wiki](https://github.com/LuisTovar0/10mcj-bot/wiki) for the planning.
 
-<table> <tr>
+<table style="border:0"> <tr>
 	<td><img src="../../wiki/screenshot1.jpg"></td>
 	<td><img src="../../wiki/screenshot2.jpg"></td>
 </tr> </table>
-
-![screenshot1](../../wiki/screenshot1.jpg)
-![screenshot2](../../wiki/screenshot2.jpg)
