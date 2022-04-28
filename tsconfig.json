@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "es5",
     "lib": [
-      //      "esnext",
-      //      "esnext.asynciterable"
+      "esnext",
+      "esnext.asynciterable"
     ],
     "typeRoots": [
       "./node_modules/@types",
