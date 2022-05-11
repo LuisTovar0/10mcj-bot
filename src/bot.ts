@@ -1,20 +1,21 @@
 import fs from "fs";
 import del from "del";
-import botgram from "botgram";
-import mp3Duration from 'mp3-duration';
-
 import {saveFile} from "./audio";
 import BotError from "./botError";
 import {audiosFolder, hasEntries, sendMessage} from "./shared";
 import {textFormattingPT} from "./textFormatting";
+import {Memory, Msg, Reply} from "./declarations";
 
-export default (botToken, adminChatId, runningEnv) => {
+const botgram = require("botgram");
+const mp3Duration = require('mp3-duration');
 
-  const memory = {};
+export default (botToken: string, adminChatId: string, runningEnv: string) => {
+
+  const memory: Memory = {};
   const bot = botgram(botToken);
 
   // middleware
-  bot.all(async (msg, reply, next) => {
+  bot.all(async (msg: Msg, reply: any, next: any) => {
     if (runningEnv === 'dev' && msg.chat.id.toString() !== adminChatId.toString()) {
       sendMessage(adminChatId, `@${msg.chat.user.name} tried to use the bot while in development.`);
       sendMessage(msg.chat.id, `Our beautiful devs are developing the bot at the moment. Please don't send messages.`);
@@ -24,7 +25,7 @@ export default (botToken, adminChatId, runningEnv) => {
   //#region commands
 
   //#region info commands
-  bot.command(`start`, (msg, reply) => reply.text(`
+  bot.command(`start`, (msg: Msg, reply: Reply) => reply.text(`
 \u{1F1F5}\u{1F1F9} Bem-vindo, co-administrador dos @dezmincomjesus!
 \u{1F1EC}\u{1F1E7}\u{1F1FA}\u{1F1F8} Welcome, fellow @tenminuteswithjesus admin!
 \u{1F1EA}\u{1F1F8} Bienvenido, compañero administrador de @diezminutos!
@@ -36,18 +37,18 @@ Currently available languages: /pt
 
 Anytime you do something you didn't mean to, use the /cancel command`));
 
-  bot.command(`info`, (msg, reply) => reply.text(`/info_pt instruções\n\nContact @tovawr for an implementation in your language!
+  bot.command(`info`, (msg: Msg, reply: Reply) => reply.text(`/info_pt instruções\n\nContact @tovawr for an implementation in your language!
 Anyway, hit /start for an international welcome message \u{1F30F}`));
 
-  bot.command(`info_pt`, (msg, reply) => reply.text(`Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto \
+  bot.command(`info_pt`, (msg: Msg, reply: Reply) => reply.text(`Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto \
 e um áudio separadamente, por qualquer ordem, e eu respondo com tudo formatado.\n\nSempre que isto ficar confuso, usa \
 /cancel; isso vai apagar todos os registos feitos sobre o teu chat, para poderes começar de novo.\n\nPara saberes \
 que informações estão guardadas sobre o teu chat, /mystatus`));
 
-  bot.command(`mystatus`, (msg, reply) => reply.text(JSON.stringify(memory[msg.chat.id] || {}, null, 3)));
+  bot.command(`mystatus`, (msg: Msg, reply: Reply) => reply.text(JSON.stringify(memory[msg.chat.id] || {}, null, 3)));
   //#endregion
 
-  bot.command(`pt`, async (msg, reply) => {
+  bot.command(`pt`, async (msg: Msg, reply: Reply) => {
     if (!memory[msg.chat.id]) {
       memory[msg.chat.id] = {
         command: `pt`, data: {
@@ -58,19 +59,19 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     } else reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
   });
 
-  bot.command(`en`, `fr`, `es`, `de`, (mag, reply) => {
+  bot.command(`en`, `fr`, `es`, `de`, (msg: Msg, reply: Reply) => {
     reply.html(`<b><i>Not yet implemented</i></b>\n/info`);
     reply.text(`\u{1F937}\u{200D}\u{2642}\u{FE0F}`);
   });
 
-  bot.command(`cancel`, async (msg, reply) => {
+  bot.command(`cancel`, async (msg: Msg, reply: Reply) => {
     await deleteUserData(msg.chat.id);
     reply.text(`Ok irmom \u{1F5FF} registos apagados`);
   });
   //#endregion
 
   //#region message treatment
-  bot.audio(async (msg, reply) => {
+  bot.audio(async (msg: Msg, reply: Reply) => {
     const chatId = msg.chat.id;
     if (!memory[chatId]) {
       // a command has not been used
@@ -100,7 +101,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     }
   });
 
-  bot.text(async (msg, reply) => {
+  bot.text(async (msg: Msg, reply: Reply) => {
     const chatId = msg.chat.id;
     if (!memory[chatId]) {
       // if a command hasn't been used, just return the formatted texts
@@ -136,21 +137,21 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     }
   });
 
-  bot.command(`debug`, async (msg, reply) => {
+  bot.command(`debug`, async (msg: Msg, reply: Reply) => {
     if (runningEnv !== `dev`) {
       throw new BotError(`\u{26D4} This command is not allowed in production mode \u{26D4}`);
     }
 
     // reply.text(`nothin's testin`);
-    if (Object.entries({}).length) reply.text(true);
-    else reply.text(false);
+    if (Object.entries({}).length) reply.text(String(true));
+    else reply.text(String(false));
   });
   //#endregion
 
   //#region auxiliar methods
 
   // to make sure exceptions are handled so the bot doesn't stop on errors
-  async function wrapper(reply, call) {
+  async function wrapper(reply: Reply, call: () => any) {
     try {
       await call();
     } catch (e) {
@@ -160,32 +161,34 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     }
   }
 
-  async function joinAudioAndText(chatId, reply) {
-    const texts = memory[chatId].data.text;
+  async function joinAudioAndText(chatId: string, reply: Reply) {
+    const texts = memory[chatId]?.data?.text;
+    if (!texts || !texts.descr) throw new BotError('Internal error: null values where should be text.');
     const badTitle = texts.descr.trim();
     const title = badTitle.substring(badTitle.indexOf(` `) + 1, badTitle.length);
-    mp3Duration(audiosFolder + chatId, async (err, duration) => {
+    mp3Duration(audiosFolder + chatId, async (err: any, duration: string) => {
       if (err) throw new BotError(`Couldn't retrieve the audio duration.`);
+      if (!texts.signal || !texts.date || !texts.telegram) throw new BotError('Internal error: null values where should be text.');
       const file = fs.createReadStream(audiosFolder + chatId);
       reply.audio(file, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
-      textWithLinks(reply, memory[chatId].data.text.signal);
+      textWithLinks(reply, texts.signal);
       await deleteUserData(chatId);
     });
   }
 
-  async function deleteUserData(chatId) {
+  async function deleteUserData(chatId: string) {
     // delete audio if exists
     await del(audiosFolder + chatId);
     // delete tracked information
     delete memory[chatId];
   }
 
-  function markdownWithLinks(reply, text) {
+  function markdownWithLinks(reply: Reply, text: string) {
     reply.sendGeneric("sendMessage",
       {text: text, parse_mode: "Markdown", disable_web_page_preview: true});
   }
 
-  function textWithLinks(reply, text) {
+  function textWithLinks(reply: Reply, text: string) {
     reply.sendGeneric("sendMessage", {text: text, disable_web_page_preview: true});
   }
 
