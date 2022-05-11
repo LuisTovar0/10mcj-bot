@@ -15,7 +15,7 @@ export default (botToken: string, adminChatId: string, runningEnv: string) => {
   const bot = botgram(botToken);
 
   // middleware
-  bot.all(async (msg: Msg, reply: any, next: any) => {
+  bot.all(async (msg: Msg, reply: Reply, next: any) => {
     if (runningEnv === 'dev' && msg.chat.id.toString() !== adminChatId.toString()) {
       sendMessage(adminChatId, `@${msg.chat.user.name} tried to use the bot while in development.`);
       sendMessage(msg.chat.id, `Our beautiful devs are developing the bot at the moment. Please don't send messages.`);
