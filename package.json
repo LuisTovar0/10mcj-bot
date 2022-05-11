@@ -13,12 +13,14 @@
     "del": "^6.0.0",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
+    "marked": "^4.0.15",
     "mp3-duration": "^1.1.0",
     "newcleanfolder": "2.4.0",
     "request": "^2.88.2",
     "ts-node": "^10.7.0"
   },
   "devDependencies": {
+    "@types/marked": "^4.0.3",
     "@types/request": "^2.48.8",
     "nodemon": "^2.0.15"
   }

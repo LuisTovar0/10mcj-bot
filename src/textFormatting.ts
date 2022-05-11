@@ -1,4 +1,5 @@
 import BotError from "./botError";
+import {marked} from 'marked';
 
 export function textFormattingPT(text: string) {
   let split = text.split(`\n`);
@@ -25,6 +26,7 @@ https://youtu.be/dQw4w9WgXcQ\n\n\u{23F9}\u{1F649} *Desliguem o funk que eu não 
 
   const telegramStr = `${formattedDate}\n\n*${descr1}*${descr2 ? `\n_${descr2}_` : ``}\n\n[\u{25B6} YouTube](${url})\
           [\u{1F310} +Info](https://t.me/dezmincomjesus/424)`;
+  marked.parse(telegramStr);//just a validation
   const signalStr = `${formattedDate}\n\n${descr1}${descr2 ? `\n\n` + descr2 : ``}\n\n\u{25B6} YouTube: ${url}\n\n\u{1F4F2} \
 App 10 Minutos com Jesus. Disponível em:\n\u{1F34E} App Store - https://tinyurl.com/10mcj-ios\n\u{1F47E} Google Play - \
 https://tinyurl.com/10mcj-android\n\n\u{1F310} +Info: https://10minutoscomjesus.org/`;
