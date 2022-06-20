@@ -7,16 +7,16 @@ import runBot from "./bot";
 import del from "del";
 
 //#region the env vars
-if (!dotenv.config()) throw new Error('Could not find .env file!');
+if (!dotenv.config()) throw 'Could not find .env file!';
 [process.env.BOT_TOKEN, process.env.ADMIN_CHAT_ID, process.env.RUNNING_ENV].forEach(env => {
-  if (!env) throw new Error(`${env} environment variable is not defined.`);
+  if (!env) throw `${env} environment variable is not defined.`;
 });
 if (!process.env.BOT_TOKEN || !process.env.ADMIN_CHAT_ID || !process.env.RUNNING_ENV)
-  throw new Error(`Unreachable code`);
+  throw `Unreachable code`;
 const botToken = process.env.BOT_TOKEN;
 const adminChatId = process.env.ADMIN_CHAT_ID;
 const runningEnv = process.env.RUNNING_ENV;
-if (!botToken || !adminChatId || !runningEnv) throw new Error(`This is unreachable code`);
+if (!botToken || !adminChatId || !runningEnv) throw `This is unreachable code`;
 console.log('your bot token: ' + botToken + '\nthe admin\'s chat ID: ' + adminChatId);
 //#endregion
 
