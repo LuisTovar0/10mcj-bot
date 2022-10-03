@@ -1,6 +1,9 @@
+const botgram = require("botgram");
+const mp3Duration = require('mp3-duration');
 import fs from "fs";
 import del from "del";
 import {Container} from "typedi";
+import moment from 'moment';
 
 import config from "../config";
 import {saveFile} from "./audio";
@@ -10,9 +13,7 @@ import {textFormattingPT} from "./textFormatting";
 import {IMemory} from "./types";
 import {Bot, ReplyQueue} from "./types/botgram";
 import IInRequestService from "../service/iService/iInRequest.service";
-
-const botgram = require("botgram");
-const mp3Duration = require('mp3-duration');
+import InRequest from "../domain/inRequest";
 
 export default () => {
 
@@ -20,24 +21,25 @@ export default () => {
   const bot: Bot = botgram(config.botToken);
   const inRequestService = Container.get(config.deps.service.inRequest.name) as IInRequestService;
 
-  // middleware
-  bot.all(async (msg, reply, next: any) => {
-    // if (msg.user) {
-    //   const {id, username, firstname, lastname} = msg.user;
-    //   try {
-    //     await inRequestService.addInRequest({
-    //       id, username//, firstname, lastname
-    //     }, moment(moment.now(), true).format(InRequest.dateFormat));
-    //   } catch (e) {
-    //     reply.text(`Someting went wrong with that:${e.stackTrace}`);
-    //   }
-    // }
-
+  //#region middleware
+  bot.all(async (msg, reply, next) => {
     if (config.runningEnv === 'development' && msg.chat.id.toString() !== config.adminChatId.toString()) {
       sendMessage(config.adminChatId, `@${msg.chat.username} tried to use the bot while in development.`);
       sendMessage(String(msg.chat.id), `Our beautiful devs are developing the bot at the moment. Please don't send messages.`);
     } else await wrapper(reply, next);
   });
+
+  bot.all(async (msg, reply, next) => {
+    // save whom did the request
+    if (msg.user) {
+      const {id, username/*, firstname, lastname*/} = msg.user;
+      await inRequestService.addInRequest({
+        id, username//, firstname, lastname
+      }, moment(moment.now(), true).format(InRequest.dateFormat));
+    }
+    next();
+  });
+  //#endregion
 
   //#region commands
 
