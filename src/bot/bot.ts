@@ -122,12 +122,10 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
 
         reply.text(`péràí... a baixar`);
         reply.text(`\u{1F4E5}`);
-        saveFile(bot, msg, audiosFolder + chatId, async () => {
-          // to be executed after the audio download
-          memory[chatId].data.audio = true;
-          if (memory[chatId].data.text) await joinAudioAndText(chatId, reply);
-          else reply.text(`já tá! ganda meditação`);
-        });
+        await saveFile(bot, msg, audiosFolder + chatId);
+        memory[chatId].data.audio = true;
+        if (memory[chatId].data.text) await joinAudioAndText(chatId, reply);
+        else reply.text(`já tá! ganda meditação`);
         break;
       default:
         reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
