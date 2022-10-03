@@ -2,10 +2,6 @@ const request = require("request");
 
 export const audiosFolder = './audios/';
 
-export function hasEntries(obj: any) {
-  return Object.entries(obj).length;
-}
-
 export function sendMessage(chatId: string, message: string) {
   apiMethod('sendMessage', {chat_id: chatId, text: message});
 }

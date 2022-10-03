@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import {repoDeps} from "./db";
+import {Dep} from "../loaders";
 
 if (!dotenv.config()) throw '\u{26A0} Could not find .env file! \u{26A0}';
 const envs = loadEnvVars({botToken: '', adminChatId: '', runningEnv: '', dbType: ''});
@@ -14,11 +15,15 @@ const config = {
       simpleUser: {
         name: 'SimpleUserService',
         path: './service/simpleUser.service',
-      },
+      } as Dep,
       inRequest: {
         name: 'InRequestService',
         path: './service/inRequest.service'
-      }
+      } as Dep,
+      textFormatting: {
+        name: 'TextFormattingService',
+        path: './service/textFormatting.service'
+      } as Dep
     },
   }
 };

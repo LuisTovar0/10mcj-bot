@@ -1,5 +1,3 @@
-const botgram = require("botgram");
-const mp3Duration = require('mp3-duration');
 import fs from "fs";
 import del from "del";
 import {Container} from "typedi";
@@ -8,25 +6,38 @@ import moment from 'moment';
 import config from "../config";
 import {saveFile} from "./audio";
 import BotError from "./botError";
-import {audiosFolder, hasEntries, sendMessage} from "./shared";
-import {textFormattingPT} from "./textFormatting";
+import {audiosFolder, sendMessage} from "./shared";
 import {IMemory} from "./types";
 import {Bot, ReplyQueue} from "./types/botgram";
 import IInRequestService from "../service/iService/iInRequest.service";
 import InRequest from "../domain/inRequest";
+import ITextFormattingService from "../service/iService/iTextFormatting.service";
+
+const botgram = require("botgram");
+const mp3Duration = require('mp3-duration');
 
 export default () => {
 
   const memory: IMemory = {};
   const bot: Bot = botgram(config.botToken);
+
   const inRequestService = Container.get(config.deps.service.inRequest.name) as IInRequestService;
+  const textFormattingService = Container.get(config.deps.service.textFormatting.name) as ITextFormattingService;
 
   //#region middleware
   bot.all(async (msg, reply, next) => {
     if (config.runningEnv === 'development' && msg.chat.id.toString() !== config.adminChatId.toString()) {
       sendMessage(config.adminChatId, `@${msg.chat.username} tried to use the bot while in development.`);
       sendMessage(String(msg.chat.id), `Our beautiful devs are developing the bot at the moment. Please don't send messages.`);
-    } else await wrapper(reply, next);
+    } else {
+      try {
+        await next();
+      } catch (e) {
+        if (e.name !== "BotError") reply.text(`An error happened.`);
+        textWithLinks(reply, e.message);
+        console.log(e.stack);
+      }
+    }
   });
 
   bot.all(async (msg, reply, next) => {
@@ -74,7 +85,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     if (!memory[msg.chat.id]) {
       memory[msg.chat.id] = {
         command: `pt`, data: {
-          audio: false, text: {}
+          audio: false
         }
       };
       reply.text(`okapa. que venham o áudio e o texto`);
@@ -114,8 +125,8 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
         saveFile(bot, msg, audiosFolder + chatId, async () => {
           // to be executed after the audio download
           memory[chatId].data.audio = true;
-          if (hasEntries(memory[chatId].data.text)) await joinAudioAndText(chatId, reply);
-          else reply.text(`já tá. ganda meditação`);
+          if (memory[chatId].data.text) await joinAudioAndText(chatId, reply);
+          else reply.text(`já tá! ganda meditação`);
         });
         break;
       default:
@@ -129,7 +140,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       // if a command hasn't been used, just return the formatted texts
       try {
         reply.text(`You should use a command before sending text.`);
-        const texts = textFormattingPT(msg.text);
+        const texts = textFormattingService.getFullInfo(msg.text);
         markdownWithLinks(reply, texts.telegram);
         textWithLinks(reply, texts.signal);
         return;
@@ -143,15 +154,15 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       case `pt`:
         if (memory[chatId].data.audio) {
           // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
-          memory[chatId].data.text = textFormattingPT(msg.text);
+          memory[chatId].data.text = textFormattingService.getFullInfo(msg.text);
           await joinAudioAndText(chatId, reply);
         } else {
           // if we don't have audio but already have text, let the user know
-          if (hasEntries(memory[chatId].data.text))
+          if (memory[chatId].data.text)
             throw new BotError(`já tinhas mandado texto, agora tens de mandar áudio.\nou então /cancel`);
-          const texts = textFormattingPT(msg.text);
+          const texts = textFormattingService.getFullInfo(msg.text);
           memory[chatId].data.text = texts;
-          reply.text(`boa escolha de emojis ${texts.descr.split(` `)[0]}`);
+          reply.text(`boa escolha de emojis ${texts.descr1.split(` `)[0]}`);
         }
         break;
       default:
@@ -160,33 +171,20 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
   });
 
   bot.command(`debug`, async (msg, reply) => {
-    if (config.runningEnv !== `dev`) {
+    if (config.runningEnv === `production`) {
       throw new BotError(`\u{26D4} This command is not allowed in production mode \u{26D4}`);
     }
 
-    // reply.text(`nothin's testin`);
-    if (Object.entries({}).length) reply.text(String(true));
-    else reply.text(String(false));
+    reply.text(`nothin's testin`);
   });
   //#endregion
 
-  //#region auxiliar methods
-
-  // to make sure exceptions are handled so the bot doesn't stop on errors
-  async function wrapper(reply: ReplyQueue, call: () => any) {
-    try {
-      await call();
-    } catch (e) {
-      if (e.name !== "BotError") reply.text(`An error happened.`);
-      textWithLinks(reply, e.message);
-      console.log(e.stack);
-    }
-  }
+  //#region auxiliary methods
 
   async function joinAudioAndText(chatId: number, reply: ReplyQueue) {
     const texts = memory[chatId]?.data?.text;
-    if (!texts || !texts.descr) throw new BotError('Internal error: null values where should be text.');
-    const badTitle = texts.descr.trim();
+    if (!texts || !texts.descr1) throw new BotError('Internal error: null values where should be text.');
+    const badTitle = texts.descr1.trim();
     const title = badTitle.substring(badTitle.indexOf(` `) + 1, badTitle.length);
     mp3Duration(audiosFolder + chatId, async (err: any, duration: string) => {
       if (err) throw new BotError(`Couldn't retrieve the audio duration.`);
