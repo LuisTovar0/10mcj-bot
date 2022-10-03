@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import fs from 'fs';
 import express from 'express';
 
-import {audiosFolder, sendMessage} from "./bot/shared";
+import {audiosFolder, sendMessage} from "./bot/general";
 import runBot from "./bot/bot";
 import del from "del";
 import config from "./config";

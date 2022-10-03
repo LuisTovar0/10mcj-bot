@@ -6,7 +6,7 @@ import moment from 'moment';
 import config from "../config";
 import {saveFile} from "./audio";
 import BotError from "./botError";
-import {audiosFolder, sendMessage} from "./shared";
+import {audiosFolder, markdownWithLinks, sendMessage, textWithLinks} from "./general";
 import {IMemory} from "./types";
 import {Bot, ReplyQueue} from "./types/botgram";
 import IInRequestService from "../service/iService/iInRequest.service";
@@ -178,7 +178,6 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
   //#endregion
 
   //#region auxiliary methods
-
   async function joinAudioAndText(chatId: number, reply: ReplyQueue) {
     const texts = memory[chatId]?.data?.text;
     if (!texts || !texts.descr1) throw new BotError('Internal error: null values where should be text.');
@@ -200,16 +199,6 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     // delete tracked information
     delete memory[chatId];
   }
-
-  function markdownWithLinks(reply: ReplyQueue, text: string) {
-    reply.sendGeneric("sendMessage",
-      {text: text, parse_mode: "Markdown", disable_web_page_preview: true});
-  }
-
-  function textWithLinks(reply: ReplyQueue, text: string) {
-    reply.sendGeneric("sendMessage", {text: text, disable_web_page_preview: true});
-  }
-
   //#endregion
 
 }

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 import config, {loadEnvVars} from "../../../config";
 import {IDbConnector} from "../dbConnector";
-import {sendMessage} from "../../../bot/shared";
+import {sendMessage} from "../../../bot/general";
 
 export default class MongoDbConnector implements IDbConnector {
 

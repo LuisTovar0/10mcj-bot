@@ -1,3 +1,5 @@
+import {ReplyQueue} from "./types/botgram";
+
 const request = require("request");
 
 export const audiosFolder = './audios/';
@@ -12,4 +14,13 @@ export function apiMethod(method: string, params: any) {
   const text = base + apiFunc;
   console.log('posted: ' + apiFunc);
   request(text);
+}
+
+export function markdownWithLinks(reply: ReplyQueue, text: string) {
+  reply.sendGeneric("sendMessage",
+    {text: text, parse_mode: "Markdown", disable_web_page_preview: true});
+}
+
+export function textWithLinks(reply: ReplyQueue, text: string) {
+  reply.sendGeneric("sendMessage", {text: text, disable_web_page_preview: true});
 }
