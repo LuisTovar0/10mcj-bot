@@ -1,7 +1,6 @@
 import fs from "fs";
 import del from "del";
 import {Container} from "typedi";
-import moment from 'moment';
 
 import config from "../config";
 import {saveFile} from "./audio";
@@ -9,7 +8,6 @@ import BotError from "./botError";
 import {audiosFolder, markdownWithLinks, sendMessage, textWithLinks} from "./general";
 import {Bot, ReplyQueue} from "./types/botgram";
 import IInRequestService from "../service/iService/iInRequest.service";
-import InRequest from "../domain/inRequest";
 import ITextFormattingService from "../service/iService/iTextFormatting.service";
 import IConvoMemoryService from "../service/iService/iConvoMemory.service";
 
@@ -24,13 +22,16 @@ export default () => {
   const textFormattingService = Container.get(config.deps.service.textFormatting.name) as ITextFormattingService;
   const convoService = Container.get(config.deps.service.convoMemory.name) as IConvoMemoryService;
 
-  //#region middleware
   bot.all(async (msg, reply, next) => {
     if (config.runningEnv === 'development' && msg.chat.id.toString() !== config.adminChatId.toString()) {
       sendMessage(config.adminChatId, `@${msg.chat.username} tried to use the bot while in development.`);
       sendMessage(String(msg.chat.id), `Our beautiful devs are developing the bot at the moment. Please don't send messages.`);
     } else {
       try {
+        if (msg.user)
+          // save requester
+          await inRequestService.addInRequest(msg.user as { id: number, username: string/*, firstname, lastname*/ });
+
         await next();
       } catch (e) {
         if (e.name !== "BotError") reply.text(`An error happened.`);
@@ -39,18 +40,6 @@ export default () => {
       }
     }
   });
-
-  bot.all(async (msg, reply, next) => {
-    // save requester
-    if (msg.user) {
-      const {id, username/*, firstname, lastname*/} = msg.user;
-      await inRequestService.addInRequest({
-        id, username//, firstname, lastname
-      }, moment(moment.now(), true).format(InRequest.dateFormat));
-    }
-    next();
-  });
-  //#endregion
 
   //#region commands
 

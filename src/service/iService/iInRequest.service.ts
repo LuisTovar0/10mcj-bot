@@ -3,6 +3,6 @@ import {SimpleUserProps} from "../../domain/simpleUser";
 
 export default interface IInRequestService {
 
-  addInRequest(userProps: SimpleUserProps, date: string): Promise<InRequest>;
+  addInRequest(userProps: SimpleUserProps): Promise<InRequest>;
 
 }

@@ -1,12 +1,12 @@
 import {Inject, Service} from "typedi";
 
 import config from "../config";
-import * as mapper from '../persistence/dataModel/mappers/inRequest.mapper';
 import IInRequestService from "./iService/iInRequest.service";
 import InRequest from "../domain/inRequest";
 import IInRequestRepo from "./iRepos/iInRequest.repo";
 import ISimpleUserService from "./iService/iSimpleUser.service";
 import SimpleUser, {SimpleUserProps} from "../domain/simpleUser";
+import UniqueEntityID from "../domain/core/uniqueEntityId";
 
 @Service()
 export default class InRequestService implements IInRequestService {
@@ -17,16 +17,15 @@ export default class InRequestService implements IInRequestService {
   ) {
   }
 
-  async addInRequest(userProps: SimpleUserProps, date: string): Promise<InRequest> {
+  async addInRequest(userProps: SimpleUserProps): Promise<InRequest> {
     let user: SimpleUser;
     try {
       user = await this.userService.getUserById(userProps.id);
     } catch (e) {
       user = await this.userService.addUser(userProps);
     }
-    const request = InRequest.create(user, date);
-    const persistedDataModel = this.repo.newRequest(mapper.domainToDataModel(request));
-    return mapper.dataModelToDomain(persistedDataModel, user);
+    const persistedDataModel = await this.repo.newRequest(new UniqueEntityID().toString(), user.domainId.toString());
+    return InRequest.create(user, persistedDataModel.date, persistedDataModel.domainId);
   }
 
 }

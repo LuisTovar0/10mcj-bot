@@ -8,7 +8,7 @@ import SimpleUserMongoDb from "../../../../src/persistence/repos/mongodb/simpleU
 import SimpleUserDataModel from "../../../../src/persistence/dataModel/simpleUser.dataModel";
 import UniqueEntityID from "../../../../src/domain/core/uniqueEntityId";
 
-describe('[Unit] SimpleUserMongoRepo class + DB server', async function () {
+describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
   if (config.dbType !== 'mongodb') return;
 
   const repo = new SimpleUserMongoDb();

@@ -8,7 +8,7 @@ interface InRequestProps {
   date: Moment;
 }
 
-export default class InRequest extends Entity<any> {
+export default class InRequest extends Entity<InRequestProps> {
 
   public static readonly dateFormat = "YYYYMMDD hh:mm:ss";
 
@@ -16,14 +16,20 @@ export default class InRequest extends Entity<any> {
     super(props, id);
   }
 
-  static create(user: SimpleUser, date: string | Moment, id?: UniqueEntityID | string) {
+  static dateEquals(date1: number, date2: number) {
+    return Math.abs(date1 - date2) < 3_000;
+  }
+
+  static create(user: SimpleUser, date: string | number | Moment, id?: UniqueEntityID | string) {
     let d;
     if (<string>date) {
       const strDate = <string>date;
       d = moment(strDate, this.dateFormat, true);
       if (d.format(this.dateFormat) === "Invalid date")
         throw new Error(`Invalid date "${strDate}". Valid format is "${this.dateFormat}".`);
-    } else
+    } else if (<number>date)
+      d = moment(<number>date);
+    else
       d = <Moment>date;
 
     return new InRequest({user, date: d}, id);
@@ -35,6 +41,10 @@ export default class InRequest extends Entity<any> {
 
   get formattedDate(): string {
     return this.props.date.format(InRequest.dateFormat);
+  }
+
+  get dateLong(): number {
+    return this.props.date.valueOf();
   }
 
   get moment(): Moment {
