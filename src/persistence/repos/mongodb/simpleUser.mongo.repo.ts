@@ -22,8 +22,8 @@ export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> im
     return res === null ? undefined : res;
   }
 
-  async save(dataModel: SimpleUserDataModel): Promise<void> {
-    await this.persist(dataModel);
+  async save(dataModel: SimpleUserDataModel): Promise<SimpleUserDataModel> {
+    return await this.persist(dataModel);
   }
 
 }

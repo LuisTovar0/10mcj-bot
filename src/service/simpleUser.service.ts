@@ -21,10 +21,9 @@ export default class SimpleUserService implements ISimpleUserService {
       // if user doesn't exist
       const user = new SimpleUser(props);
       const dataModel = mapper.domainToDataModel(user);
-      /*const persistedDataModel =*/
-      await this.repo.save(dataModel);
-      // if (!persistedDataModel) throw new Error(`Could not save user.`);
-      return user;
+      const persistedDataModel = await this.repo.save(dataModel);
+      if (!persistedDataModel) throw new Error(`Could not save user.`);
+      return mapper.dataModelToDomain(persistedDataModel);
     }
     throw new Error(`User ${props.id}@${props.username} has been added already.`);
   }

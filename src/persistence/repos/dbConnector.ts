@@ -14,6 +14,8 @@ export default class DbConnector {
           connect: async noLog => {
             if (!noLog)
               console.log(`[DB] local`);
+          },
+          disconnect: async () => {
           }
         };
         break;
@@ -38,4 +40,5 @@ export default class DbConnector {
 export interface IDbConnector {
   dbConnected: boolean;
   connect: (noLog?: boolean) => Promise<void>;
+  disconnect: () => Promise<void>;
 }

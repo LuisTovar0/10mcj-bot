@@ -11,11 +11,11 @@ export abstract class MongoRepo<TDataModel extends DataModel> {
     return this.schema.findOne({domainId: id});
   }
 
-  protected async persist(dataModel: TDataModel): Promise<void> {
+  protected async persist(dataModel: TDataModel): Promise<TDataModel> {
     // const existingDataModel = await this.findByDomainId(dataModel.domainId);
     // if (existingDataModel !== null)
     //   throw new Error('ID ' + dataModel.domainId + ' already exists.');
-    await this.schema.create(dataModel);
+    return await this.schema.create(dataModel);
   }
 
 }

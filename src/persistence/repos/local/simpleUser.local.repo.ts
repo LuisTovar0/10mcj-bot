@@ -15,8 +15,9 @@ export default class SimpleUserLocalRepo implements ISimpleUserRepo {
     return this.repo.find(v => v.id === id);
   }
 
-  async save(dataModel: SimpleUserDataModel): Promise<void> {
+  async save(dataModel: SimpleUserDataModel): Promise<SimpleUserDataModel> {
     this.repo.push(dataModel);
+    return this.repo[this.repo.length - 1];
   }
 
 }

@@ -2,7 +2,10 @@ import SimpleUserDataModel from "../../persistence/dataModel/simpleUser.dataMode
 
 export default interface ISimpleUserRepo {
 
-  save(dataModel: SimpleUserDataModel): Promise<void>;
+  /**
+   * Persist a simple user. If user'd domainId, id, or username already exists, throws exception.
+   */
+  save(dataModel: SimpleUserDataModel): Promise<SimpleUserDataModel>;
 
   getByDomainId(id: string): Promise<SimpleUserDataModel | undefined>;
 

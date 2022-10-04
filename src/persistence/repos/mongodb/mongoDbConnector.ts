@@ -14,6 +14,10 @@ export default class MongoDbConnector implements IDbConnector {
   }
 
   async connect(noLog?: boolean) {
+    if (this.dbConnected) {
+      if (!noLog) console.log('was already connected');
+      return;
+    }
     await this.connectMongo(noLog);
   }
 
@@ -31,6 +35,10 @@ export default class MongoDbConnector implements IDbConnector {
       await new Promise(r => setTimeout(r, 5000));
       await this.connectMongo();
     }
+  }
+
+  async disconnect() {
+    await mongoose.disconnect();
   }
 
 }
