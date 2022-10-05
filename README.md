@@ -2,9 +2,16 @@
 
 Every day I receive an audio and text from [10 Minutes with Jesus](https://10minuteswithjesus.org/). I'm responsible for forwarding them to Telegram and Signal, but making a couple changes to the text.
 
-<img align="right" style="width: 30%" src="../../wiki/bot-usage-screenshot.jpg">
+<img align="right" style="width: 32%" src="../../wiki/bot-usage-screenshot.jpg">
 
 That is a repetitive task that this repo's app automates. Currently, I just have to forward the text and audio to the [Telegram bot](https://t.me/dez_mcj_bot), and it gives me the text and audio messages ready to be forwarded to Telegram and Signal.
+
+## List of features
+
++ Message treatment in portuguese language
+  + Format text messages for Telegram and Signal when audio is missing
+  + Format an audio+text message for Telegram
++ As a security measure, persist how many messages a user sent to the bot
 
 ## Current works
 
@@ -43,3 +50,11 @@ Building the app requires the following environment variables to be defined:
 + `RUNNING_ENV`: self-explained. Accepts 'production', ' development' or 'test' as value.
 + `DB_TYPE`: accepts 'local' or 'mongodb' as values.
   + `DATABASE_URL`: if `DB_TYPE` refers to an actual database type, the access URL should be specified. It's not necessary otherwise.
+
+## Current development
+
+- [x] In-request persistence
+- [ ] Viewing the available images
+  - [ ] Storing images (if necessary)
+  - [ ] Webpage to view the images
+- [ ] Interacting with Pixio API

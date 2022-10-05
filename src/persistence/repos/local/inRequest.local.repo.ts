@@ -14,18 +14,6 @@ export default class InRequestLocalRepo implements IInRequestRepo {
     return this.repo[this.repo.length - 1];
   }
 
-  async requestsLast15Days(): Promise<InRequestDataModel[]> {
-    return [];//todo
-  }
-
-  async requestsLastMonth(): Promise<InRequestDataModel[]> {
-    return [];//todo
-  }
-
-  async requestsLastWeek(): Promise<InRequestDataModel[]> {
-    return [];//todo
-  }
-
   async requestsSince(dateLong: number): Promise<InRequestDataModel[]> {
     return [];//todo
   }
