@@ -22,7 +22,13 @@ export default () => {
   const textFormattingService = Container.get(config.deps.service.textFormatting.name) as ITextFormattingService;
   const convoService = Container.get(config.deps.service.convoMemory.name) as IConvoMemoryService;
 
+  // middleware
   bot.all(async (msg, reply, next) => {
+    if (msg.group) {
+      reply.text(`I don't talk in groups. Please remove me.`);
+      return;
+    }
+
     if (config.runningEnv === 'development' && msg.chat.id.toString() !== config.adminChatId.toString()) {
       sendMessage(config.adminChatId, `@${msg.chat.username} tried to use the bot while in development.`);
       sendMessage(String(msg.chat.id), `Our beautiful devs are developing the bot at the moment. Please don't send messages.`);

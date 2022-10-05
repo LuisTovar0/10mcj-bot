@@ -9,9 +9,9 @@ That is a repetitive task that this repo's app automates. Currently, I just have
 ## List of features
 
 + Message treatment in portuguese language
-  + Format text messages for Telegram and Signal when audio is missing
-  + Format an audio+text message for Telegram
-+ As a security measure, persist how many messages a user sent to the bot
+  + Format text messages for Signal
+  + Format an audio+text (or just text if audio is missing) message for Telegram
++ As a security measure, persist how many messages a user sent to the bot. The bot can't read group messages nor be added to a group.
 
 ## Current works
 
