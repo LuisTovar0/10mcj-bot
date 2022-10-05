@@ -2,9 +2,19 @@ import {Service} from "typedi";
 
 import ITextFormattingService, {AllInfo} from "./iService/iTextFormatting.service";
 import BotError from "../bot/botError";
+import {NumberOfRequestsByUser} from "./iService/iInRequest.service";
 
 @Service()
 export default class TextFormattingService implements ITextFormattingService {
+
+  inRequestsToString(reqs: NumberOfRequestsByUser) {
+    let res = '';
+    reqs.forEach(req => {
+      const u = req.user ? '@' + req.user : 'unkown';
+      res += `${u}: ${req.requests}\n`;
+    });
+    return res;
+  }
 
   getDate() {
     let date = new Date(), day = date.getDate(), month = date.getMonth() + 1;

@@ -15,15 +15,19 @@ export default class InRequestLocalRepo implements IInRequestRepo {
   }
 
   async requestsLast15Days(): Promise<InRequestDataModel[]> {
-    throw new Error('not implemented');
+    return [];//todo
   }
 
   async requestsLastMonth(): Promise<InRequestDataModel[]> {
-    throw new Error('not implemented');
+    return [];//todo
   }
 
   async requestsLastWeek(): Promise<InRequestDataModel[]> {
-    throw new Error('not implemented');
+    return [];//todo
+  }
+
+  async requestsSince(dateLong: number): Promise<InRequestDataModel[]> {
+    return [];//todo
   }
 
 }

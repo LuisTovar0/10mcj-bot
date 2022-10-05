@@ -1,3 +1,5 @@
+import {NumberOfRequestsByUser} from "./iInRequest.service";
+
 export interface TextInfo {
   url: string;
   descr1: string;
@@ -14,6 +16,8 @@ export interface MessagesAndInfo extends AllInfo {
 }
 
 export default interface ITextFormattingService {
+
+  inRequestsToString(reqs: NumberOfRequestsByUser): string;
 
   getDate(): string;
 

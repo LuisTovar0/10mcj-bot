@@ -7,10 +7,6 @@ export default interface IInRequestRepo {
    */
   newRequest(domainId: string, user: string): Promise<InRequestDataModel>;
 
-  requestsLastMonth(): Promise<InRequestDataModel[]>;
-
-  requestsLast15Days(): Promise<InRequestDataModel[]>;
-
-  requestsLastWeek(): Promise<InRequestDataModel[]>;
+  requestsSince(dateLong: number): Promise<InRequestDataModel[]>;
 
 }

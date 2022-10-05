@@ -33,25 +33,6 @@ export default class InRequestMongoDb extends MongoRepo<{ domainId: string, user
     return res.map(InRequestMongoDb.mapSchemaToDataModel);
   }
 
-  async requestsLastDays(daysAgo: number) {
-    const xDaysAgo = moment().subtract(daysAgo, 'days').valueOf();
-    return await this.requestsSince(xDaysAgo);
-  }
-
-  async requestsLast15Days() {
-    return await this.requestsLastDays(15);
-  }
-
-  async requestsLastMonth() {
-    const aMonthAgo = moment().subtract(1, 'month').valueOf();
-    return await this.requestsSince(aMonthAgo);
-  }
-
-  async requestsLastWeek() {
-    const aWeekAgo = moment().subtract(1, 'week').valueOf();
-    return await this.requestsSince(aWeekAgo);
-  }
-
 }
 
 const schema = model<{ domainId: string, user: string }>(`In Request`, new Schema({

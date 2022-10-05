@@ -20,19 +20,8 @@ export default class InRequest extends Entity<InRequestProps> {
     return Math.abs(date1 - date2) < 3_000;
   }
 
-  static create(user: SimpleUser, date: string | number | Moment, id?: UniqueEntityID | string) {
-    let d;
-    if (<string>date) {
-      const strDate = <string>date;
-      d = moment(strDate, this.dateFormat, true);
-      if (d.format(this.dateFormat) === "Invalid date")
-        throw new Error(`Invalid date "${strDate}". Valid format is "${this.dateFormat}".`);
-    } else if (<number>date)
-      d = moment(<number>date);
-    else
-      d = <Moment>date;
-
-    return new InRequest({user, date: d}, id);
+  static create(user: SimpleUser, date: number | Moment, id?: UniqueEntityID | string) {
+    return new InRequest({user, date: moment(date)}, id);
   }
 
   get user(): SimpleUser {

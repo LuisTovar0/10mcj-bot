@@ -101,6 +101,13 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
 
     reply.text(`nothin's testin`);
   });
+
+  bot.command(`report`, async (msg, reply) => {
+    if (String(msg.chat.id) !== config.adminChatId)
+      reply.text(`I can't report to you.`);
+
+    reply.text(textFormattingService.inRequestsToString(await inRequestService.getLastWeekRequests()));
+  });
   //#endregion
 
   //#region message treatment
