@@ -30,8 +30,8 @@ export default () => {
     }
 
     if (config.runningEnv === 'development' && msg.chat.id.toString() !== config.adminChatId.toString()) {
-      sendMessage(config.adminChatId, `@${msg.chat.username} tried to use the bot while in development.`);
-      sendMessage(String(msg.chat.id), `Our beautiful devs are developing the bot at the moment. Please don't send messages.`);
+      await sendMessage(config.adminChatId, `@${msg.chat.username} tried to use the bot while in development.`);
+      await sendMessage(String(msg.chat.id), `Our beautiful devs are developing the bot at the moment. Please don't send messages.`);
     } else {
       try {
         if (msg.user)
@@ -195,6 +195,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       if (!texts.signal || !texts.date || !texts.telegram) throw new BotError('Internal error: null values where should be text.');
       const file = fs.createReadStream(audiosFolder + chatId);
       reply.audio(file, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
+      // sendMessage(`@dezmincomjesus`,texts.telegram);
       textWithLinks(reply, texts.signal);
       await deleteUserData(chatId);
     });

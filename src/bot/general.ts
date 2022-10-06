@@ -1,19 +1,18 @@
 import {ReplyQueue} from "./types/botgram";
-
-const request = require("request");
+import axios from 'axios';
 
 export const audiosFolder = './audios/';
 
-export function sendMessage(chatId: string, message: string) {
-  apiMethod('sendMessage', {chat_id: chatId, text: message});
+export async function sendMessage(chatId: string, message: string) {
+  await apiMethod('sendMessage', {chat_id: chatId, text: message});
 }
 
-export function apiMethod(method: string, params: any) {
+export async function apiMethod(method: string, params: any) {
   const base = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
   const apiFunc = `/${method}?${new URLSearchParams(params).toString()}`;
   const text = base + apiFunc;
+  await axios.get(text);
   console.log('posted: ' + apiFunc);
-  request(text);
 }
 
 export function markdownWithLinks(reply: ReplyQueue, text: string) {
