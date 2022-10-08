@@ -25,7 +25,7 @@ const config = {
         path: './service/textFormatting.service'
       } as Dep,
       convoMemory: {
-        name: 'ConvoMemoryService',
+        name: 'LocalConvoMemoryService',
         path: './service/localConvoMemory.service'
       } as Dep
     },
