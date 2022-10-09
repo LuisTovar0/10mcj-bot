@@ -49,7 +49,8 @@ Building the app requires the following environment variables to be defined:
 + `ADMIN_CHAT_ID`: the admin's Telegram chat ID (a number). In the case of this bot, it's my chat ID. This value can be found on the bot's [updates](https://core.telegram.org/bots).
 + `RUNNING_ENV`: self-explained. Accepts 'production', ' development' or 'test' as value.
 + `DB_TYPE`: accepts 'local' or 'mongodb' as values.
-  + `DATABASE_URL`: if `DB_TYPE` refers to an actual database type, the access URL should be specified. It's not necessary otherwise.
++ `DATABASE_URL`: if `DB_TYPE` refers to an actual database type, the access URL should be specified. It's not necessary otherwise.
++ `TELEGRAM_CHANNEL`: if messages are meant to be sent directly to a Telegram channel, its public handler should be specified.
 
 ## Current development
 
