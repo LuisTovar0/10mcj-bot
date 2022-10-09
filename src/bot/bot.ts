@@ -24,6 +24,7 @@ export default () => {
 
   // middleware
   bot.all(async (msg, reply, next) => {
+    if (msg.chat.type === 'channel') return; // ignore channel messages
     if (msg.group) {
       reply.text(`I don't talk in groups. Please remove me.`);
       return;
