@@ -27,7 +27,11 @@ const config = {
       convoMemory: {
         name: 'LocalConvoMemoryService',
         path: './service/localConvoMemory.service'
-      } as Dep
+      } as Dep,
+      pt: {
+        name: 'PtService',
+        path: './service/pt.service'
+      }
     },
   }
 };

@@ -7,7 +7,7 @@ import {Bot} from "./types/botgram";
 import IInRequestService from "../service/iService/iInRequest.service";
 import ITextFormattingService from "../service/iService/iTextFormatting.service";
 import IConvoMemoryService from "../service/iService/iConvoMemory.service";
-import * as pt from "./pt";
+import IPtService from "../service/iService/iPt.service";
 
 const botgram = require("botgram");
 
@@ -18,6 +18,7 @@ export default () => {
   const inRequestService = Container.get(config.deps.service.inRequest.name) as IInRequestService;
   const textFormattingService = Container.get(config.deps.service.textFormatting.name) as ITextFormattingService;
   const convoService = Container.get(config.deps.service.convoMemory.name) as IConvoMemoryService;
+  const pt = Container.get(config.deps.service.pt.name) as IPtService;
 
   // middleware
   bot.all(async (msg, reply, next) => {
@@ -115,7 +116,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     }
 
     const command = await convoService.getCommand(chatId);
-    if (command === `pt-testar` || command === `pt-enviar`) {
+    if (pt.isPtCommand(command)) {
       await pt.handleAudio(bot, msg, reply);
     } else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
   });
@@ -138,7 +139,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
     }
 
     const command = await convoService.getCommand(chatId);
-    if (command === `pt-testar` || command === `pt-enviar`)
+    if (pt.isPtCommand(command))
       await pt.handleText(msg, reply);
     else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
   });
