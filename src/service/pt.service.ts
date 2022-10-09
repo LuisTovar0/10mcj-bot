@@ -1,5 +1,6 @@
 import {Inject, Service} from "typedi";
 import fs from "fs";
+import FormData from 'form-data';
 
 import IPtService from "./iService/iPt.service";
 import {Bot, ReplyQueue} from "../bot/types/botgram";
@@ -10,13 +11,16 @@ import {audiosFolder, deleteUserData, textWithLinks} from "../bot/general";
 import ITextFormattingService from "./iService/iTextFormatting.service";
 import {saveFile} from "../bot/audio";
 import config from "../config";
+import axios from "axios";
 
 @Service()
 export default class PtService implements IPtService {
 
+  private readonly channel = process.env.CHANNEL;
+
   constructor(
     @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
-    @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService
+    @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
   ) {
   }
 
@@ -24,8 +28,8 @@ export default class PtService implements IPtService {
 
     bot.command(`pt`, async (msg, reply) => {
       reply.text(`Comandos disponíveis:
-/pt_testar mostra o funcionamento normal do bot, mas sem enviar mensagens
-/pt_enviar pede algumas informações e envia a mensagen para o canal de Telegram`);
+/pt_testar mostra o funcionamento normal do bot, mas sem enviar mensagens${this.channel ? `
+/pt_enviar pede algumas informações e envia a mensagen para o canal de Telegram` : ''}`);
     });
 
     // para comandos de edição de áudios e textos
@@ -45,7 +49,8 @@ export default class PtService implements IPtService {
 
     registarComando(bot, `pt_testar`);
 
-    registarComando(bot, `pt_enviar`);
+    if (this.channel)
+      registarComando(bot, `pt_enviar`);
 
   }
 
@@ -96,8 +101,17 @@ export default class PtService implements IPtService {
           reply.audio(file, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
           break;
         case `pt_enviar`:
-          reply.audio(file, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
-          reply.text(`Envio automático para o canal não está pronto.`);//todo
+          if (!this.channel) throw new BotError('Variável CHANNEL devia estar definida.');
+
+          const fd = new FormData();
+          fd.append('audio', file);
+          await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendAudio`,
+            fd, {
+              params: {
+                chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',
+                duration, title, performer: texts.date
+              }
+            });
           break;
       }
       textWithLinks(reply, texts.signal);
@@ -107,7 +121,7 @@ export default class PtService implements IPtService {
 
   isPtCommand(command?: string): boolean {
     // return !!Object.values(config.consts.commands.pt).find(v => v === command);
-    return command === 'pt_testar' || command === 'pt_enviar';
+    return command === 'pt_testar' || (!!this.channel && command === 'pt_enviar');
   }
 
 }

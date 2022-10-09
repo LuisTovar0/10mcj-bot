@@ -1,17 +1,32 @@
 import {Container} from "typedi";
+import express from "express";
+
 import config from "./config";
 import DbConnector from "./persistence/repos/dbConnector";
+import fs from "fs";
+import {audiosFolder, sendMessage} from "./bot/general";
 
 export interface Dep {
   name: string;
   path: string;
 }
 
-export interface DepMap {
-  [k: string]: Dep;
-}
-
 export default () => {
+
+  //#region server
+  const app = express();
+
+  app.get('/', (req, res) =>
+    fs.readFile('./index.html', 'utf8', (err, html) => {
+      if (err) res.status(500).send('Sorry, out of order');
+      res.send(html);
+    })
+  );
+
+  app.use(express.static(audiosFolder));
+
+  app.listen(process.env.PORT || 15000, () => sendMessage(config.adminChatId, 'Site is up in ' + config.runningEnv));
+  //#endregion
 
   DbConnector.getInstance().connect(); // to speed up startup, don't await
 

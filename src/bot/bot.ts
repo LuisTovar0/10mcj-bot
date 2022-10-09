@@ -103,6 +103,8 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
 
     reply.text(textFormattingService.inRequestsToString(await inRequestService.getLastWeekRequests()));
   });
+
+  bot.command((msg, reply) => reply.text(`Say what? I'm not recognizing that command.`));
   //#endregion
 
   //#region message treatment
