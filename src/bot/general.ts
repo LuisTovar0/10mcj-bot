@@ -10,9 +10,8 @@ export async function sendMessage(chatId: string, message: string) {
 export async function apiMethod(method: string, params: any) {
   const base = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
   const apiFunc = `/${method}?${new URLSearchParams(params).toString()}`;
-  const text = base + apiFunc;
-  await axios.get(text);
-  console.log('posted: ' + apiFunc);
+  await axios.get<void>(`${base}/${method}`, {params});
+  console.log(`posted: ${apiFunc}`);
 }
 
 export function markdownWithLinks(reply: ReplyQueue, text: string) {
