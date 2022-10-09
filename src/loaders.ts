@@ -13,7 +13,7 @@ export interface DepMap {
 
 export default () => {
 
-  DbConnector.getInstance().connect();
+  DbConnector.getInstance().connect(); // to speed up startup, don't await
 
   const loadDep = (dep: Dep) => {
     // load the @Service() class by its path
