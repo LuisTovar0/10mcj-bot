@@ -3,9 +3,9 @@ import del from "del";
 import {Container} from "typedi";
 import config from "../config";
 import IConvoMemoryService from "../service/iService/iConvoMemory.service";
+import axios from 'axios';
 
 const request = require("request");
-import axios from 'axios';
 
 export const audiosFolder = './audios/';
 
