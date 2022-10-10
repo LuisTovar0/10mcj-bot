@@ -1,5 +1,8 @@
 {
   "name": "10mcj-bot",
+  "engines": {
+    "node": "16.13.0"
+  },
   "scripts": {
     "start": "node build/app.js",
     "ts-start": "ts-node ./src/app.ts",

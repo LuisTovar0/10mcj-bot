@@ -99,10 +99,12 @@ export default class PtService implements IPtService {
       switch (await this.convoService.getCommand(chatId)) {
         case `pt_testar`:
           reply.audio(file, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
+          textWithLinks(reply, texts.signal);
           break;
         case `pt_enviar`:
           if (!this.channel) throw new BotError('Variável CHANNEL devia estar definida.');
 
+          // send to Telegram
           const fd = new FormData();
           fd.append('audio', file);
           await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendAudio`,
@@ -112,9 +114,13 @@ export default class PtService implements IPtService {
                 duration, title, performer: texts.date
               }
             });
+          reply.text(`Sent to @${this.channel}`);
+
+          // send to Signal
+          textWithLinks(reply, texts.signal);
+          reply.text('Not yet able to send to Signal');//todo
           break;
       }
-      textWithLinks(reply, texts.signal);
       await deleteUserData(chatId);
     });
   }
