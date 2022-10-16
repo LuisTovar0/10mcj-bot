@@ -46,7 +46,6 @@ export default class CanvasService implements IImageEditingService {
     ctx.font = `bold ${options?.titleSize || 75}pt Rockwell`;
     ctx.fillStyle = "#fff";
     ctx.textAlign = "left";
-    // ctx.fillText(title, dateFormDftlc, dateFormDftlc * 3.3, w / 2);
     this.wrapText(ctx, title, dateFormDftlc, dateFormDftlc * 3.3, 1200, 100);
 
     // url text
@@ -55,29 +54,8 @@ export default class CanvasService implements IImageEditingService {
     ctx.rotate(Math.PI / -2);
     ctx.fillText("www.10minutoscomjesus.org", h / -2, w - 20);
 
-
-    // const text = "Hello, World!";
-    // ctx.font = "bold 70pt Impact";
-    // ctx.textAlign = 'center';
-    // ctx.textBaseline = 'top';
-    //
-    // ctx.fillStyle = '#3574d4';
-    // const textWidth = ctx.measureText(text).width;
-    // ctx.fillRect(600 - textWidth / 2 - 10, 170 - 5, textWidth + 20, 120);
-    //
-    // ctx.fillStyle="#fff"
-    // ctx.fillText(text, 600, 170);
-    //
-    // ctx.fillStyle = '#fff';
-    // ctx.font = 'bold 30pt Serif';
-    // ctx.fillText('flaviocopes.com', 600, 530);
-    //
-    // const image = await loadImage('./icon.png');
-    // ctx.drawImage(image, 340, 515, 70, 70);
-
     const buffer = canvas.toBuffer('image/png');
     fs.writeFileSync(`./${moment().valueOf()}.png`, buffer);
-
   }
 
   //https://thewebdev.info/2021/08/28/how-to-wrap-text-in-a-canvas-element-with-javascript/

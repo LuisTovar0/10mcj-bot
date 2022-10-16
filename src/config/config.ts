@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
-import {repoDeps} from "./db";
-import {Dep} from "../loaders";
+import { repoDeps } from "./db";
+import { Dep } from "../loaders";
 
 if (!dotenv.config()) throw '\u{26A0} Could not find .env file! \u{26A0}';
-const envs = loadEnvVars({botToken: '', adminChatId: '', runningEnv: '', dbType: ''});
+const envs = loadEnvVars({ botToken: '', adminChatId: '', runningEnv: '', dbType: '' });
 
 const config = {
 
@@ -27,6 +27,12 @@ const config = {
       convoMemory: {
         name: 'LocalConvoMemoryService',
         path: './service/localConvoMemory.service'
+      } as Dep,
+      imageEditing: {
+        name: 'CanvasService',
+        path: './service/canvas.service'
+        //name: 'PixoEditorService',
+        //path: './service/pixoEditor.service'
       } as Dep,
       pt: {
         name: 'PtService',
