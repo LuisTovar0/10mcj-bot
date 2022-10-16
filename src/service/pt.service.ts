@@ -1,17 +1,20 @@
-import {Inject, Service} from "typedi";
+import { Inject, Service } from "typedi";
 import fs from "fs";
 import FormData from 'form-data';
+import moment from "moment";
+// import 'moment/locale/pt-pt';
 
 import IPtService from "./iService/iPt.service";
-import {Bot, ReplyQueue} from "../bot/types/botgram";
-import {messageAudio, messageText} from "../bot/types/model";
+import { Bot, ReplyQueue } from "../bot/types/botgram";
+import { InputFile, messageAudio, messageText } from "../bot/types/model";
 import BotError from "../bot/botError";
 import IConvoMemoryService from "./iService/iConvoMemory.service";
-import {audiosFolder, deleteUserData, textWithLinks} from "../bot/general";
+import { audiosFolder, deleteUserData, textWithLinks } from "../bot/general";
 import ITextFormattingService from "./iService/iTextFormatting.service";
-import {saveFile} from "../bot/audio";
+import { saveFile } from "../bot/audio";
 import config from "../config";
 import axios from "axios";
+import IImageEditingService from "./iService/iImageEditing.service";
 
 @Service()
 export default class PtService implements IPtService {
@@ -21,6 +24,7 @@ export default class PtService implements IPtService {
   constructor(
     @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
     @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
+    @Inject(config.deps.service.imageEditing.name) private imageEditingService: IImageEditingService,
   ) {
   }
 
@@ -29,7 +33,8 @@ export default class PtService implements IPtService {
     bot.command(`pt`, async (msg, reply) => {
       reply.text(`Comandos disponíveis:
 /pt_testar mostra o funcionamento normal do bot, mas sem enviar mensagens${this.channel ? `
-/pt_enviar pede algumas informações e envia a mensagen para o canal de Telegram` : ''}`);
+/pt_enviar pede algumas informações e envia a mensagen para o canal de Telegram` : ''}
+/pt_img`);
     });
 
     // para comandos de edição de áudios e textos
@@ -51,6 +56,16 @@ export default class PtService implements IPtService {
 
     if (this.channel)
       registarComando(bot, `pt_enviar`);
+
+    bot.command(`pt_img`, async (msg, reply) => {
+      const title = msg.text.split(' ').slice(1).join(' ');
+      const { day, month, year } = this.textFormattingService.theDate();
+      moment.locale('pt-pt');
+      const date = moment().date(day).month(month).year(year).format("DD MMMM YYYY").toString();
+      console.log(date);
+      const fileName = await this.imageEditingService.req('./rapaz.jpg', date, title);
+      reply.photo(fs.createReadStream(fileName) as unknown as InputFile);
+    });
 
   }
 
@@ -98,7 +113,7 @@ export default class PtService implements IPtService {
       const file = fs.createReadStream(audiosFolder + chatId);
       switch (await this.convoService.getCommand(chatId)) {
         case `pt_testar`:
-          reply.audio(file, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
+          reply.audio(file as unknown as InputFile, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
           break;
         case `pt_enviar`:
           if (!this.channel) throw new BotError('Variável CHANNEL devia estar definida.');
@@ -107,11 +122,11 @@ export default class PtService implements IPtService {
           fd.append('audio', file);
           await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendAudio`,
             fd, {
-              params: {
-                chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',
-                duration, title, performer: texts.date
-              }
-            });
+            params: {
+              chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',
+              duration, title, performer: texts.date
+            }
+          });
           break;
       }
       textWithLinks(reply, texts.signal);

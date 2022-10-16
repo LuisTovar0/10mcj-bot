@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
-import {repoDeps} from "./db";
-import {Dep} from "../loaders";
+import { repoDeps } from "./db";
+import { Dep } from "../loaders";
 
 if (!dotenv.config()) throw '\u{26A0} Could not find .env file! \u{26A0}';
-const envs = loadEnvVars({botToken: '', adminChatId: '', runningEnv: '', dbType: ''});
+const envs = loadEnvVars({ botToken: '', adminChatId: '', runningEnv: '', dbType: '' });
 
 const config = {
 
@@ -12,6 +12,12 @@ const config = {
   deps: {
     repo: repoDeps(envs.dbType),
     service: {
+      imageEditing: {
+        name: 'CanvasService',
+        path: './service/canvas.service'
+        //name: 'PixoEditorService',
+        //path: './service/pixoEditor.service'
+      } as Dep,
       simpleUser: {
         name: 'SimpleUserService',
         path: './service/simpleUser.service',

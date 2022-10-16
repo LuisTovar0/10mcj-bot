@@ -1,5 +1,6 @@
 import * as assert from 'assert';
-import {describe, it} from 'mocha';
+import { describe, it } from 'mocha';
+import moment from 'moment';
 
 import InRequest from "../../../src/domain/inRequest";
 import SimpleUser from "../../../src/domain/simpleUser";
@@ -18,14 +19,8 @@ describe('[Unit] InRequest class', () => {
 
   it('Valid constructor', () => {
     const date = "20211220 12:12:12";
-    const r = InRequest.create(u, date);
+    const r = InRequest.create(u, moment(date, InRequest.dateFormat, true).valueOf());
     assert.deepEqual(date, r.formattedDate);
   });
-
-  it('Invalid date throws Error', () =>
-    assert.throws(() => {
-      const date = "2021/12/20 12:12:12";
-      InRequest.create(u, date);
-    }));
 
 });
