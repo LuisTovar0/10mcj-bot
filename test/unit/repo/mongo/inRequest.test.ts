@@ -50,14 +50,4 @@ describe('[Unit] InRequestMongoRepo class + DB server', () => {
     assert.ok(res.find((v) => compareDataModels(v)));
   });
 
-  it('Requests in the last month contains the added date', async () => {
-    const res = await repo.requestsLastMonth();
-    assert.ok(res.find((v) => compareDataModels(v)));
-  });
-
-  it('Requests in the last 15 days contains the added date', async () => {
-    const res = await repo.requestsLast15Days();
-    assert.ok(res.find((v) => compareDataModels(v)));
-  });
-
 });
