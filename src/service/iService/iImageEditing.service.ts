@@ -1,5 +1,10 @@
 export default interface IImageEditingService {
-    req(photoSrc: string, dateTxt: string, title: string, options?: ImageEditingOptions): Promise<void>;
+
+    /**
+     * @return the file name.
+     */
+    req(photoSrc: string, dateTxt: string, title: string, options?: ImageEditingOptions): Promise<string>;
+
 }
 
 export interface ImageEditingOptions {

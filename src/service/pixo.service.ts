@@ -15,6 +15,7 @@ export default class PixoService implements IImageEditingService {
   }
 
   async req(src: string, dateTxt: string, title: string, options?: ImageEditingOptions) {
+    throw new Error('Not yet supported');
     const text = [{
       fontFamily: "Times New Roman", position: "center",
       fontSize: 15, lineHeight: 15, charSpacing: 5, fontWeight: "bold",

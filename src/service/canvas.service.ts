@@ -55,7 +55,9 @@ export default class CanvasService implements IImageEditingService {
     ctx.fillText("www.10minutoscomjesus.org", h / -2, w - 20);
 
     const buffer = canvas.toBuffer('image/png');
-    fs.writeFileSync(`./${moment().valueOf()}.png`, buffer);
+    const fileName = `./${moment().valueOf()}.png`;
+    fs.writeFileSync(fileName, buffer);
+    return fileName;
   }
 
   //https://thewebdev.info/2021/08/28/how-to-wrap-text-in-a-canvas-element-with-javascript/

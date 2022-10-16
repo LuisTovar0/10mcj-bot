@@ -12,6 +12,12 @@ const config = {
   deps: {
     repo: repoDeps(envs.dbType),
     service: {
+      imageEditing: {
+        name: 'CanvasService',
+        path: './service/canvas.service'
+        //name: 'PixoEditorService',
+        //path: './service/pixoEditor.service'
+      } as Dep,
       simpleUser: {
         name: 'SimpleUserService',
         path: './service/simpleUser.service',
@@ -27,12 +33,6 @@ const config = {
       convoMemory: {
         name: 'LocalConvoMemoryService',
         path: './service/localConvoMemory.service'
-      } as Dep,
-      imageEditing: {
-        name: 'CanvasService',
-        path: './service/canvas.service'
-        //name: 'PixoEditorService',
-        //path: './service/pixoEditor.service'
       } as Dep,
       pt: {
         name: 'PtService',
