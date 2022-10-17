@@ -8,6 +8,7 @@ import IInRequestService from "../service/iService/iInRequest.service";
 import ITextFormattingService from "../service/iService/iTextFormatting.service";
 import IConvoMemoryService from "../service/iService/iConvoMemory.service";
 import IPtService from "../service/iService/iPt.service";
+import IWhitelistService from "../service/iService/iWhitelist.service";
 
 const botgram = require("botgram");
 
@@ -18,6 +19,7 @@ export default () => {
   const inRequestService = Container.get(config.deps.service.inRequest.name) as IInRequestService;
   const textFormattingService = Container.get(config.deps.service.textFormatting.name) as ITextFormattingService;
   const convoService = Container.get(config.deps.service.convoMemory.name) as IConvoMemoryService;
+  const whitelistService = Container.get(config.deps.service.whitelist.name) as IWhitelistService;
   const pt = Container.get(config.deps.service.pt.name) as IPtService;
 
   // middleware
