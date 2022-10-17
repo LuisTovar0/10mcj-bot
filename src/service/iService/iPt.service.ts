@@ -3,7 +3,7 @@ import {messageAudio, messageText} from "../../bot/types/model";
 
 export default interface IPtService {
 
-  registarComandos(bot: Bot): void;
+  registerCommands(bot: Bot): void;
 
   handleAudio(bot: Bot, msg: messageAudio, reply: ReplyQueue): Promise<void>;
 

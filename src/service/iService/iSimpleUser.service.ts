@@ -8,4 +8,6 @@ export default interface ISimpleUserService {
 
   getUserById(id: number): Promise<SimpleUser>;
 
+  getByUsername(username: string): Promise<SimpleUser>;
+
 }

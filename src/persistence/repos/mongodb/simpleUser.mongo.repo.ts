@@ -26,6 +26,11 @@ export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> im
     return await this.persist(dataModel);
   }
 
+  async getByUsername(username: string): Promise<SimpleUserDataModel | undefined> {
+    const res = await this.schema.findOne({username});
+    return res === null ? undefined : res;
+  }
+
 }
 
 const schema = model<SimpleUserDataModel>(`Simple User`, new Schema({
