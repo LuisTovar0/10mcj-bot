@@ -2,12 +2,13 @@ import {Container} from "typedi";
 
 import config from "../config";
 import BotError from "./botError";
-import {deleteUserData, markdownWithLinks, sendMessage, textWithLinks} from "./general";
+import {deleteUserData, markdownWithLinks, msgIsFromAdmin, sendMessage, textWithLinks} from "./general";
 import {Bot} from "./types/botgram";
 import IInRequestService from "../service/iService/iInRequest.service";
 import ITextFormattingService from "../service/iService/iTextFormatting.service";
 import IConvoMemoryService from "../service/iService/iConvoMemory.service";
 import IPtService from "../service/iService/iPt.service";
+import IListsService from "../service/iService/IListsService";
 
 const botgram = require("botgram");
 
@@ -18,9 +19,10 @@ export default () => {
   const inRequestService = Container.get(config.deps.service.inRequest.name) as IInRequestService;
   const textFormattingService = Container.get(config.deps.service.textFormatting.name) as ITextFormattingService;
   const convoService = Container.get(config.deps.service.convoMemory.name) as IConvoMemoryService;
+  const listsService = Container.get(config.deps.service.lists.name) as IListsService;
   const pt = Container.get(config.deps.service.pt.name) as IPtService;
 
-  // middleware
+  // middleware (before all the other message treatment)
   bot.all(async (msg, reply, next) => {
     if (msg.chat.type === 'channel') return; // ignore channel messages
     if (msg.group) {
@@ -28,23 +30,34 @@ export default () => {
       return;
     }
 
-    if (config.runningEnv === 'development' && msg.chat.id.toString() !== config.adminChatId.toString()) {
-      await sendMessage(config.adminChatId, `@${msg.chat.username} tried to use the bot while in development.`);
-      await sendMessage(String(msg.chat.id), `Our beautiful devs are developing the bot at the moment. Please don't send messages.`);
-    } else {
-      try {
-        if (msg.user)
-          // save requester
-          await inRequestService.addInRequest(msg.user as { id: number, username: string/*, firstname, lastname*/ });
+    if (msg.user)
+      // save requester
+      await inRequestService.addInRequest(msg.user as { id: number, username: string/*, firstname, lastname*/ });
 
-        await next();
-      } catch (e) {
-        if (e.name !== "BotError") reply.text(`An error happened.`);
-        textWithLinks(reply, e.message);
-        console.log(e.stack);
+    if (!msgIsFromAdmin(msg)) {
+      if (!msg.chat.username) return;
+      if (await listsService.blacklist.contains(msg.chat.username)) {
+        await reply.text(`You're blacklisted \u{1F620}`)
+        return;
+      }
+      if (config.runningEnv === 'development') {
+        await sendMessage(config.adminChatId, `@${msg.chat.username} tried to use the bot while in development.`);
+        reply.text(`Our beautiful devs are developing the bot at the moment. Please don't send messages. If using it is urgent, text @tovawr`);
+        return;
       }
     }
+
+    try {
+      await next();
+    } catch (e) {
+      if (e.name !== "BotError") reply.text(`An error happened.`);
+      textWithLinks(reply, e.message);
+      console.log(e.stack);
+    }
   });
+
+  pt.registerCommands(bot);
+  listsService.registerCommands(bot);
 
   //#region commands
 
@@ -78,8 +91,6 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
   });
 
   //#endregion
-
-  pt.registarComandos(bot);
 
   bot.command(`en`, `fr`, `es`, `de`, (msg, reply) => {
     reply.html(`<b><i>Not implemented</i></b>\n/info`);
@@ -146,10 +157,6 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       await pt.handleText(msg, reply);
     else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
   });
-  //#endregion
-
-  //#region auxiliary methods
-
   //#endregion
 
 }

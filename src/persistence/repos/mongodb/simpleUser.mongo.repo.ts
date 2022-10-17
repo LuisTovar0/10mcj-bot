@@ -3,7 +3,7 @@ import {Service} from "typedi";
 
 import ISimpleUserRepo from "../../../service/iRepos/iSimpleUser.repo";
 import SimpleUserDataModel from "../../dataModel/simpleUser.dataModel";
-import {MongoRepo} from "./mongoRepo";
+import {MongoRepo} from "./general/mongoRepo";
 
 @Service()
 export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> implements ISimpleUserRepo {
@@ -24,6 +24,11 @@ export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> im
 
   async save(dataModel: SimpleUserDataModel): Promise<SimpleUserDataModel> {
     return await this.persist(dataModel);
+  }
+
+  async getByUsername(username: string): Promise<SimpleUserDataModel | undefined> {
+    const res = await this.schema.findOne({username});
+    return res === null ? undefined : res;
   }
 
 }

@@ -2,7 +2,7 @@ import {Document, model, Schema, Types} from "mongoose";
 import {Service} from "typedi";
 import moment from "moment";
 
-import {MongoRepo} from "./mongoRepo";
+import {MongoRepo} from "./general/mongoRepo";
 import InRequestDataModel from "../../dataModel/inRequest.dataModel";
 import IInRequestRepo from "../../../service/iRepos/iInRequest.repo";
 

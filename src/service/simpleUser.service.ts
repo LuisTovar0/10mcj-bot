@@ -44,4 +44,12 @@ export default class SimpleUserService implements ISimpleUserService {
       return mapper.dataModelToDomain(dataModel);
   }
 
+  async getByUsername(username: string) {
+    const dataModel = await this.repo.getByUsername(username);
+    if (!dataModel)
+      throw new Error(`User with username ${username} doesn't exist.`);
+    else
+      return mapper.dataModelToDomain(dataModel);
+  }
+
 }
