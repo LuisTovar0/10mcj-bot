@@ -37,6 +37,10 @@ export async function deleteUserData(chatId: number) {
 }
 
 export function ensureMsgIsFromAdmin(msg: Message) {
-  if (String(msg.chat.id) !== config.adminChatId)
+  if (!msgIsFromAdmin(msg))
     throw new BotError('Not allowed.');
+}
+
+export function msgIsFromAdmin(msg: Message) {
+  return String(msg.chat.id) === config.adminChatId
 }

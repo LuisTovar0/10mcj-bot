@@ -3,7 +3,7 @@ import {Service} from "typedi";
 
 import ISimpleUserRepo from "../../../service/iRepos/iSimpleUser.repo";
 import SimpleUserDataModel from "../../dataModel/simpleUser.dataModel";
-import {MongoRepo} from "./mongoRepo";
+import {MongoRepo} from "./general/mongoRepo";
 
 @Service()
 export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> implements ISimpleUserRepo {
