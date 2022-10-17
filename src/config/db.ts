@@ -1,7 +1,7 @@
 import {Dep} from "../loaders";
 
 export const repoDeps = (dbType: string) => {
-  let repoDeps: { simpleUser: Dep, inRequest: Dep, whitelist: Dep };
+  let repoDeps: { simpleUser: Dep, inRequest: Dep, whitelist: Dep, blacklist: Dep };
   switch (dbType) {
     case 'local':
       repoDeps = {
@@ -16,6 +16,10 @@ export const repoDeps = (dbType: string) => {
         whitelist: {
           name: 'WhitelistLocalRepo',
           path: './persistence/repos/local/whitelist.local.repo'
+        },
+        blacklist: {
+          name: 'BlacklistLocalRepo',
+          path: './persistence/repos/local/blacklist.local.repo'
         }
       };
       break;
@@ -32,6 +36,10 @@ export const repoDeps = (dbType: string) => {
         whitelist: {
           name: 'WhitelistRepo',
           path: './persistence/repos/mongodb/whitelist.mongo.repo'
+        },
+        blacklist: {
+          name: 'BlacklistRepo',
+          path: './persistence/repos/mongodb/blacklist.mongo.repo'
         }
       };
       break;
