@@ -11,16 +11,16 @@ export default class WhitelistService implements IWhitelistService {
   ) {
   }
 
-  async add(chatId: number): Promise<void> {
-    return this.repo.add(chatId);
+  async add(username: string): Promise<void> {
+    return this.repo.add(username);
   }
 
-  async isWhitelisted(chatId: number): Promise<boolean> {
-    return this.repo.isWhitelisted(chatId);
+  async isWhitelisted(username: string): Promise<boolean> {
+    return this.repo.isWhitelisted(username);
   }
 
-  async remove(chatId: number): Promise<void> {
-    return this.repo.remove(chatId);
+  async remove(username: string): Promise<void> {
+    return this.repo.remove(username);
   }
 
 }

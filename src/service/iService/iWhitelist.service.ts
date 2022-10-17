@@ -1,9 +1,9 @@
 export default interface IWhitelistService {
 
-  isWhitelisted(chatId: number): Promise<boolean>;
+  isWhitelisted(username: string): Promise<boolean>;
 
-  add(chatId: number): Promise<void>;
+  add(username: string): Promise<void>;
 
-  remove(chatId: number): Promise<void>;
+  remove(username: string): Promise<void>;
 
 }

@@ -4,18 +4,18 @@ import IWhitelistRepo from "../../../service/iRepos/iWhitelist.repo";
 @Service()
 export default class WhitelistLocalRepo implements IWhitelistRepo {
 
-  private whitelist: number[] = []
+  private whitelist: string[] = []
 
-  async add(chatId: number): Promise<void> {
-    this.whitelist.push(chatId)
+  async add(username: string): Promise<void> {
+    this.whitelist.push(username)
   }
 
-  async isWhitelisted(chatId: number): Promise<boolean> {
-    return this.whitelist.indexOf(chatId) !== -1;
+  async isWhitelisted(username: string): Promise<boolean> {
+    return this.whitelist.indexOf(username) !== -1;
   }
 
-  async remove(chatId: number): Promise<void> {
-    this.whitelist = this.whitelist.filter(v => v !== chatId);
+  async remove(username: string): Promise<void> {
+    this.whitelist = this.whitelist.filter(v => v !== username);
   }
 
 }
