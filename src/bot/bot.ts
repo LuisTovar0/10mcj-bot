@@ -81,7 +81,8 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
 
   //#endregion
 
-  pt.registarComandos(bot);
+  pt.registerCommands(bot);
+  whitelistService.registerCommands(bot);
 
   bot.command(`en`, `fr`, `es`, `de`, (msg, reply) => {
     reply.html(`<b><i>Not implemented</i></b>\n/info`);
@@ -148,10 +149,6 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       await pt.handleText(msg, reply);
     else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
   });
-  //#endregion
-
-  //#region auxiliary methods
-
   //#endregion
 
 }

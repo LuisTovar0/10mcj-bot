@@ -6,4 +6,6 @@ export default interface IWhitelistRepo {
 
   remove(username: string): Promise<void>;
 
+  fullWhitelist(): Promise<string[]>;
+
 }

@@ -35,12 +35,12 @@ const config = {
         path: './service/localConvoMemory.service'
       } as Dep,
       whitelist: {
-        name: './WhitelistService',
-        path: './service/whitelist.service'
+        name: 'WhitelistService',
+        path: './service/commands/whitelist.service'
       } as Dep,
       pt: {
         name: 'PtService',
-        path: './service/pt.service'
+        path: './service/commands/pt.service'
       } as Dep
     },
   }

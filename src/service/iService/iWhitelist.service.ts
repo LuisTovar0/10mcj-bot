@@ -1,9 +1,9 @@
+import {Bot} from "../../bot/types/botgram";
+
 export default interface IWhitelistService {
 
-  isWhitelisted(username: string): Promise<boolean>;
+  registerCommands(bot: Bot): void;
 
-  add(username: string): Promise<void>;
-
-  remove(username: string): Promise<void>;
+  isWhitelistCommand(command: string): boolean;
 
 }

@@ -18,4 +18,8 @@ export default class WhitelistLocalRepo implements IWhitelistRepo {
     this.whitelist = this.whitelist.filter(v => v !== username);
   }
 
+  async fullWhitelist(): Promise<string[]> {
+    return [...this.whitelist]; // copy
+  }
+
 }

@@ -1,9 +1,10 @@
-import {ReplyQueue} from "./types/botgram";
+import {Message, ReplyQueue} from "./types/botgram";
 import del from "del";
 import {Container} from "typedi";
 import config from "../config";
 import IConvoMemoryService from "../service/iService/iConvoMemory.service";
 import axios from 'axios';
+import BotError from "./botError";
 
 export const audiosFolder = './audios/';
 
@@ -33,4 +34,9 @@ export async function deleteUserData(chatId: number) {
   // delete tracked information
   const convoService = Container.get(config.deps.service.convoMemory.name) as IConvoMemoryService;
   await convoService.delete(chatId);
+}
+
+export function ensureMsgIsFromAdmin(msg: Message) {
+  if (String(msg.chat.id) !== config.adminChatId)
+    throw new BotError('Not allowed.');
 }

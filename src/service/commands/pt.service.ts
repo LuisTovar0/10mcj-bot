@@ -1,20 +1,19 @@
-import { Inject, Service } from "typedi";
+import {Inject, Service} from "typedi";
 import fs from "fs";
 import FormData from 'form-data';
 import moment from "moment";
 // import 'moment/locale/pt-pt';
-
-import IPtService from "./iService/iPt.service";
-import { Bot, ReplyQueue } from "../bot/types/botgram";
-import { InputFile, messageAudio, messageText } from "../bot/types/model";
-import BotError from "../bot/botError";
-import IConvoMemoryService from "./iService/iConvoMemory.service";
-import { audiosFolder, deleteUserData, textWithLinks } from "../bot/general";
-import ITextFormattingService from "./iService/iTextFormatting.service";
-import { saveFile } from "../bot/audio";
-import config from "../config";
+import IPtService from "../iService/iPt.service";
+import {Bot, ReplyQueue} from "../../bot/types/botgram";
+import {InputFile, messageAudio, messageText} from "../../bot/types/model";
+import BotError from "../../bot/botError";
+import IConvoMemoryService from "../iService/iConvoMemory.service";
+import {audiosFolder, deleteUserData, textWithLinks} from "../../bot/general";
+import ITextFormattingService from "../iService/iTextFormatting.service";
+import {saveFile} from "../../bot/audio";
+import config from "../../config";
 import axios from "axios";
-import IImageEditingService from "./iService/iImageEditing.service";
+import IImageEditingService from "../iService/iImageEditing.service";
 
 @Service()
 export default class PtService implements IPtService {
@@ -28,7 +27,7 @@ export default class PtService implements IPtService {
   ) {
   }
 
-  registarComandos(bot: Bot): void {
+  registerCommands(bot: Bot): void {
 
     bot.command(`pt`, async (msg, reply) => {
       reply.text(`Comandos disponíveis:

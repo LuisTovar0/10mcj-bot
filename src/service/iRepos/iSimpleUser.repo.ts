@@ -11,4 +11,6 @@ export default interface ISimpleUserRepo {
 
   getById(id: number): Promise<SimpleUserDataModel | undefined>;
 
+  getByUsername(username: string): Promise<SimpleUserDataModel | undefined>;
+
 }

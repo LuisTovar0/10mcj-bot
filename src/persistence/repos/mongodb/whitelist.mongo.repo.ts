@@ -25,6 +25,11 @@ export default class WhitelistMongoRepo implements IWhitelistRepo {
     await this.schema.deleteOne({username});
   }
 
+  async fullWhitelist(): Promise<string[]> {
+    const res = await this.schema.find();
+    return res.map(v => v.username)
+  }
+
 }
 
 const schema = model<WhitelistElem>(`White-list`, new Schema({
