@@ -7,8 +7,8 @@ export abstract class MongoRepo<TDataModel extends DataModel> {
   protected constructor(protected schema: Model<TDataModel>) {
   }
 
-  protected async findByDomainId(id: string): Promise<TDataModel | null> {
-    return this.schema.findOne({domainId: id});
+  protected async findByDomainId(domainId: string): Promise<TDataModel | null> {
+    return this.schema.findOne({domainId});
   }
 
   protected async persist(dataModel: TDataModel): Promise<TDataModel> {
