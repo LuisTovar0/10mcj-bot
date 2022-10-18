@@ -78,7 +78,7 @@ export default class PtService implements IPtService {
 
     reply.text(`péràí... a baixar`);
     reply.text(`\u{1F4E5}`);
-    await saveFile(bot, msg, audiosFolder + chatId);
+    await saveFile(bot, msg, `${audiosFolder}/${chatId}`);
     await this.convoService.setAudio(chatId, true);
     if (await this.convoService.getText(chatId))
       await this.finalResponse(chatId, reply);
@@ -107,9 +107,9 @@ export default class PtService implements IPtService {
     const badTitle = texts.descr1.trim();
     const title = badTitle.substring(badTitle.indexOf(` `) + 1, badTitle.length);
     const mp3duration = require('mp3-duration');
-    mp3duration(audiosFolder + chatId, async (err: any, duration: string) => {
+    mp3duration(`${audiosFolder}/${chatId}`, async (err: any, duration: string) => {
       if (err) throw new BotError(`Couldn't retrieve the audio duration.`);
-      const file = fs.createReadStream(audiosFolder + chatId);
+      const file = fs.createReadStream(`${audiosFolder}/${chatId}`);
       switch (await this.convoService.getCommand(chatId)) {
         case `pt_testar`:
           reply.audio(file as unknown as InputFile, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);

@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import * as r from 'randomstring';
 import * as fs from "fs";
 
-import FileMongoRepo from "../../../../src/persistence/repos/mongodb/fileMongoRepo";
+import FileMongoRepo from "../../../../src/persistence/repos/mongodb/file.mongo.repo";
 import FileDataModel from "../../../../src/persistence/dataModel/file.dataModel";
 import UniqueEntityID from "../../../../src/domain/core/uniqueEntityId";
 import DbConnector from "../../../../src/persistence/repos/dbConnector";

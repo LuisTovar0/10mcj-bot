@@ -7,7 +7,7 @@ import axios from 'axios';
 import BotError from "./botError";
 
 export const filesFolder = './files'
-export const audiosFolder = `${filesFolder}/audios/`;
+export const audiosFolder = `${filesFolder}/audios`;
 
 export async function sendMessage(chatId: string, message: string) {
   await apiMethod('sendMessage', {chat_id: chatId, text: message});
@@ -31,7 +31,7 @@ export function textWithLinks(reply: ReplyQueue, text: string) {
 
 export async function deleteUserData(chatId: number) {
   // delete audio if exists
-  await del(audiosFolder + String(chatId));
+  await del(`${audiosFolder}/${String(chatId)}`);
   // delete tracked information
   const convoService = Container.get(config.deps.service.convoMemory.name) as IConvoMemoryService;
   await convoService.delete(chatId);
