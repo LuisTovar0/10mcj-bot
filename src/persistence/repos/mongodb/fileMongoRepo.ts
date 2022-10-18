@@ -7,8 +7,8 @@ import IFileRepo from "../../../service/iRepos/iFileRepo";
 @Service()
 export default class FileMongoRepo extends MongoRepo<FileDataModel> implements IFileRepo {
 
-  async getById(fileId: string) {
-    const res = await this.schema.findOne({fileId});
+  async getById(id: string) {
+    const res = await this.schema.findOne({id});
     return res === null ? undefined : res;
   }
 
@@ -21,8 +21,8 @@ export default class FileMongoRepo extends MongoRepo<FileDataModel> implements I
     return res === null ? undefined : res;
   }
 
-  async remove(fileId: string) {
-    const res = await this.schema.findOneAndDelete({fileId});
+  async remove(id: string) {
+    const res = await this.schema.findOneAndDelete({id});
     return res === null ? undefined : res;
   }
 
@@ -32,11 +32,7 @@ export default class FileMongoRepo extends MongoRepo<FileDataModel> implements I
         type: String,
         required: [true, 'MongoDB requires the file to have a domainId.']
       },
-      type: {
-        type: String,
-        required: [true, 'MongoDB requires the file to have a type.']
-      },
-      fileId: {
+      id: {
         type: String,
         required: [true, 'MongoDB requires the file to have a fileId.']
       },

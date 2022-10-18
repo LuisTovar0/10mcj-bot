@@ -12,33 +12,44 @@ describe('[Unit] FileMongoRepo + MongoDB server', () => {
 
   const repo = new FileMongoRepo();
   const dataModel: FileDataModel = {
-    type: 'image',
     domainId: new UniqueEntityID().toString(),
-    fileId: r.generate(),
+    id: r.generate(),
     file: fs.readFileSync(`${__dirname}/rapaz.jpg`)
   }
-  const {type, domainId, fileId, file} = dataModel;
-  fs.writeFileSync(`${__dirname}/original${fileId}.png`, file)
+  const {domainId, id, file} = dataModel;
 
   before(() => DbConnector.getInstance().connect(true));
 
   it('save image', async () => {
     const ret = await repo.save(dataModel);
-    fs.writeFileSync(`${__dirname}/saved${fileId}.png`, ret.file);
+    const fileName = `${__dirname}/saved${id}.png`
+    fs.writeFileSync(fileName, ret.file);
+    fs.rmSync(fileName)
   })
 
   it('get the image by fileId', async () => {
-    const ret = await repo.getById(fileId);
+    const ret = await repo.getById(id);
     assert.ok(ret);
     assert.ok(ret.file)
-    fs.writeFileSync(`${__dirname}/byID${fileId}.png`, ret.file);
+    const fileName = `${__dirname}/byID${id}.png`
+    fs.writeFileSync(fileName, ret.file);
+    fs.rmSync(fileName)
+  })
+
+  it('get the image by domainId', async () => {
+    const ret = await repo.getByDomainId(domainId);
+    assert.ok(ret);
+    assert.ok(ret.file)
+    const fileName = `${__dirname}/byDomainID${id}.png`
+    fs.writeFileSync(fileName, ret.file);
+    fs.rmSync(fileName)
   })
 
   it('delete', async () => {
-    const ret = await repo.remove(fileId);
+    const ret = await repo.remove(id);
     assert.ok(ret);
     assert.ok(ret.file);
-    const get = await repo.getById(fileId);
+    const get = await repo.getById(id);
     assert.equal(get, undefined);
   })
 
