@@ -1,14 +1,14 @@
-import { Inject, Service } from "typedi";
+import {Service} from "typedi";
 
-import IImageEditingService, { ImageEditingOptions } from "./iService/iImageEditing.service";
-import { loadEnvVars } from "../config";
+import IImageEditingService, {ImageEditingOptions} from "./iService/iImageEditing.service";
+import {loadEnvVars} from "../config";
 import axios from "axios";
 
 @Service()
 export default class PixoService implements IImageEditingService {
 
   static readonly url = "https://pixoeditor.com/api";
-  static readonly apiKey = loadEnvVars({ pixioKey: '' }).pixioKey;
+  static readonly apiKey = loadEnvVars({pixioKey: ''}).pixioKey;
 
   constructor() {
 
@@ -30,6 +30,7 @@ export default class PixoService implements IImageEditingService {
       apikey: PixoService.apiKey, src,
       filter: "Sepia", // text
     },/*{ maxContentLength:99999999999999 }*/);
+    return ''
   }
 
 }

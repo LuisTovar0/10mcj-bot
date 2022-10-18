@@ -6,7 +6,8 @@ import IConvoMemoryService from "../service/iService/iConvoMemory.service";
 import axios from 'axios';
 import BotError from "./botError";
 
-export const audiosFolder = './audios/';
+export const filesFolder = './files'
+export const audiosFolder = `${filesFolder}/audios/`;
 
 export async function sendMessage(chatId: string, message: string) {
   await apiMethod('sendMessage', {chat_id: chatId, text: message});

@@ -1,12 +1,14 @@
-import { Service } from "typedi";
-import { createCanvas, loadImage, NodeCanvasRenderingContext2DSettings } from 'canvas';
-
-import IImageEditingService, { ImageEditingOptions } from "./iService/iImageEditing.service";
+import {Service} from "typedi";
+import {createCanvas, loadImage} from 'canvas';
 import fs from "fs";
 import moment from "moment";
 
+import IImageEditingService, {ImageEditingOptions} from "./iService/iImageEditing.service";
+
 @Service()
 export default class CanvasService implements IImageEditingService {
+
+  private readonly filesFolder = './files';
 
   async req(photoSrc: string, dateTxt: string, title: string, options?: ImageEditingOptions) {
     const w = 2560, h = 1440;
@@ -19,18 +21,18 @@ export default class CanvasService implements IImageEditingService {
     ctx.drawImage(photoImg, options?.imgAlign || 820, 0, photoDrawnWidth, h);
 
     // the colored fill
-    const formaImg = await loadImage('./forma.png');
+    const formaImg = await loadImage(`${this.filesFolder}/forma.png`);
     const border = 85; // this image has a shadow around it, so we have to trim it a little
     const formaDrawnWith = formaImg.width * (h + border * 2) / formaImg.height; // keep the proportions
     ctx.drawImage(formaImg, -border, -border, formaDrawnWith, h + border * 2);
 
     // 10mwJ icon
-    const iconImg = await loadImage('./symbol.png');
+    const iconImg = await loadImage(`${this.filesFolder}/symbol.png`);
     const iconDfblc = 100; // distance from bottom left corner
     ctx.drawImage(iconImg, iconDfblc, h - iconDfblc - iconImg.height);
 
     // the border arounthe date
-    const dateFormImg = await loadImage('./forma-data.png');
+    const dateFormImg = await loadImage(`${this.filesFolder}/forma-data.png`);
     const dateFormDftlc = 100; // distance from top left corner
     const dateFormDrawHeight = 85;
     const dateFormDrawWidth = dateFormImg.width * dateFormDrawHeight / dateFormImg.height;
