@@ -9,12 +9,13 @@ import {Bot, ReplyQueue} from "../../bot/types/botgram";
 import {InputFile, messageAudio, messageText} from "../../bot/types/model";
 import BotError from "../../bot/botError";
 import IConvoMemoryService from "../iService/iConvoMemory.service";
-import {audiosFolder, deleteUserData, filesFolder, textWithLinks} from "../../bot/general";
+import {deleteUserData, textHideLinks} from "../../bot/general";
 import ITextFormattingService from "../iService/iTextFormatting.service";
 import {saveFile} from "../../bot/audio";
 import config from "../../config";
 import IImageEditingService from "../iService/iImageEditing.service";
-import {telegramBotUrl} from "../../config/constants";
+import {filesFolder, tempFolder} from "../../config/constants";
+import botConfig from "../../bot";
 
 @Service()
 export default class PtService implements IPtService {
@@ -57,7 +58,7 @@ export default class PtService implements IPtService {
     if (this.channel)
       registarComando(bot, `pt_enviar`);
 
-    bot.command(`pt_img`, async (msg, reply) => {
+    bot.command(`pt_img`, async msg => {
       const title = msg.text.split(' ').slice(1).join(' ');
       const {day, month, year} = this.textFormattingService.theDate();
       moment.locale('pt-pt');
@@ -68,7 +69,7 @@ export default class PtService implements IPtService {
       fs.writeFileSync(generatedFileName, generatedFile);
       const fd = new FormData();
       fd.append('photo', fs.createReadStream(generatedFileName));
-      await axios.post(`${telegramBotUrl}/sendPhoto`,
+      await axios.post(`${botConfig.telegramUrl}/sendPhoto`,
         fd, {params: {chat_id: msg.chat.id}});
       fs.unlinkSync(generatedFileName);
     });
@@ -85,7 +86,7 @@ export default class PtService implements IPtService {
 
     reply.text(`péràí... a baixar`);
     reply.text(`\u{1F4E5}`);
-    await saveFile(bot, msg, `${audiosFolder}/${chatId}`);
+    await saveFile(bot, msg, `${tempFolder}/${chatId}`);
     await this.convoService.setAudio(chatId, true);
     if (await this.convoService.getText(chatId))
       await this.finalResponse(chatId, reply);
@@ -114,9 +115,9 @@ export default class PtService implements IPtService {
     const badTitle = texts.descr1.trim();
     const title = badTitle.substring(badTitle.indexOf(` `) + 1, badTitle.length);
     const mp3duration = require('mp3-duration');
-    mp3duration(`${audiosFolder}/${chatId}`, async (err: any, duration: string) => {
+    mp3duration(`${tempFolder}/${chatId}`, async (err: any, duration: string) => {
       if (err) throw new BotError(`Couldn't retrieve the audio duration.`);
-      const file = fs.createReadStream(`${audiosFolder}/${chatId}`);
+      const file = fs.createReadStream(`${tempFolder}/${chatId}`);
       switch (await this.convoService.getCommand(chatId)) {
         case `pt_testar`:
           reply.audio(file as unknown as InputFile, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
@@ -126,7 +127,7 @@ export default class PtService implements IPtService {
 
           const fd = new FormData();
           fd.append('audio', file);
-          await axios.post(`${telegramBotUrl}/sendAudio`,
+          await axios.post(`${botConfig.telegramUrl}/sendAudio`,
             fd, {
               params: {
                 chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',
@@ -135,7 +136,7 @@ export default class PtService implements IPtService {
             });
           break;
       }
-      textWithLinks(reply, texts.signal);
+      textHideLinks(reply, texts.signal);
       await deleteUserData(chatId);
     });
   }

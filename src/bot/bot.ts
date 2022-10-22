@@ -1,20 +1,27 @@
 import {Container} from "typedi";
 
-import config from "../config";
+import {loadEnvVars} from "../config";
 import BotError from "./botError";
-import {deleteUserData, markdownWithLinks, msgIsFromAdmin, sendMessage, textWithLinks} from "./general";
+import {deleteUserData, markdownHideLinks, msgIsFromAdmin, sendMessage, textHideLinks} from "./general";
 import {Bot} from "./types/botgram";
 import IInRequestService from "../service/iService/iInRequest.service";
 import ITextFormattingService from "../service/iService/iTextFormatting.service";
 import IConvoMemoryService from "../service/iService/iConvoMemory.service";
 import IPtService from "../service/iService/iPt.service";
 import IListsService from "../service/iService/IListsService";
+import config from "../config/config";
 
 const botgram = require("botgram");
 
-export default () => {
+const {botToken, adminChatId} = loadEnvVars({botToken: '', adminChatId: ''});
+console.log(`[conf] \u{2699} bot token: ${botToken}
+[conf] \u{1F4C7} the admin's chat ID: ${adminChatId}`);
 
-  const bot: Bot = botgram(config.botToken);
+const telegramUrl = `https://api.telegram.org/bot${botToken}`;
+
+async function run() {
+
+  const bot: Bot = botgram(botToken);
 
   const inRequestService = Container.get(config.deps.service.inRequest.name) as IInRequestService;
   const textFormattingService = Container.get(config.deps.service.textFormatting.name) as ITextFormattingService;
@@ -33,17 +40,28 @@ export default () => {
     if (msg.user)
       // save requester
       await inRequestService.addInRequest(msg.user as { id: number, username: string/*, firstname, lastname*/ });
+    else {
+      reply.text(`Only available to users...`);
+      return;
+    }
 
     if (!msgIsFromAdmin(msg)) {
-      if (!msg.chat.username) return;
-      if (await listsService.blacklist.contains(msg.chat.username)) {
-        await reply.text(`You're blacklisted \u{1F620}`)
+      if (!msg.chat.username) {
+        markdownHideLinks(reply, `You don't look like a user... [\u{1FAD6}](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418)`);
+        return;
+      }
+      const username = msg.chat.username;
+      if (await listsService.blacklist.contains(username)) {
+        await reply.text(`You're blacklisted \u{1F620}`);
         return;
       }
       if (config.runningEnv === 'development') {
-        await sendMessage(config.adminChatId, `@${msg.chat.username} tried to use the bot while in development.`);
-        reply.text(`Our beautiful devs are developing the bot at the moment. Please don't send messages. If using it is urgent, text @tovawr`);
-        return;
+        await sendMessage(adminChatId, `@${username} tried to use the bot while in development.`);
+        const isWhitelisted = await listsService.whitelist.contains(username);
+        if (!isWhitelisted) {
+          reply.text(`Our beautiful devs are developing the bot at the moment. Please don't send messages. If using it is urgent, text @tovawr`);
+          return;
+        }
       }
     }
 
@@ -51,7 +69,7 @@ export default () => {
       await next();
     } catch (e) {
       if (e.name !== "BotError") reply.text(`An error happened.`);
-      textWithLinks(reply, e.message);
+      textHideLinks(reply, e.message);
       console.log(e.stack);
     }
   });
@@ -80,7 +98,9 @@ Anyway, hit /start for an international welcome message \u{1F30F}\n
 <b>Privacy notice</b>: The number of messages you send to the bot is saved since this is meant to be a \
 more or less private bot.`, "HTML"));
 
-  bot.command(`info_pt`, (msg, reply) => reply.text(`Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto \
+  bot.command(`info_pt`, (msg, reply) => reply.text(`[Informação desatualizada]
+
+Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto \
 e um áudio separadamente, por qualquer ordem, e eu respondo com tudo formatado.\n\nSempre que isto ficar confuso, usa \
 /cancel; isso vai apagar todos os registos feitos sobre o teu chat, para poderes começar de novo.\n\nPara saberes \
 que informações estão guardadas sobre o teu chat, /mystatus`));
@@ -110,8 +130,10 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
   });
 
   bot.command(`report`, async (msg, reply) => {
-    if (String(msg.chat.id) !== config.adminChatId)
+    if (!msgIsFromAdmin(msg)) {
       reply.text(`I can't report to you.`);
+      return;
+    }
 
     reply.text(textFormattingService.inRequestsToString(await inRequestService.getLastWeekRequests()));
   });
@@ -143,8 +165,8 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       try {
         reply.text(`You should use a command before sending text.`);
         const texts = textFormattingService.getFullInfo(msg.text);
-        markdownWithLinks(reply, texts.telegram);
-        textWithLinks(reply, texts.signal);
+        markdownHideLinks(reply, texts.telegram);
+        textHideLinks(reply, texts.signal);
         return;
       } catch (e) {
         if (e instanceof BotError) throw e;
@@ -159,4 +181,8 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
   });
   //#endregion
 
+  // inform me that it's running
+  await sendMessage(adminChatId, 'Bot is running in ' + config.runningEnv);
 }
+
+export default {run, telegramUrl, botToken, adminChatId};

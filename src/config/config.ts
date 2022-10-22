@@ -3,7 +3,7 @@ import {repoDeps} from "./db";
 import {Dep} from "../loaders";
 
 if (!dotenv.config()) throw '\u{26A0} Could not find .env file! \u{26A0}';
-const envs = loadEnvVars({botToken: '', adminChatId: '', runningEnv: '', dbType: ''});
+const envs = loadEnvVars({runningEnv: '', dbType: ''});
 
 const config = {
 
@@ -46,21 +46,22 @@ const config = {
   }
 };
 
-console.log(`[conf] \u{2699} bot token: ${config.botToken}
-[conf] \u{1F4C7} the admin's chat ID: ${config.adminChatId}`);
-
 export default config;
 
 export type Envs = { [k: string]: string; };
 
+export function loadEnvVar(camelCaseName: string) {
+  const envVarName = camelCaseToMacroCase(camelCaseName);
+  const env = process.env[envVarName];
+  if (!env) throw new Error(`${envVarName} environment variable is not defined.`);
+  return env;
+}
+
 export function loadEnvVars<T extends Envs>(emptyEnvs: T): T {
   const b = emptyEnvs;
   Object.keys(b).forEach(v => {
-    const envVarName = camelCaseToMacroCase(v);
-    const env = process.env[envVarName];
-    if (!env) throw new Error(`${envVarName} environment variable is not defined.`);
     // @ts-ignore
-    b[v] = env;
+    b[v] = loadEnvVar(v);
   });
   return b;
 }

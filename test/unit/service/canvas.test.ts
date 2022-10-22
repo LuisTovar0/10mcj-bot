@@ -1,10 +1,10 @@
 import {describe, it} from 'mocha';
 import {LoremIpsum} from 'lorem-ipsum';
 import moment from 'moment';
-import {filesFolder} from "../../../src/bot/general";
 import * as fs from "fs";
 
 import CanvasService from "../../../src/service/canvas.service";
+import {filesFolder} from "../../../src/config/constants";
 
 describe('[Unit] Canvas Service', function () {
   this.timeout(20_000);

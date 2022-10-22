@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 
-import config, {loadEnvVars} from "../../../../config";
+import {loadEnvVar} from "../../../../config";
 import {IDbConnector} from "../../dbConnector";
 import {sendMessage} from "../../../../bot/general";
+import bot from "../../../../bot";
 
 export default class MongoDbConnector implements IDbConnector {
 
@@ -10,7 +11,7 @@ export default class MongoDbConnector implements IDbConnector {
   databaseUrl: string;
 
   constructor() {
-    this.databaseUrl = loadEnvVars({databaseUrl: ''}).databaseUrl;
+    this.databaseUrl = loadEnvVar('mongodbUrl');
   }
 
   async connect(noLog?: boolean) {
@@ -26,7 +27,7 @@ export default class MongoDbConnector implements IDbConnector {
       await mongoose.connect(this.databaseUrl);
       if (!noLog) {
         console.log(`[DB] \u{1F527} Connected to the MongoDB database`);
-        sendMessage(config.adminChatId, '\u{1F527} Connected to MongoDB');
+        await sendMessage(bot.adminChatId, '\u{1F527} Connected to MongoDB');
       }
       this.dbConnected = true;
     } catch (e) {

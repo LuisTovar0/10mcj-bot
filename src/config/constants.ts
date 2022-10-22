@@ -1,1 +1,2 @@
-export const telegramBotUrl = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
+export const filesFolder = './files';
+export const tempFolder = `${filesFolder}/temp`;

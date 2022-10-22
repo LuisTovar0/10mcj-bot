@@ -1,28 +1,30 @@
 import 'reflect-metadata';
 import fs from 'fs';
-
-import {audiosFolder, sendMessage} from "./bot/general";
-import runBot from "./bot/bot";
 import del from "del";
-import config from "./config";
+
+import bot from "./bot";
 import loaders from "./loaders";
+import {tempFolder} from "./config/constants";
 
-loaders();
+async function app() {
+  loaders();
 
-// make sure our audios folder exists, or clean it
-async function newCleanFolder(folderName: string) {
-  await del(folderName);
-  fs.access(folderName, (error) => {
-    if (error) fs.mkdir(folderName, (error) => {
-      if (error) throw error;
+  //#region make sure our audios folder exists, or clean it
+  async function newCleanFolder(folderName: string) {
+    await del(folderName);
+    fs.access(folderName, (error) => {
+      if (error) fs.mkdir(folderName, (error) => {
+        if (error) throw error;
+      });
     });
-  });
+  }
+
+  //#endregion
+
+  await newCleanFolder(tempFolder);
+
+  // set up and run the bot
+  await bot.run();
 }
 
-newCleanFolder(audiosFolder);
-
-// set up and run the bot
-runBot();
-
-// inform me that it's running
-sendMessage(config.adminChatId, 'Bot is running in ' + config.runningEnv);
+app();
