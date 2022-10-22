@@ -5,6 +5,7 @@ import config from "../config";
 import IConvoMemoryService from "../service/iService/iConvoMemory.service";
 import axios from 'axios';
 import BotError from "./botError";
+import {telegramBotUrl} from "../config/constants";
 
 export const filesFolder = './files'
 export const audiosFolder = `${filesFolder}/audios`;
@@ -14,9 +15,8 @@ export async function sendMessage(chatId: string, message: string) {
 }
 
 export async function apiMethod(method: string, params: any) {
-  const base = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
   // const apiFunc = `/${method}?${new URLSearchParams(params).toString()}`;
-  const axiosResponse = await axios.get<void>(`${base}/${method}`, {params});
+  const axiosResponse = await axios.get<void>(`${telegramBotUrl}/${method}`, {params});
   console.log(`posted: /${axiosResponse.request.path.split('/')[2]}`);
 }
 

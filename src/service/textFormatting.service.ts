@@ -1,8 +1,8 @@
-import { Service } from "typedi";
+import {Service} from "typedi";
 
-import ITextFormattingService, { AllInfo } from "./iService/iTextFormatting.service";
+import ITextFormattingService, {AllInfo} from "./iService/iTextFormatting.service";
 import BotError from "../bot/botError";
-import { NumberOfRequestsByUser } from "./iService/iInRequest.service";
+import {NumberOfRequestsByUser} from "./iService/iInRequest.service";
 
 @Service()
 export default class TextFormattingService implements ITextFormattingService {
@@ -36,7 +36,7 @@ export default class TextFormattingService implements ITextFormattingService {
     let split = text.split(`\n`);
     if (split.length < 3)
       throw new BotError(`texto malformado: deve ter pelo menos 3 linhas. por exemplo:
-https://youtu.be/dQw4w9WgXcQ\n\n\u{23F9}\u{1F649} *Desliguem o funk que eu não aguento mais*`);
+https://youtu.be/dQw4w9WgXcQ\n\n\u{23F9}\u{1F649} *Para quê ouvir funk?*`);
 
     let url = split[0].trim(),
       descr1 = split[2].replace(`*`, ``).replace(`*`, ``).trim(); // first line of description

@@ -1,0 +1,1 @@
+export const telegramBotUrl = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;

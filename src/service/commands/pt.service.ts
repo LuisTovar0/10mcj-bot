@@ -14,6 +14,7 @@ import ITextFormattingService from "../iService/iTextFormatting.service";
 import {saveFile} from "../../bot/audio";
 import config from "../../config";
 import IImageEditingService from "../iService/iImageEditing.service";
+import {telegramBotUrl} from "../../config/constants";
 
 @Service()
 export default class PtService implements IPtService {
@@ -67,7 +68,7 @@ export default class PtService implements IPtService {
       fs.writeFileSync(generatedFileName, generatedFile);
       const fd = new FormData();
       fd.append('photo', fs.createReadStream(generatedFileName));
-      await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`,
+      await axios.post(`${telegramBotUrl}/sendPhoto`,
         fd, {params: {chat_id: msg.chat.id}});
       fs.unlinkSync(generatedFileName);
     });
@@ -125,7 +126,7 @@ export default class PtService implements IPtService {
 
           const fd = new FormData();
           fd.append('audio', file);
-          await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendAudio`,
+          await axios.post(`${telegramBotUrl}/sendAudio`,
             fd, {
               params: {
                 chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',
