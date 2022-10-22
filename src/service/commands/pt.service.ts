@@ -2,17 +2,17 @@ import {Inject, Service} from "typedi";
 import fs from "fs";
 import FormData from 'form-data';
 import moment from "moment";
-// import 'moment/locale/pt-pt';
+import axios from "axios";
+
 import IPtService from "../iService/iPt.service";
 import {Bot, ReplyQueue} from "../../bot/types/botgram";
 import {InputFile, messageAudio, messageText} from "../../bot/types/model";
 import BotError from "../../bot/botError";
 import IConvoMemoryService from "../iService/iConvoMemory.service";
-import {audiosFolder, deleteUserData, textWithLinks} from "../../bot/general";
+import {audiosFolder, deleteUserData, filesFolder, textWithLinks} from "../../bot/general";
 import ITextFormattingService from "../iService/iTextFormatting.service";
 import {saveFile} from "../../bot/audio";
 import config from "../../config";
-import axios from "axios";
 import IImageEditingService from "../iService/iImageEditing.service";
 
 @Service()
@@ -58,12 +58,18 @@ export default class PtService implements IPtService {
 
     bot.command(`pt_img`, async (msg, reply) => {
       const title = msg.text.split(' ').slice(1).join(' ');
-      const { day, month, year } = this.textFormattingService.theDate();
+      const {day, month, year} = this.textFormattingService.theDate();
       moment.locale('pt-pt');
       const date = moment().date(day).month(month).year(year).format("DD MMMM YYYY").toString();
-      console.log(date);
-      const fileName = await this.imageEditingService.req('./rapaz.jpg', date, title);
-      reply.photo(fs.createReadStream(fileName) as unknown as InputFile);
+      const photo = fs.readFileSync(`${filesFolder}/rapaz.jpg`);
+      const generatedFile = await this.imageEditingService.generate(photo, date, title);
+      const generatedFileName = `./${moment().valueOf()}.png`;
+      fs.writeFileSync(generatedFileName, generatedFile);
+      const fd = new FormData();
+      fd.append('photo', fs.createReadStream(generatedFileName));
+      await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`,
+        fd, {params: {chat_id: msg.chat.id}});
+      fs.unlinkSync(generatedFileName);
     });
 
   }
@@ -121,11 +127,11 @@ export default class PtService implements IPtService {
           fd.append('audio', file);
           await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendAudio`,
             fd, {
-            params: {
-              chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',
-              duration, title, performer: texts.date
-            }
-          });
+              params: {
+                chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',
+                duration, title, performer: texts.date
+              }
+            });
           break;
       }
       textWithLinks(reply, texts.signal);

@@ -20,4 +20,8 @@ export default class SimpleUserLocalRepo implements ISimpleUserRepo {
     return this.repo[this.repo.length - 1];
   }
 
+  async getByUsername(username: string): Promise<SimpleUserDataModel | undefined> {
+    return this.repo.find(v => v.username === username);
+  }
+
 }

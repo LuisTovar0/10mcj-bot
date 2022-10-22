@@ -1,10 +1,8 @@
-import {Service} from "typedi";
-
 import IImageEditingService, {ImageEditingOptions} from "./iService/iImageEditing.service";
 import {loadEnvVars} from "../config";
 import axios from "axios";
 
-@Service()
+//@Service()
 export default class PixoService implements IImageEditingService {
 
   static readonly url = "https://pixoeditor.com/api";
@@ -14,7 +12,7 @@ export default class PixoService implements IImageEditingService {
 
   }
 
-  async req(src: string, dateTxt: string, title: string, options?: ImageEditingOptions) {
+  async generate(src: Buffer, dateTxt: string, title: string, options?: ImageEditingOptions): Promise<Buffer> {
     throw new Error('Not yet supported');
     const text = [{
       fontFamily: "Times New Roman", position: "center",
@@ -30,7 +28,6 @@ export default class PixoService implements IImageEditingService {
       apikey: PixoService.apiKey, src,
       filter: "Sepia", // text
     },/*{ maxContentLength:99999999999999 }*/);
-    return ''
   }
 
 }

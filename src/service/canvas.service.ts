@@ -1,7 +1,5 @@
 import {Service} from "typedi";
-import {createCanvas, loadImage} from 'canvas';
-import fs from "fs";
-import moment from "moment";
+import {createCanvas, loadImage, registerFont} from 'canvas';
 
 import IImageEditingService, {ImageEditingOptions} from "./iService/iImageEditing.service";
 
@@ -10,7 +8,11 @@ export default class CanvasService implements IImageEditingService {
 
   private readonly filesFolder = './files';
 
-  async req(photoSrc: string, dateTxt: string, title: string, options?: ImageEditingOptions) {
+  constructor() {
+    registerFont('./files/Rockwell-Bold.ttf', {family: 'Rockwell', style: 'bold'});
+  }
+
+  async generate(photoSrc: Buffer, dateTxt: string, title: string, options?: ImageEditingOptions) {
     const w = 2560, h = 1440;
     const canvas = createCanvas(w, h);
     const ctx = canvas.getContext('2d');
@@ -56,10 +58,7 @@ export default class CanvasService implements IImageEditingService {
     ctx.rotate(Math.PI / -2);
     ctx.fillText("www.10minutoscomjesus.org", h / -2, w - 20);
 
-    const buffer = canvas.toBuffer('image/png');
-    const fileName = `./${moment().valueOf()}.png`;
-    fs.writeFileSync(fileName, buffer);
-    return fileName;
+    return canvas.toBuffer('image/png');
   }
 
   //https://thewebdev.info/2021/08/28/how-to-wrap-text-in-a-canvas-element-with-javascript/
