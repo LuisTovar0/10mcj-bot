@@ -26,21 +26,25 @@ const config = {
         name: 'InRequestService',
         path: './service/inRequest.service'
       } as Dep,
+      botUtils: {
+        name: 'BotUtilsServive',
+        path: './service/telegramBot/botUtils.service'
+      },
       textFormatting: {
         name: 'TextFormattingService',
-        path: './service/textFormatting.service'
+        path: './service/telegramBot/textFormatting.service'
       } as Dep,
       convoMemory: {
         name: 'LocalConvoMemoryService',
-        path: './service/localConvoMemory.service'
+        path: './service/telegramBot/localConvoMemory.service'
       } as Dep,
       lists: {
         name: 'WhitelistService',
-        path: './service/commands/lists.service'
+        path: './service/telegramBot/commands/lists.service'
       } as Dep,
       pt: {
         name: 'PtService',
-        path: './service/commands/pt.service'
+        path: './service/telegramBot/commands/pt.service'
       } as Dep
     },
   }

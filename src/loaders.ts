@@ -4,9 +4,9 @@ import fs from "fs";
 
 import config from "./config";
 import DbConnector from "./persistence/repos/dbConnector";
-import {sendMessage} from "./bot/general";
 import {filesFolder} from "./config/constants";
 import bot from './bot';
+import IBotUtilsService from "./service/iService/iBotUtils.service";
 
 export interface Dep {
   name: string;
@@ -14,19 +14,6 @@ export interface Dep {
 }
 
 export default () => {
-
-  //#region server
-  const app = express();
-
-  app.get('/', (req, res) =>
-    fs.readFile(`${filesFolder}/index.html`, 'utf8', (err, html) => {
-      if (err) res.status(500).send('Sorry, out of order');
-      res.send(html);
-    })
-  );
-
-  app.listen(process.env.PORT || 15000, () => sendMessage(bot.adminChatId, 'Site is up in ' + config.runningEnv));
-  //#endregion
 
   DbConnector.getInstance().connect(); // for a quicker startup, don't await
 
@@ -44,6 +31,21 @@ export default () => {
     .forEach(deps =>
       Object.values(deps).forEach(loadDep)
     );
+
+  //#region server
+  const app = express();
+
+  app.get('/', (req, res) =>
+    fs.readFile(`${filesFolder}/index.html`, 'utf8', (err, html) => {
+      if (err) res.status(500).send('Sorry, out of order');
+      res.send(html);
+    })
+  );
+
+  app.listen(process.env.PORT || 15000, () =>
+    (Container.get(config.deps.service.botUtils.name) as IBotUtilsService).sendMessage(bot.adminChatId,
+      'Site is up in ' + config.runningEnv));
+  //#endregion
 
   console.log(`[DI] \u{1f5ff} the dependencies are loaded bro \u{1f5ff}\n`);
 

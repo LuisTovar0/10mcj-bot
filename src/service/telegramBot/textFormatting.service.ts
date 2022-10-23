@@ -1,8 +1,8 @@
 import {Service} from "typedi";
 
-import ITextFormattingService, {AllInfo} from "./iService/iTextFormatting.service";
-import BotError from "../bot/botError";
-import {NumberOfRequestsByUser} from "./iService/iInRequest.service";
+import ITextFormattingService, {AllInfo} from "../iService/iTextFormatting.service";
+import BotError from "./botError";
+import {NumberOfRequestsByUser} from "../iService/iInRequest.service";
 
 @Service()
 export default class TextFormattingService implements ITextFormattingService {

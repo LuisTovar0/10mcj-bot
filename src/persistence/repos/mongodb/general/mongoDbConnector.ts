@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
 
-import {loadEnvVar} from "../../../../config";
+import config, {loadEnvVar} from "../../../../config";
 import {IDbConnector} from "../../dbConnector";
-import {sendMessage} from "../../../../bot/general";
 import bot from "../../../../bot";
+import {Container} from "typedi";
+import IBotUtilsService from "../../../../service/iService/iBotUtils.service";
 
 export default class MongoDbConnector implements IDbConnector {
 
@@ -27,7 +28,11 @@ export default class MongoDbConnector implements IDbConnector {
       await mongoose.connect(this.databaseUrl);
       if (!noLog) {
         console.log(`[DB] \u{1F527} Connected to the MongoDB database`);
-        await sendMessage(bot.adminChatId, '\u{1F527} Connected to MongoDB');
+        try {
+          const botUtils = Container.get(config.deps.service.botUtils.name) as IBotUtilsService;
+          await botUtils.sendMessage(bot.adminChatId, '\u{1F527} Connected to MongoDB');
+        } catch (e) {
+        }
       }
       this.dbConnected = true;
     } catch (e) {

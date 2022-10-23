@@ -4,18 +4,17 @@ import FormData from 'form-data';
 import moment from "moment";
 import axios from "axios";
 
-import IPtService from "../iService/iPt.service";
-import {Bot, ReplyQueue} from "../../bot/types/botgram";
-import {InputFile, messageAudio, messageText} from "../../bot/types/model";
-import BotError from "../../bot/botError";
-import IConvoMemoryService from "../iService/iConvoMemory.service";
-import {deleteUserData, textHideLinks} from "../../bot/general";
-import ITextFormattingService from "../iService/iTextFormatting.service";
-import {saveFile} from "../../bot/audio";
-import config from "../../config";
-import IImageEditingService from "../iService/iImageEditing.service";
-import {filesFolder, tempFolder} from "../../config/constants";
-import botConfig from "../../bot";
+import IPtService from "../../iService/iPt.service";
+import {Bot, ReplyQueue} from "../../../bot/types/botgram";
+import {InputFile, messageAudio, messageText} from "../../../bot/types/model";
+import BotError from "../botError";
+import IConvoMemoryService from "../../iService/iConvoMemory.service";
+import ITextFormattingService from "../../iService/iTextFormatting.service";
+import config from "../../../config";
+import IImageEditingService from "../../iService/iImageEditing.service";
+import {filesFolder, tempFolder} from "../../../config/constants";
+import botConfig from "../../../bot";
+import IBotUtilsService from "../../iService/iBotUtils.service";
 
 @Service()
 export default class PtService implements IPtService {
@@ -26,6 +25,7 @@ export default class PtService implements IPtService {
     @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
     @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
     @Inject(config.deps.service.imageEditing.name) private imageEditingService: IImageEditingService,
+    @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
   ) {
   }
 
@@ -86,7 +86,7 @@ export default class PtService implements IPtService {
 
     reply.text(`péràí... a baixar`);
     reply.text(`\u{1F4E5}`);
-    await saveFile(bot, msg, `${tempFolder}/${chatId}`);
+    await this.botUtils.saveFile(bot, msg, `${tempFolder}/${chatId}`);
     await this.convoService.setAudio(chatId, true);
     if (await this.convoService.getText(chatId))
       await this.finalResponse(chatId, reply);
@@ -136,8 +136,8 @@ export default class PtService implements IPtService {
             });
           break;
       }
-      textHideLinks(reply, texts.signal);
-      await deleteUserData(chatId);
+      this.botUtils.textHideLinks(reply, texts.signal);
+      await this.botUtils.deleteUserData(chatId);
     });
   }
 

@@ -1,13 +1,13 @@
 import {Inject, Service} from "typedi";
-import IListsService from "../iService/IListsService";
-import config from "../../config";
-import IWhitelistRepo from "../iRepos/iWhitelist.repo";
-import {Bot, ReplyQueue} from "../../bot/types/botgram";
-import {ensureMsgIsFromAdmin} from "../../bot/general";
-import ISimpleUserService from "../iService/iSimpleUser.service";
-import {messageCommand} from "../../bot/types/model";
-import BotError from "../../bot/botError";
-import IBlacklistRepo from "../iRepos/iBlacklist.repo";
+import IListsService from "../../iService/IListsService";
+import config from "../../../config";
+import IWhitelistRepo from "../../iRepos/iWhitelist.repo";
+import {Bot, ReplyQueue} from "../../../bot/types/botgram";
+import ISimpleUserService from "../../iService/iSimpleUser.service";
+import {messageCommand} from "../../../bot/types/model";
+import BotError from "../botError";
+import IBlacklistRepo from "../../iRepos/iBlacklist.repo";
+import IBotUtilsService from "../../iService/iBotUtils.service";
 
 @Service()
 export default class ListsService implements IListsService {
@@ -16,6 +16,7 @@ export default class ListsService implements IListsService {
     @Inject(config.deps.repo.whitelist.name) private whitelistRepo: IWhitelistRepo,
     @Inject(config.deps.repo.blacklist.name) private blacklistRepo: IBlacklistRepo,
     @Inject(config.deps.service.simpleUser.name) private userService: ISimpleUserService,
+    @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
   ) {
   }
 
@@ -42,7 +43,7 @@ export default class ListsService implements IListsService {
     }
 
     bot.command(`whitelist_add`, async (msg, reply) => {
-      ensureMsgIsFromAdmin(msg);
+      this.botUtils.ensureMsgIsFromAdmin(msg);
 
       const username = analisa(msg, reply)
       try {
@@ -55,7 +56,7 @@ export default class ListsService implements IListsService {
     });
 
     bot.command(`whitelist_rm`, async (msg, reply) => {
-      ensureMsgIsFromAdmin(msg);
+      this.botUtils.ensureMsgIsFromAdmin(msg);
 
       const username = analisa(msg, reply);
       if (await this.whitelistRepo.contains(username)) {
@@ -67,7 +68,7 @@ export default class ListsService implements IListsService {
     });
 
     bot.command(`whitelist_all`, async (msg, reply) => {
-      ensureMsgIsFromAdmin(msg);
+      this.botUtils.ensureMsgIsFromAdmin(msg);
 
       const list = await this.whitelistRepo.fullList();
       const str = list.reduce((accum, curr) => `${accum}\n@${curr}`, '');
@@ -75,7 +76,7 @@ export default class ListsService implements IListsService {
     })
 
     bot.command(`blacklist_add`, async (msg, reply) => {
-      ensureMsgIsFromAdmin(msg);
+      this.botUtils.ensureMsgIsFromAdmin(msg);
 
       const username = analisa(msg, reply);
       try {
@@ -88,7 +89,7 @@ export default class ListsService implements IListsService {
     })
 
     bot.command(`blacklist_rm`, async (msg, reply) => {
-      ensureMsgIsFromAdmin(msg);
+      this.botUtils.ensureMsgIsFromAdmin(msg);
 
       const username = analisa(msg, reply);
       if (await this.blacklistRepo.contains(username)) {
@@ -100,7 +101,7 @@ export default class ListsService implements IListsService {
     })
 
     bot.command(`blacklist_all`, async (msg, reply) => {
-      ensureMsgIsFromAdmin(msg);
+      this.botUtils.ensureMsgIsFromAdmin(msg);
 
       const list = await this.blacklistRepo.fullList();
       const str = list.reduce((accum, curr) => `${accum}\n@${curr}`, '');
