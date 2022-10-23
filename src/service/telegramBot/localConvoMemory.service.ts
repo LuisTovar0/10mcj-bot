@@ -1,7 +1,7 @@
 import {Service} from "typedi";
 
 import IConvoMemoryService from "../iService/iConvoMemory.service";
-import {Convo, ConvoMemory, InfosForText} from "../../bot/types";
+import {Convo, ConvoMemory, InfosForText} from "./types";
 
 @Service()
 export default class LocalConvoMemoryService implements IConvoMemoryService {

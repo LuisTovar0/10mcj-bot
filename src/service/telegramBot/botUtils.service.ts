@@ -2,8 +2,8 @@ import {Container, Service} from "typedi";
 import axios from "axios";
 import fs from "fs";
 
-import {FileLike} from "../../bot/types/model";
-import {Bot, Message, ReplyQueue} from "../../bot/types/botgram";
+import {FileLike} from "./types/model";
+import {Bot, Message, ReplyQueue} from "./types/botgram";
 import BotError from "./botError";
 import IBotUtilsService from "../iService/iBotUtils.service";
 import config, {loadEnvVar} from "../../config";
@@ -23,7 +23,7 @@ export default class BotUtilsService implements IBotUtilsService {
     console.log(`posted: /${axiosResponse.request.path.split('/')[2]}`);
   }
 
-  async sendMessage(chatId: string, message: string) {
+  async sendMessage(chatId: number, message: string) {
     await this.apiMethod('sendMessage', {chat_id: chatId, text: message});
   }
 

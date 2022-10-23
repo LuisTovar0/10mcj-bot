@@ -1,5 +1,5 @@
-import {Bot, ReplyQueue} from "../../bot/types/botgram";
-import {messageAudio, messageText} from "../../bot/types/model";
+import {Bot, ReplyQueue} from "../telegramBot/types/botgram";
+import {messageAudio, messageText} from "../telegramBot/types/model";
 
 export default interface IPtService {
 

@@ -5,15 +5,14 @@ import moment from "moment";
 import axios from "axios";
 
 import IPtService from "../../iService/iPt.service";
-import {Bot, ReplyQueue} from "../../../bot/types/botgram";
-import {InputFile, messageAudio, messageText} from "../../../bot/types/model";
+import {Bot, ReplyQueue} from "../types/botgram";
+import {InputFile, messageAudio, messageText} from "../types/model";
 import BotError from "../botError";
 import IConvoMemoryService from "../../iService/iConvoMemory.service";
 import ITextFormattingService from "../../iService/iTextFormatting.service";
 import config from "../../../config";
 import IImageEditingService from "../../iService/iImageEditing.service";
 import {filesFolder, tempFolder} from "../../../config/constants";
-import botConfig from "../../../bot";
 import IBotUtilsService from "../../iService/iBotUtils.service";
 
 @Service()
@@ -69,7 +68,7 @@ export default class PtService implements IPtService {
       fs.writeFileSync(generatedFileName, generatedFile);
       const fd = new FormData();
       fd.append('photo', fs.createReadStream(generatedFileName));
-      await axios.post(`${botConfig.telegramUrl}/sendPhoto`,
+      await axios.post(`${this.botUtils.telegramUrl}/sendPhoto`,
         fd, {params: {chat_id: msg.chat.id}});
       fs.unlinkSync(generatedFileName);
     });
@@ -127,7 +126,7 @@ export default class PtService implements IPtService {
 
           const fd = new FormData();
           fd.append('audio', file);
-          await axios.post(`${botConfig.telegramUrl}/sendAudio`,
+          await axios.post(`${this.botUtils.telegramUrl}/sendAudio`,
             fd, {
               params: {
                 chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',

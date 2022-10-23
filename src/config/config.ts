@@ -45,6 +45,10 @@ const config = {
       pt: {
         name: 'PtService',
         path: './service/telegramBot/commands/pt.service'
+      } as Dep,
+      bot: {
+        name: 'BotService',
+        path: './service/telegramBot/bot.service'
       } as Dep
     },
   }

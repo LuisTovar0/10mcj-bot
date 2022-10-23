@@ -2,9 +2,11 @@ import 'reflect-metadata';
 import fs from 'fs';
 import del from "del";
 
-import bot from "./bot";
 import loaders from "./loaders";
 import {tempFolder} from "./config/constants";
+import {Container} from "typedi";
+import config from "./config";
+import IBotService from "./service/iService/IBotService";
 
 async function app() {
   loaders();
@@ -24,6 +26,7 @@ async function app() {
   await newCleanFolder(tempFolder);
 
   // set up and run the bot
+  const bot = Container.get(config.deps.service.bot.name) as IBotService;
   await bot.run();
 }
 

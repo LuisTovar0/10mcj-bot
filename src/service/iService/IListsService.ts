@@ -1,4 +1,4 @@
-import {Bot} from "../../bot/types/botgram";
+import {Bot} from "../telegramBot/types/botgram";
 import IBlacklistRepo from "../iRepos/iBlacklist.repo";
 import IWhitelistRepo from "../iRepos/iWhitelist.repo";
 
