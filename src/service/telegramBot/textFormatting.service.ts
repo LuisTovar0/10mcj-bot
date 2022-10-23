@@ -1,6 +1,6 @@
 import {Service} from "typedi";
 
-import ITextFormattingService, {AllInfo} from "../iService/iTextFormatting.service";
+import ITextFormattingService, {AllInfo} from "../iService/telegramBot/iTextFormatting.service";
 import BotError from "./botError";
 import {NumberOfRequestsByUser} from "../iService/iInRequest.service";
 

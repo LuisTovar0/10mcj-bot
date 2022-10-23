@@ -5,11 +5,11 @@ import fs from "fs";
 import {FileLike} from "./types/model";
 import {Bot, Message, ReplyQueue} from "./types/botgram";
 import BotError from "./botError";
-import IBotUtilsService from "../iService/iBotUtils.service";
+import IBotUtilsService from "../iService/telegramBot/iBotUtils.service";
 import config, {loadEnvVar} from "../../config";
 import del from "del";
 import {tempFolder} from "../../config/constants";
-import IConvoMemoryService from "../iService/iConvoMemory.service";
+import IConvoMemoryService from "../iService/telegramBot/iConvoMemory.service";
 
 @Service()
 export default class BotUtilsService implements IBotUtilsService {

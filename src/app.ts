@@ -6,7 +6,7 @@ import loaders from "./loaders";
 import {tempFolder} from "./config/constants";
 import {Container} from "typedi";
 import config from "./config";
-import IBotService from "./service/iService/IBotService";
+import IBotService from "./service/iService/telegramBot/IBotService";
 
 async function app() {
   loaders();

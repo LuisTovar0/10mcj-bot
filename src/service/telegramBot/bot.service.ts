@@ -1,14 +1,14 @@
 import {Inject, Service} from "typedi";
 
-import IBotService from "../iService/IBotService";
+import IBotService from "../iService/telegramBot/IBotService";
 import {Bot} from "./types/botgram";
 import config, {loadEnvVar} from "../../config";
-import IBotUtilsService from "../iService/iBotUtils.service";
+import IBotUtilsService from "../iService/telegramBot/iBotUtils.service";
 import IInRequestService from "../iService/iInRequest.service";
-import ITextFormattingService from "../iService/iTextFormatting.service";
-import IConvoMemoryService from "../iService/iConvoMemory.service";
-import IListsService from "../iService/IListsService";
-import IPtService from "../iService/iPt.service";
+import ITextFormattingService from "../iService/telegramBot/iTextFormatting.service";
+import IConvoMemoryService from "../iService/telegramBot/iConvoMemory.service";
+import IListsService from "../iService/telegramBot/IListsService";
+import IPtService from "../iService/telegramBot/iPt.service";
 import BotError from "./botError";
 
 
@@ -18,8 +18,8 @@ const botgram = require("botgram");
 export default class BotService implements IBotService {
 
   constructor(
-    @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
     @Inject(config.deps.service.inRequest.name) private inRequestService: IInRequestService,
+    @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
     @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
     @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
     @Inject(config.deps.service.lists.name) private listsService: IListsService,

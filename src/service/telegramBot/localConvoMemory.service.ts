@@ -1,6 +1,6 @@
 import {Service} from "typedi";
 
-import IConvoMemoryService from "../iService/iConvoMemory.service";
+import IConvoMemoryService from "../iService/telegramBot/iConvoMemory.service";
 import {Convo, ConvoMemory, InfosForText} from "./types";
 
 @Service()

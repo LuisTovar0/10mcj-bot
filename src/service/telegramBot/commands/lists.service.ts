@@ -1,5 +1,5 @@
 import {Inject, Service} from "typedi";
-import IListsService from "../../iService/IListsService";
+import IListsService from "../../iService/telegramBot/IListsService";
 import config from "../../../config";
 import IWhitelistRepo from "../../iRepos/iWhitelist.repo";
 import {Bot, ReplyQueue} from "../types/botgram";
@@ -7,7 +7,7 @@ import ISimpleUserService from "../../iService/iSimpleUser.service";
 import {messageCommand} from "../types/model";
 import BotError from "../botError";
 import IBlacklistRepo from "../../iRepos/iBlacklist.repo";
-import IBotUtilsService from "../../iService/iBotUtils.service";
+import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
 
 @Service()
 export default class ListsService implements IListsService {

@@ -5,7 +5,7 @@ import fs from "fs";
 import config from "./config";
 import DbConnector from "./persistence/repos/dbConnector";
 import {filesFolder} from "./config/constants";
-import IBotUtilsService from "./service/iService/iBotUtils.service";
+import IBotUtilsService from "./service/iService/telegramBot/iBotUtils.service";
 
 export interface Dep {
   name: string;

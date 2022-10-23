@@ -4,16 +4,16 @@ import FormData from 'form-data';
 import moment from "moment";
 import axios from "axios";
 
-import IPtService from "../../iService/iPt.service";
+import IPtService from "../../iService/telegramBot/iPt.service";
 import {Bot, ReplyQueue} from "../types/botgram";
 import {InputFile, messageAudio, messageText} from "../types/model";
 import BotError from "../botError";
-import IConvoMemoryService from "../../iService/iConvoMemory.service";
-import ITextFormattingService from "../../iService/iTextFormatting.service";
+import IConvoMemoryService from "../../iService/telegramBot/iConvoMemory.service";
+import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.service";
 import config from "../../../config";
 import IImageEditingService from "../../iService/iImageEditing.service";
 import {filesFolder, tempFolder} from "../../../config/constants";
-import IBotUtilsService from "../../iService/iBotUtils.service";
+import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
 
 @Service()
 export default class PtService implements IPtService {
