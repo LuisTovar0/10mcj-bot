@@ -1,4 +1,4 @@
-import config, {loadEnvVars} from "./config";
+import config from './config';
 
 export default config;
-export {loadEnvVars};
+export {loadEnvVar, loadEnvVars} from './config';

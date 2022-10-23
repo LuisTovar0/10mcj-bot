@@ -7,13 +7,13 @@ import InRequestDataModel from "../../dataModel/inRequest.dataModel";
 import IInRequestRepo from "../../../service/iRepos/iInRequest.repo";
 
 @Service()
-export default class InRequestMongoDb extends MongoRepo<{ domainId: string, user: string }> implements IInRequestRepo {
+export default class InRequestMongoDb extends MongoRepo<ActualDataModel> implements IInRequestRepo {
 
   constructor() {
     super(schema);
   }
 
-  static mapSchemaToDataModel(schema: Document<unknown, any, { domainId: string, user: string }> & { domainId: string, user: string } & { _id: Types.ObjectId }) {
+  static mapSchemaToDataModel(schema: Document<unknown, any, ActualDataModel> & ActualDataModel & { _id: Types.ObjectId }) {
     // @ts-ignore
     const date = moment(schema.createdAt).valueOf();
     return {
@@ -35,7 +35,12 @@ export default class InRequestMongoDb extends MongoRepo<{ domainId: string, user
 
 }
 
-const schema = model<{ domainId: string, user: string }>(`In Request`, new Schema({
+interface ActualDataModel {
+  domainId: string;
+  user: string;
+}
+
+const schema = model<ActualDataModel>(`In Request`, new Schema({
   domainId: {
     type: String,
     required: [true, `MongoDB requires an InRequest domain ID.`],

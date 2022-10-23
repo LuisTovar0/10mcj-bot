@@ -3,7 +3,7 @@ import {repoDeps} from "./db";
 import {Dep} from "../loaders";
 
 if (!dotenv.config()) throw '\u{26A0} Could not find .env file! \u{26A0}';
-const envs = loadEnvVars({botToken: '', adminChatId: '', runningEnv: '', dbType: ''});
+const envs = loadEnvVars({runningEnv: '', dbType: ''});
 
 const config = {
 
@@ -26,41 +26,50 @@ const config = {
         name: 'InRequestService',
         path: './service/inRequest.service'
       } as Dep,
+      botUtils: {
+        name: 'BotUtilsServive',
+        path: './service/telegramBot/botUtils.service'
+      },
       textFormatting: {
         name: 'TextFormattingService',
-        path: './service/textFormatting.service'
+        path: './service/telegramBot/textFormatting.service'
       } as Dep,
       convoMemory: {
         name: 'LocalConvoMemoryService',
-        path: './service/localConvoMemory.service'
+        path: './service/telegramBot/localConvoMemory.service'
       } as Dep,
       lists: {
         name: 'WhitelistService',
-        path: './service/commands/lists.service'
+        path: './service/telegramBot/commands/lists.service'
       } as Dep,
       pt: {
         name: 'PtService',
-        path: './service/commands/pt.service'
+        path: './service/telegramBot/commands/pt.service'
+      } as Dep,
+      bot: {
+        name: 'BotService',
+        path: './service/telegramBot/bot.service'
       } as Dep
     },
   }
 };
 
-console.log(`[conf] \u{2699} bot token: ${config.botToken}
-[conf] \u{1F4C7} the admin's chat ID: ${config.adminChatId}`);
-
 export default config;
 
 export type Envs = { [k: string]: string; };
 
+export function loadEnvVar(camelCaseName: string) {
+  const envVarName = camelCaseToMacroCase(camelCaseName);
+  const env = process.env[envVarName];
+  if (!env) throw new Error(`${envVarName} environment variable is not defined.`);
+  return env;
+}
+
 export function loadEnvVars<T extends Envs>(emptyEnvs: T): T {
   const b = emptyEnvs;
   Object.keys(b).forEach(v => {
-    const envVarName = camelCaseToMacroCase(v);
-    const env = process.env[envVarName];
-    if (!env) throw new Error(`${envVarName} environment variable is not defined.`);
     // @ts-ignore
-    b[v] = env;
+    b[v] = loadEnvVar(v);
   });
   return b;
 }

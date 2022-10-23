@@ -7,7 +7,7 @@
     ],
     "typeRoots": [
       "./node_modules/@types",
-      "./src/bot/types"
+      "./src/service/telegramBot/types"
     ],
     "esModuleInterop": true,
     "skipLibCheck": true,

@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 
-import config, {loadEnvVars} from "../../../../config";
+import config, {loadEnvVar} from "../../../../config";
 import {IDbConnector} from "../../dbConnector";
-import {sendMessage} from "../../../../bot/general";
+import {Container} from "typedi";
+import IBotUtilsService from "../../../../service/iService/telegramBot/iBotUtils.service";
 
 export default class MongoDbConnector implements IDbConnector {
 
@@ -10,7 +11,7 @@ export default class MongoDbConnector implements IDbConnector {
   databaseUrl: string;
 
   constructor() {
-    this.databaseUrl = loadEnvVars({databaseUrl: ''}).databaseUrl;
+    this.databaseUrl = loadEnvVar('mongodbUrl');
   }
 
   async connect(noLog?: boolean) {
@@ -26,7 +27,11 @@ export default class MongoDbConnector implements IDbConnector {
       await mongoose.connect(this.databaseUrl);
       if (!noLog) {
         console.log(`[DB] \u{1F527} Connected to the MongoDB database`);
-        sendMessage(config.adminChatId, '\u{1F527} Connected to MongoDB');
+        try {
+          const botUtils = Container.get(config.deps.service.botUtils.name) as IBotUtilsService;
+          await botUtils.sendMessage(botUtils.adminChatId, '\u{1F527} Connected to MongoDB');
+        } catch (e) {
+        }
       }
       this.dbConnected = true;
     } catch (e) {

@@ -1,4 +1,4 @@
-import {Convo, InfosForText} from "../../bot/types";
+import {Convo, InfosForText} from "../../telegramBot/types";
 
 export default interface IConvoMemoryService {
 

@@ -1,14 +1,18 @@
-import { Service } from "typedi";
-import { createCanvas, loadImage, NodeCanvasRenderingContext2DSettings } from 'canvas';
+import {Service} from "typedi";
+import {createCanvas, loadImage, registerFont} from 'canvas';
 
-import IImageEditingService, { ImageEditingOptions } from "./iService/iImageEditing.service";
-import fs from "fs";
-import moment from "moment";
+import IImageEditingService, {ImageEditingOptions} from "./iService/iImageEditing.service";
 
 @Service()
 export default class CanvasService implements IImageEditingService {
 
-  async req(photoSrc: string, dateTxt: string, title: string, options?: ImageEditingOptions) {
+  private readonly filesFolder = './files';
+
+  constructor() {
+    registerFont('./files/Rockwell-Bold.ttf', {family: 'Rockwell', style: 'bold'});
+  }
+
+  async generate(photoSrc: Buffer, dateTxt: string, title: string, options?: ImageEditingOptions) {
     const w = 2560, h = 1440;
     const canvas = createCanvas(w, h);
     const ctx = canvas.getContext('2d');
@@ -19,18 +23,18 @@ export default class CanvasService implements IImageEditingService {
     ctx.drawImage(photoImg, options?.imgAlign || 820, 0, photoDrawnWidth, h);
 
     // the colored fill
-    const formaImg = await loadImage('./forma.png');
+    const formaImg = await loadImage(`${this.filesFolder}/forma.png`);
     const border = 85; // this image has a shadow around it, so we have to trim it a little
     const formaDrawnWith = formaImg.width * (h + border * 2) / formaImg.height; // keep the proportions
     ctx.drawImage(formaImg, -border, -border, formaDrawnWith, h + border * 2);
 
     // 10mwJ icon
-    const iconImg = await loadImage('./symbol.png');
+    const iconImg = await loadImage(`${this.filesFolder}/symbol.png`);
     const iconDfblc = 100; // distance from bottom left corner
     ctx.drawImage(iconImg, iconDfblc, h - iconDfblc - iconImg.height);
 
     // the border arounthe date
-    const dateFormImg = await loadImage('./forma-data.png');
+    const dateFormImg = await loadImage(`${this.filesFolder}/forma-data.png`);
     const dateFormDftlc = 100; // distance from top left corner
     const dateFormDrawHeight = 85;
     const dateFormDrawWidth = dateFormImg.width * dateFormDrawHeight / dateFormImg.height;
@@ -54,10 +58,7 @@ export default class CanvasService implements IImageEditingService {
     ctx.rotate(Math.PI / -2);
     ctx.fillText("www.10minutoscomjesus.org", h / -2, w - 20);
 
-    const buffer = canvas.toBuffer('image/png');
-    const fileName = `./${moment().valueOf()}.png`;
-    fs.writeFileSync(fileName, buffer);
-    return fileName;
+    return canvas.toBuffer('image/png');
   }
 
   //https://thewebdev.info/2021/08/28/how-to-wrap-text-in-a-canvas-element-with-javascript/

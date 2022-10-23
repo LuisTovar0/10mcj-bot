@@ -1,20 +1,18 @@
-import { Inject, Service } from "typedi";
-
-import IImageEditingService, { ImageEditingOptions } from "./iService/iImageEditing.service";
-import { loadEnvVars } from "../config";
+import IImageEditingService, {ImageEditingOptions} from "./iService/iImageEditing.service";
+import {loadEnvVars} from "../config";
 import axios from "axios";
 
-@Service()
+//@Service()
 export default class PixoService implements IImageEditingService {
 
   static readonly url = "https://pixoeditor.com/api";
-  static readonly apiKey = loadEnvVars({ pixioKey: '' }).pixioKey;
+  static readonly apiKey = loadEnvVars({pixioKey: ''}).pixioKey;
 
   constructor() {
 
   }
 
-  async req(src: string, dateTxt: string, title: string, options?: ImageEditingOptions) {
+  async generate(src: Buffer, dateTxt: string, title: string, options?: ImageEditingOptions): Promise<Buffer> {
     throw new Error('Not yet supported');
     const text = [{
       fontFamily: "Times New Roman", position: "center",

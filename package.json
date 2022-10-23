@@ -7,7 +7,9 @@
     "ts-dev": "nodemon --exec \"node --loader ts-node/esm\"  ./src/app.ts",
     "build": "tsc",
     "prestart": "npm run build",
-    "test": "env-cmd -f ./.test.env mocha -r ts-node/register test/**/*.test.ts"
+    "test": "env-cmd -f .test.env mocha -r ts-node/register test/**/*.test.ts",
+    "test-repos": "env-cmd -f .test.env mocha -r ts-node/register test/unit/repo/**/*.test.ts",
+    "test-services": "env-cmd -f .test.env mocha -r ts-node/register test/unit/service/**/*.test.ts"
   },
   "dependencies": {
     "@types/del": "^4.0.0",
@@ -21,6 +23,7 @@
     "del": "^6.0.0",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
+    "lorem-ipsum": "^2.0.8",
     "moment": "^2.29.4",
     "mongoose": "^6.6.2",
     "mp3-duration": "^1.1.0",
