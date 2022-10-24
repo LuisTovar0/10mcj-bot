@@ -1,7 +1,7 @@
 import {Inject, Service} from "typedi";
 
 import config from "../config";
-import * as mapper from '../persistence/dataModel/mappers/simpleUser.mapper';
+import * as mapper from '../mappers/simpleUser.mapper';
 import SimpleUser, {SimpleUserProps} from "../domain/simpleUser";
 import ISimpleUserService from "./iService/iSimpleUser.service";
 import ISimpleUserRepo from "./iRepos/iSimpleUser.repo";

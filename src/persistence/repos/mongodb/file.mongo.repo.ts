@@ -27,7 +27,7 @@ export default class FileMongoRepo extends MongoRepo<FileDataModel> implements I
   }
 
   constructor() {
-    super(model<FileDataModel>('File', new Schema(({
+    super(model<FileDataModel>('File', new Schema({
       domainId: {
         type: String,
         required: [true, 'MongoDB requires the file to have a domainId.']
@@ -40,7 +40,7 @@ export default class FileMongoRepo extends MongoRepo<FileDataModel> implements I
         type: Buffer,
         required: [true, 'MongoDB requires the file to have a file (buffer).']
       }
-    }))));
+    })));
   }
 
 }

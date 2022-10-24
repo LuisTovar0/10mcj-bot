@@ -1,8 +1,8 @@
 import {Dep} from "../loaders";
 
-type RepoDep = 'inRequest' | 'simpleUser' | 'whitelist' | 'blacklist';
+type RepoDep = 'inRequest' | 'simpleUser' | 'whitelist' | 'blacklist' | 'file';
 type RepoDeps = {
-  [a in RepoDep]: Dep;
+  [a in RepoDep]?: Dep;
 };
 
 export const repoDeps = (dbType: string) => {
@@ -34,12 +34,16 @@ export const repoDeps = (dbType: string) => {
       path: './persistence/repos/mongodb/simpleUser.mongo.repo'
     },
     whitelist: {
-      name: 'WhitelistRepo',
+      name: 'WhitelistMongoRepo',
       path: './persistence/repos/mongodb/whitelist.mongo.repo'
     },
     blacklist: {
-      name: 'BlacklistRepo',
+      name: 'BlacklistMongoRepo',
       path: './persistence/repos/mongodb/blacklist.mongo.repo'
+    },
+    file: {
+      name: 'FileMongoRepo',
+      path: './persistence/repos/mongodb/file.mongo.repo'
     }
   };
 
@@ -68,8 +72,9 @@ export const repoDeps = (dbType: string) => {
   const simpleUser = decideDb('simpleUser');
   const whitelist = decideDb('whitelist');
   const blacklist = decideDb('blacklist');
+  const file = decideDb('file');
 
-  return {inRequest, simpleUser, whitelist, blacklist};
+  return {inRequest, simpleUser, whitelist, blacklist, file};
 };
 
 export function camelCaseToMacroCase(str: string): string {
