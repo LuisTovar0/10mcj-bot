@@ -1,6 +1,6 @@
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
-import * as r from 'randomstring';
+import * as randStr from 'randomstring';
 import * as fs from "fs";
 
 import FileMongoRepo from "../../../../src/persistence/repos/mongodb/file.mongo.repo";
@@ -13,8 +13,8 @@ describe('[Unit] FileMongoRepo + MongoDB server', () => {
   const repo = new FileMongoRepo();
   const dataModel: FileDataModel = {
     domainId: new UniqueEntityID().toString(),
-    id: r.generate(),
-    file: fs.readFileSync(`${__dirname}/rapaz.jpg`)
+    id: randStr.generate(),
+    file: fs.readFileSync(`./test/rapaz.jpg`)
   }
   const {domainId, id, file} = dataModel;
 

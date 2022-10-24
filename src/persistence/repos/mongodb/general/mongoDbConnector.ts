@@ -8,6 +8,7 @@ import IBotUtilsService from "../../../../service/iService/telegramBot/iBotUtils
 export default class MongoDbConnector implements IDbConnector {
 
   dbConnected = false;
+  connecting = false;
   databaseUrl: string;
 
   constructor() {
@@ -19,7 +20,10 @@ export default class MongoDbConnector implements IDbConnector {
       if (!noLog) console.log('was already connected');
       return;
     }
-    await this.connectMongo(noLog);
+    if (!this.connecting) {
+      this.connecting = true;
+      await this.connectMongo(noLog);
+    }
   }
 
   async connectMongo(noLog?: boolean): Promise<void> {
@@ -34,6 +38,7 @@ export default class MongoDbConnector implements IDbConnector {
         }
       }
       this.dbConnected = true;
+      this.connecting = false;
     } catch (e) {
       if (!noLog) console.log(`[DB] Could not connect to MongoDB: ${e.message}\n\tWaiting 5s until next try`);
 

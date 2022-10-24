@@ -8,8 +8,8 @@
     "build": "tsc",
     "prestart": "npm run build",
     "test": "env-cmd -f .test.env mocha -r ts-node/register test/**/*.test.ts",
-    "test-repos": "env-cmd -f .test.env mocha -r ts-node/register test/unit/repo/**/*.test.ts",
-    "test-services": "env-cmd -f .test.env mocha -r ts-node/register test/unit/service/**/*.test.ts"
+    "test-repos": "env-cmd -f .test.env mocha -r ts-node/register test/**/repo/**/*.test.ts",
+    "test-services": "env-cmd -f .test.env mocha -r ts-node/register test/**/service/**/*.test.ts"
   },
   "dependencies": {
     "@types/del": "^4.0.0",

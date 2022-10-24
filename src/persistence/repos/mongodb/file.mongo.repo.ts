@@ -27,20 +27,22 @@ export default class FileMongoRepo extends MongoRepo<FileDataModel> implements I
   }
 
   constructor() {
-    super(model<FileDataModel>('File', new Schema({
-      domainId: {
-        type: String,
-        required: [true, 'MongoDB requires the file to have a domainId.']
-      },
-      id: {
-        type: String,
-        required: [true, 'MongoDB requires the file to have a fileId.']
-      },
-      file: {
-        type: Buffer,
-        required: [true, 'MongoDB requires the file to have a file (buffer).']
-      }
-    })));
+    super(schema);
   }
 
 }
+
+const schema = model<FileDataModel>('File', new Schema({
+  domainId: {
+    type: String,
+    required: [true, 'MongoDB requires the file to have a domainId.']
+  },
+  id: {
+    type: String,
+    required: [true, 'MongoDB requires the file to have a fileId.']
+  },
+  file: {
+    type: Buffer,
+    required: [true, 'MongoDB requires the file to have a file (buffer).']
+  }
+}));
