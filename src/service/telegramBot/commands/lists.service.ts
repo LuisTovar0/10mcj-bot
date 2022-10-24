@@ -2,7 +2,7 @@ import {Inject, Service} from "typedi";
 import IListsService from "../../iService/telegramBot/IListsService";
 import config from "../../../config";
 import IWhitelistRepo from "../../iRepos/iWhitelist.repo";
-import {Bot, ReplyQueue} from "../types/botgram";
+import {Bot} from "../types/botgram";
 import ISimpleUserService from "../../iService/iSimpleUser.service";
 import {messageCommand} from "../types/model";
 import BotError from "../botError";
@@ -34,10 +34,10 @@ export default class ListsService implements IListsService {
 
   registerCommands(bot: Bot) {
 
-    function analisa(msg: messageCommand, reply: ReplyQueue) {
+    function analisa(msg: messageCommand) {
       const split = msg.text.split(' ');
       if (split.length < 2)
-        throw new BotError(`Comando mal usado. Formato correto é: /${msg.command} <username>`)
+        throw new BotError(`Comando mal usado. Formato correto é: /${msg.command} <username>`);
 
       return split[1];
     }
@@ -45,7 +45,7 @@ export default class ListsService implements IListsService {
     bot.command(`whitelist_add`, async (msg, reply) => {
       this.botUtils.ensureMsgIsFromAdmin(msg);
 
-      const username = analisa(msg, reply)
+      const username = analisa(msg);
       try {
         await this.userService.getByUsername(username);
       } catch (e) {
@@ -58,7 +58,7 @@ export default class ListsService implements IListsService {
     bot.command(`whitelist_rm`, async (msg, reply) => {
       this.botUtils.ensureMsgIsFromAdmin(msg);
 
-      const username = analisa(msg, reply);
+      const username = analisa(msg);
       if (await this.whitelistRepo.contains(username)) {
         await this.whitelistRepo.remove(username);
         reply.text('Done');
@@ -78,7 +78,7 @@ export default class ListsService implements IListsService {
     bot.command(`blacklist_add`, async (msg, reply) => {
       this.botUtils.ensureMsgIsFromAdmin(msg);
 
-      const username = analisa(msg, reply);
+      const username = analisa(msg);
       try {
         await this.userService.getByUsername(username);
       } catch (e) {
@@ -91,7 +91,7 @@ export default class ListsService implements IListsService {
     bot.command(`blacklist_rm`, async (msg, reply) => {
       this.botUtils.ensureMsgIsFromAdmin(msg);
 
-      const username = analisa(msg, reply);
+      const username = analisa(msg);
       if (await this.blacklistRepo.contains(username)) {
         await this.blacklistRepo.remove(username);
         reply.text('Done');
