@@ -37,7 +37,9 @@ export default class ImageMongoRepo extends MongoRepo<ImageDataModel> {
   async remove(id: string): Promise<ImageDto | null> {
     const removedFile = await this.fileRepo.remove(id);
     if (!removedFile) return null;
-    return this.schema.findOneAndDelete({fileDomainId: removedFile.domainId});
+    const removedImg = await this.schema.findOneAndDelete({fileDomainId: removedFile.domainId});
+    if (!removedImg) return null;
+    return imageMapper.dataModelToDto(removedImg, removedFile);
   }
 
   constructor(
