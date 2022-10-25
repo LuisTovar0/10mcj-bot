@@ -44,7 +44,14 @@ export default class ImageMongoRepo extends MongoRepo<ImageDataModel> implements
   }
 
   async getAll(): Promise<ImageDto[]> {
-    return await this.schema.find();
+    const imgs: ImageDataModel[] = await this.schema.find();
+    const ret: ImageDto[] = [];
+    for (const img of imgs) {
+      const file = await this.fileRepo.getByDomainId(img.fileDomainId);
+      if (file)
+        ret.push(imageMapper.dataModelToDto(img, file));
+    }
+    return ret;
   }
 
   constructor(
