@@ -7,9 +7,10 @@ import {MongoRepo} from "./general/mongoRepo";
 import ImageDataModel from "../../dataModel/image.dataModel";
 import * as imageMapper from '../../../mappers/image.mapper';
 import ImageDto from "../../../dto/image.dto";
+import IImageRepo from "../../../service/iRepos/iImage.repo";
 
 @Service()
-export default class ImageMongoRepo extends MongoRepo<ImageDataModel> {
+export default class ImageMongoRepo extends MongoRepo<ImageDataModel> implements IImageRepo {
 
   async save(dto: ImageDto): Promise<ImageDto> {
     const {img, file} = imageMapper.dtoToDataModel(dto);

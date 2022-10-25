@@ -12,6 +12,10 @@ const config = {
   deps: {
     repo: repoDeps(envs.dbType),
     service: {
+      image: {
+        name: 'ImageService',
+        path: './service/image.service'
+      } as Dep,
       imageEditing: {
         name: 'CanvasService',
         path: './service/canvas.service'
