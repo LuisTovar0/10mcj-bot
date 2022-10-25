@@ -89,7 +89,7 @@ describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
 
   it('Get user by domain ID', async () => {
     const res = await repo.getByDomainId(new UniqueEntityID().toString());
-    assert.equal(res, undefined);
+    assert.equal(res, null);
   });
 
 });

@@ -8,22 +8,19 @@ import IFileRepo from "../../../service/iRepos/iFileRepo";
 export default class FileMongoRepo extends MongoRepo<FileDataModel> implements IFileRepo {
 
   async getById(id: string) {
-    const res = await this.schema.findOne({id});
-    return res === null ? undefined : res;
+    return this.schema.findOne({id});
   }
 
   async save(dataModel: FileDataModel) {
     return await this.persist(dataModel);
   }
 
-  async getByDomainId(domainId: string) {
-    const res = await this.findByDomainId(domainId);
-    return res === null ? undefined : res;
+  getByDomainId(domainId: string) {
+    return this.findByDomainId(domainId);
   }
 
   async remove(id: string) {
-    const res = await this.schema.findOneAndDelete({id});
-    return res === null ? undefined : res;
+    return this.schema.findOneAndDelete({id});
   }
 
   constructor() {

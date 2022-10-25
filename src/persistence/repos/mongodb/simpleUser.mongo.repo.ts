@@ -12,23 +12,20 @@ export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> im
     super(schema);
   }
 
-  async getByDomainId(id: string): Promise<SimpleUserDataModel | undefined> {
-    const res = await this.findByDomainId(id);
-    return res === null ? undefined : res;
+  async getByDomainId(id: string): Promise<SimpleUserDataModel | null> {
+    return this.findByDomainId(id);
   }
 
-  async getById(id: number): Promise<SimpleUserDataModel | undefined> {
-    const res = await this.schema.findOne({id});
-    return res === null ? undefined : res;
+  async getById(id: number): Promise<SimpleUserDataModel | null> {
+    return this.schema.findOne({id});
   }
 
   async save(dataModel: SimpleUserDataModel): Promise<SimpleUserDataModel> {
     return await this.persist(dataModel);
   }
 
-  async getByUsername(username: string): Promise<SimpleUserDataModel | undefined> {
-    const res = await this.schema.findOne({username});
-    return res === null ? undefined : res;
+  async getByUsername(username: string): Promise<SimpleUserDataModel | null> {
+    return this.schema.findOne({username});
   }
 
 }

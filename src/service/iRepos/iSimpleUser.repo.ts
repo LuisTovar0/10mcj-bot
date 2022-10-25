@@ -7,10 +7,10 @@ export default interface ISimpleUserRepo {
    */
   save(dataModel: SimpleUserDataModel): Promise<SimpleUserDataModel>;
 
-  getByDomainId(id: string): Promise<SimpleUserDataModel | undefined>;
+  getByDomainId(id: string): Promise<SimpleUserDataModel | null>;
 
-  getById(id: number): Promise<SimpleUserDataModel | undefined>;
+  getById(id: number): Promise<SimpleUserDataModel | null>;
 
-  getByUsername(username: string): Promise<SimpleUserDataModel | undefined>;
+  getByUsername(username: string): Promise<SimpleUserDataModel | null>;
 
 }

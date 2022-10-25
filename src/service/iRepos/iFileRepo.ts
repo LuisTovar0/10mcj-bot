@@ -2,12 +2,12 @@ import FileDataModel from "../../persistence/dataModel/file.dataModel";
 
 export default interface IFileRepo {
 
-  getById(fileId: string): Promise<FileDataModel | undefined>;
+  getById(fileId: string): Promise<FileDataModel | null>;
 
   save(dataModel: FileDataModel): Promise<FileDataModel>;
 
-  getByDomainId(domainId: string): Promise<FileDataModel | undefined>;
+  getByDomainId(domainId: string): Promise<FileDataModel | null>;
 
-  remove(fileId: string): Promise<FileDataModel | undefined>;
+  remove(fileId: string): Promise<FileDataModel | null>;
 
 }

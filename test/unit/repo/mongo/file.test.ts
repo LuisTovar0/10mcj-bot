@@ -50,7 +50,7 @@ describe('[Unit] FileMongoRepo + MongoDB server', () => {
     assert.ok(ret);
     assert.ok(ret.file);
     const get = await repo.getById(id);
-    assert.equal(get, undefined);
+    assert.equal(get, null);
   });
 
 })

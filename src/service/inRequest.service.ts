@@ -9,6 +9,20 @@ import ISimpleUserService from "./iService/iSimpleUser.service";
 import SimpleUser, {SimpleUserProps} from "../domain/simpleUser";
 import UniqueEntityID from "../domain/core/uniqueEntityId";
 
+type RequestList = {
+  user?: string;
+  requests: number;
+}[];
+
+type AuxRequestList = {
+  user: {
+    domainId: string;
+    username?: string;
+    // chatId: number;
+  };
+  requests: number;
+}[];
+
 @Service()
 export default class InRequestService implements IInRequestService {
 
@@ -29,23 +43,22 @@ export default class InRequestService implements IInRequestService {
     return InRequest.create(user, persistedDataModel.date, persistedDataModel.domainId);
   }
 
-  async getRequestsSince(dateLong: number) {
+  async getRequestsSince(dateLong: number): Promise<RequestList> {
     const requestDataModels = await this.repo.requestsSince(dateLong);
-    const res: { user: { domainId: string, username?: string }, requests: number }[] = [];
+    const res: AuxRequestList = [];
     for (const req of requestDataModels) {
       const entry = res.find(v => v.user.domainId === req.user);
-      if (entry) entry.requests += 1;
+      if (entry)
+        entry.requests += 1;
       else {
         const user = await this.userService.getUserByDomainId(req.user);
         res.push({user: {domainId: user.domainId.toString(), username: user.username}, requests: 1});
       }
     }
-    return res.map(v => {
-      return {
-        requests: v.requests,
-        user: v.user.username
-      };
-    });
+    return res.map(v => ({
+      requests: v.requests,
+      user: v.user.username
+    }));
   }
 
   getLastMonthRequests() {

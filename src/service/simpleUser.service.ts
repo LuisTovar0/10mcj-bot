@@ -28,10 +28,10 @@ export default class SimpleUserService implements ISimpleUserService {
     throw new Error(`User ${props.id}@${props.username} has been added already.`);
   }
 
-  async getUserByDomainId(id: string): Promise<SimpleUser> {
-    const dataModel = await this.repo.getByDomainId(id);
+  async getUserByDomainId(domainId: string): Promise<SimpleUser> {
+    const dataModel = await this.repo.getByDomainId(domainId);
     if (!dataModel)
-      throw new Error(`User with domain ID ${id} doesn't exist.`);
+      throw new Error(`User with domain ID ${domainId} doesn't exist.`);
     else
       return mapper.dataModelToDomain(dataModel);
   }

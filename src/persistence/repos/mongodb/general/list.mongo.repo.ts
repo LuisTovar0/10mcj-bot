@@ -16,7 +16,7 @@ export default abstract class ListMongoRepo implements IListRepo {
         unique: true,
         required: [true, `MongoDB requires a username in a ${name} elem.`]
       }
-    }))
+    }));
   }
 
   async add(username: string): Promise<void> {
@@ -25,7 +25,7 @@ export default abstract class ListMongoRepo implements IListRepo {
 
   async contains(username: string): Promise<boolean> {
     const here = await this.schema.findOne({username});
-    return !!here
+    return !!here;
   }
 
   async remove(username: string): Promise<void> {
@@ -33,6 +33,6 @@ export default abstract class ListMongoRepo implements IListRepo {
   }
 
   async fullList(): Promise<string[]> {
-    return this.schema.find();
+    return (await this.schema.find()).map(a => a.username);
   }
 }
