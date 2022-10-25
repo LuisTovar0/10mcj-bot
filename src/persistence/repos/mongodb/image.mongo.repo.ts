@@ -43,6 +43,10 @@ export default class ImageMongoRepo extends MongoRepo<ImageDataModel> implements
     return imageMapper.dataModelToDto(removedImg, removedFile);
   }
 
+  async getAll(): Promise<ImageDto[]> {
+    return await this.schema.find();
+  }
+
   constructor(
     @Inject(config.deps.repo.file.name) private fileRepo: IFileRepo
   ) {

@@ -1,15 +1,17 @@
 import 'reflect-metadata';
+import {Container} from "typedi";
 import fs from 'fs';
 import del from "del";
 
 import loaders from "./loaders";
+import server from "./server";
 import {tempFolder} from "./config/constants";
-import {Container} from "typedi";
 import config from "./config";
 import IBotService from "./service/iService/telegramBot/IBotService";
 
 async function app() {
   loaders();
+  server();
 
   //#region make sure our audios folder exists, or clean it
   async function newCleanFolder(folderName: string) {
@@ -22,7 +24,6 @@ async function app() {
   }
 
   //#endregion
-
   await newCleanFolder(tempFolder);
 
   // set up and run the bot

@@ -10,4 +10,6 @@ export default interface IImageService {
 
   remove(id: string): Promise<ImageDto | null>;
 
+  getAll(): Promise<ImageDto[]>;
+
 }

@@ -28,4 +28,8 @@ export default class ImageService implements IImageService {
     return await this.repo.remove(id);
   }
 
+  async getAll() {
+    return await this.repo.getAll();
+  }
+
 }
