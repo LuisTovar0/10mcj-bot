@@ -155,7 +155,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
         return;
       }
 
-      const command = await this.convoService.getCommand(chatId);
+      const command = await this.convoService.getCommand(chatId) as string;
       if (this.pt.isPtCommand(command)) {
         await this.pt.handleAudio(bot, msg, reply);
       } else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
@@ -178,7 +178,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
         }
       }
 
-      const command = await this.convoService.getCommand(chatId);
+      const command = await this.convoService.getCommand(chatId) as string;
       if (this.pt.isPtCommand(command))
         await this.pt.handleText(msg, reply);
       else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);

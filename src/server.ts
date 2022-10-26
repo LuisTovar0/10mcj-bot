@@ -19,6 +19,8 @@ export default () => {
   );
 
   const imageService = Container.get(config.deps.service.image.name) as IImageService;
+  const botUtils = Container.get(config.deps.service.botUtils.name) as IBotUtilsService;
+
   app.get('/image/:id.png', async (req, res) => {
     if (!req.params.id)
       return res.status(400).send('Bad ID');
@@ -55,11 +57,8 @@ export default () => {
   });
 
   const server = app.listen(process.env.PORT || 15000, async () => {
-    const botUtils = Container.get(config.deps.service.botUtils.name) as IBotUtilsService;
     await botUtils.sendMessage(botUtils.adminChatId, 'Site is up in ' + config.runningEnv);
   });
 
-  const host = server.address();
-  console.log(host);
-
+  Container.set('server', server);
 }

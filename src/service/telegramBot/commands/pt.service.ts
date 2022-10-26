@@ -8,7 +8,7 @@ import IPtService from "../../iService/telegramBot/iPt.service";
 import {Bot, ReplyQueue} from "../types/botgram";
 import {InputFile, messageAudio, messageText} from "../types/model";
 import BotError from "../botError";
-import IConvoMemoryService from "../../iService/telegramBot/iConvoMemory.service";
+import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/iConvoMemory.service";
 import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.service";
 import config from "../../../config";
 import IImageEditingService from "../../iService/iImageEditing.service";
@@ -77,7 +77,10 @@ export default class PtService implements IPtService {
 
   async handleAudio(bot: Bot, msg: messageAudio, reply: ReplyQueue): Promise<void> {
     const chatId = msg.chat.id;
-    if (await this.convoService.hasAudio(chatId)) {
+    const hasAudio = await this.convoService.hasAudio(chatId);
+    if (hasAudio === null)
+      throw await ConvoError.new(this.convoService, chatId);
+    if (hasAudio) {
       // audio was already received
       reply.text(`já tinhas mandado áudio. manda aí texto`);
       return;
@@ -99,8 +102,8 @@ export default class PtService implements IPtService {
       await this.convoService.setText(chatId, this.textFormattingService.getFullInfo(msg.text));
       await this.finalResponse(chatId, reply);
     } else {
-      // if we don't have audio but already have text, let the user know
       if (await this.convoService.getText(chatId))
+        // if we don't have audio but already have text, let the user know
         throw new BotError(`já tinhas mandado texto, agora tens de mandar áudio.\nou então /cancel`);
       const texts = this.textFormattingService.getFullInfo(msg.text);
       await this.convoService.setText(chatId, texts);
