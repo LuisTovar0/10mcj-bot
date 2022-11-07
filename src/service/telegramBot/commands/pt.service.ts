@@ -41,14 +41,16 @@ export default class PtService implements IPtService {
     const registarComando = (bot: Bot, comando: string) => {
       bot.command(comando, async (msg, reply) => {
         const exists = await this.convoService.exists(msg.chat.id);
-        if (!exists) {
-          await this.convoService.set(msg.chat.id, {
-            command: comando, data: {
-              audio: false
-            }
-          });
-          reply.text(`okapa. que venham o áudio e o texto`);
-        } else reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
+        if (exists) {
+          reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
+          return;
+        }
+        await this.convoService.set(msg.chat.id, {
+          command: comando, data: {
+            audio: false
+          }
+        });
+        reply.text(`okapa. que venham o áudio e o texto`);
       });
     };
 
@@ -68,7 +70,7 @@ export default class PtService implements IPtService {
       fs.writeFileSync(generatedFileName, generatedFile);
       const fd = new FormData();
       fd.append('photo', fs.createReadStream(generatedFileName));
-      await axios.post(`${this.botUtils.telegramUrl}/sendPhoto`,
+      await axios.post(`${this.botUtils.methodsUrl}/sendPhoto`,
         fd, {params: {chat_id: msg.chat.id}});
       fs.unlinkSync(generatedFileName);
     });
@@ -79,7 +81,7 @@ export default class PtService implements IPtService {
     const chatId = msg.chat.id;
     const hasAudio = await this.convoService.hasAudio(chatId);
     if (hasAudio === null)
-      throw await ConvoError.new(this.convoService, chatId);
+      throw await ConvoError.new(this.convoService, chatId, 'hasAudio at handleAudio');
     if (hasAudio) {
       // audio was already received
       reply.text(`já tinhas mandado áudio. manda aí texto`);
@@ -88,7 +90,7 @@ export default class PtService implements IPtService {
 
     reply.text(`péràí... a baixar`);
     reply.text(`\u{1F4E5}`);
-    await this.botUtils.saveFile(bot, msg, `${tempFolder}/${chatId}`);
+    await this.botUtils.saveFile(bot, msg.file, `${tempFolder}/${chatId}`);
     await this.convoService.setAudio(chatId, true);
     if (await this.convoService.getText(chatId))
       await this.finalResponse(chatId, reply);
@@ -129,7 +131,7 @@ export default class PtService implements IPtService {
 
           const fd = new FormData();
           fd.append('audio', file);
-          await axios.post(`${this.botUtils.telegramUrl}/sendAudio`,
+          await axios.post(`${this.botUtils.methodsUrl}/sendAudio`,
             fd, {
               params: {
                 chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',

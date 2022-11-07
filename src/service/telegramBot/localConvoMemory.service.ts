@@ -1,9 +1,11 @@
 import {Service} from "typedi";
 
 import IConvoMemoryService, {
+  AddImageData,
   Convo,
   Data,
   InfosForText,
+  isAddImageData,
   isTextData,
   TextData
 } from "../iService/telegramBot/iConvoMemory.service";
@@ -37,6 +39,10 @@ export default class LocalConvoMemoryService implements IConvoMemoryService {
     return convo ? convo : null;
   }
 
+  /**
+   * If chat isn't being recorded, returns null.<br/>
+   * If data isn't present, returns undefined.
+   */
   async getData(chatId: number): Promise<Data | null | undefined> {
     const convo = await this.wholeConvo(chatId);
     if (!convo) return null;
@@ -93,6 +99,30 @@ export default class LocalConvoMemoryService implements IConvoMemoryService {
     const data = await this.getData(chatId);
     if (!isTextData(data)) return false;
     (this.memory[chatId].data as TextData).text = text;
+    return true;
+  }
+
+  //#endregion
+
+  //#region add image data
+  async getAddImageData(chatId: number): Promise<AddImageData | null | undefined> {
+    const data = await this.getData(chatId);
+    if (!data) return data;
+    if (!isAddImageData(data)) return undefined;
+    return data;
+  }
+
+  async setImg(chatId: number, img: Buffer): Promise<boolean> {
+    const data = await this.getAddImageData(chatId);
+    if (!data) return false;
+    (this.memory[chatId].data as AddImageData).image = img;
+    return true;
+  }
+
+  async setImgName(chatId: number, name: string): Promise<boolean> {
+    const data = await this.getAddImageData(chatId);
+    if (!data) return false;
+    (this.memory[chatId].data as AddImageData).name = name;
     return true;
   }
 

@@ -7,7 +7,7 @@ export function dataModelToDto(img: ImageDataModel, file: FileDataModel): ImageD
   return {
     domainId: img.domainId,
     offset: img.offset,
-    format: img.format,
+    // format: img.format,
     file: fileMapper.dataModelToDto(file)
   };
 }
@@ -16,7 +16,7 @@ export function dtoToDataModel(dto: ImageDto): { img: ImageDataModel, file: File
   const img: ImageDataModel = {
     domainId: dto.domainId,
     offset: dto.offset,
-    format: dto.format,
+    // format: dto.format,
     fileDomainId: dto.file.domainId
   };
   const file = fileMapper.dtoToDataModel(dto.file);

@@ -19,8 +19,6 @@ const config = {
       imageEditing: {
         name: 'CanvasService',
         path: './service/canvas.service'
-        //name: 'PixoEditorService',
-        //path: './service/pixoEditor.service'
       } as Dep,
       simpleUser: {
         name: 'SimpleUserService',
@@ -49,6 +47,10 @@ const config = {
       pt: {
         name: 'PtService',
         path: './service/telegramBot/commands/pt.service'
+      } as Dep,
+      imageCommands: {
+        name: 'ImageCommands',
+        path: './service/telegramBot/commands/image.commands'
       } as Dep,
       bot: {
         name: 'BotService',

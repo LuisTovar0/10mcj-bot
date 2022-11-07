@@ -1,4 +1,5 @@
 import {Container, Service} from "typedi";
+import del from "del";
 import axios from "axios";
 import fs from "fs";
 
@@ -7,19 +8,20 @@ import {Bot, Message, ReplyQueue} from "./types/botgram";
 import BotError from "./botError";
 import IBotUtilsService from "../iService/telegramBot/iBotUtils.service";
 import config, {loadEnvVar} from "../../config";
-import del from "del";
 import {tempFolder} from "../../config/constants";
 import IConvoMemoryService from "../iService/telegramBot/iConvoMemory.service";
 
 @Service()
 export default class BotUtilsService implements IBotUtilsService {
 
-  readonly telegramUrl = `https://api.telegram.org/bot${loadEnvVar('botToken')}`;
+  readonly token = loadEnvVar('botToken');
+  readonly filesUrl = `https://api.telegram.org/file/bot${this.token}`;
+  readonly methodsUrl = `https://api.telegram.org/bot${this.token}`;
   readonly adminChatId = Number(loadEnvVar('adminChatId'));
 
   async apiMethod(method: string, params: any) {
     // const apiFunc = `/${method}?${new URLSearchParams(params).toString()}`;
-    const axiosResponse = await axios.get<void>(`${this.telegramUrl}/${method}`, {params});
+    const axiosResponse = await axios.get<void>(`${this.methodsUrl}/${method}`, {params});
     console.log(`posted: /${axiosResponse.request.path.split('/')[2]}`);
   }
 
@@ -27,9 +29,9 @@ export default class BotUtilsService implements IBotUtilsService {
     await this.apiMethod('sendMessage', {chat_id: chatId, text: message});
   }
 
-  saveFile(bot: Bot, msg: Message & { file: FileLike }, fileName: fs.PathLike): Promise<void> {
+  saveFile(bot: Bot, file: FileLike, fileName: fs.PathLike): Promise<void> {
     return new Promise(resolve => {
-      bot.fileLoad(msg.file, (err: any, buffer: any) => {
+      bot.fileLoad(file, (err: any, buffer: any) => {
         if (err) throw err;
         let stream = fs.createWriteStream(fileName);
         stream.on('close', async (err: any) => {

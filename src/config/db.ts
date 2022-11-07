@@ -15,10 +15,6 @@ export const repoDeps = (dbType: string) => {
       name: 'InRequestLocalRepo',
       path: './persistence/repos/local/inRequest.local.repo'
     },
-    whitelist: {
-      name: 'WhitelistLocalRepo',
-      path: './persistence/repos/local/whitelist.local.repo'
-    },
     blacklist: {
       name: 'BlacklistLocalRepo',
       path: './persistence/repos/local/blacklist.local.repo'

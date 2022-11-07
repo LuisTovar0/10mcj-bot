@@ -10,6 +10,7 @@ import IConvoMemoryService from "../iService/telegramBot/iConvoMemory.service";
 import IListsService from "../iService/telegramBot/IListsService";
 import IPtService from "../iService/telegramBot/iPt.service";
 import BotError from "./botError";
+import IImageCommandsService from "../iService/iImageCommands.service";
 
 
 const botgram = require("botgram");
@@ -24,6 +25,7 @@ export default class BotService implements IBotService {
     @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
     @Inject(config.deps.service.lists.name) private listsService: IListsService,
     @Inject(config.deps.service.pt.name) private pt: IPtService,
+    @Inject(config.deps.service.imageCommands.name) private imageCommands: IImageCommandsService,
   ) {
   }
 
@@ -80,6 +82,7 @@ export default class BotService implements IBotService {
 
     this.pt.registerCommands(bot);
     this.listsService.registerCommands(bot);
+    this.imageCommands.registerCommands(bot);
 
     //#region commands
 
@@ -161,6 +164,20 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       } else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
     });
 
+    bot.photo(async (msg, reply) => {
+      const chatId = msg.chat.id;
+      const exists = await this.convoService.exists(chatId);
+      if (!exists) {
+        reply.text(`You didn't use a command. I'll be ignoring this photo.`);
+        return;
+      }
+
+      const command = await this.convoService.getCommand(chatId) as string;
+      if (this.imageCommands.isImageCommand(command))
+        await this.imageCommands.handlePhoto(bot, msg, reply);
+      else reply.text(`This command doesn't want you to send photos.`);
+    });
+
     bot.text(async (msg, reply) => {
       const chatId = msg.chat.id;
       const exists = await this.convoService.exists(chatId);
@@ -181,6 +198,8 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       const command = await this.convoService.getCommand(chatId) as string;
       if (this.pt.isPtCommand(command))
         await this.pt.handleText(msg, reply);
+      else if (this.imageCommands.isImageCommand(command))
+        await this.imageCommands.handleText(msg, reply);
       else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
     });
     //#endregion
