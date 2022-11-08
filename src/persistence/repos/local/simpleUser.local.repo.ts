@@ -1,9 +1,7 @@
-import ISimpleUserRepo from "../../../service/iRepos/iSimpleUser.repo";
-import {Service} from "typedi";
 import SimpleUserDataModel from "../../dataModel/simpleUser.dataModel";
 
-@Service()
-export default class SimpleUserLocalRepo implements ISimpleUserRepo {
+// @Service()
+export default class SimpleUserLocalRepo /*implements ISimpleUserRepo*/ {
 
   private readonly repo = new Array<SimpleUserDataModel>();
 

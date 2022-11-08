@@ -13,4 +13,6 @@ export default interface ISimpleUserRepo {
 
   getByUsername(username: string): Promise<SimpleUserDataModel | null>;
 
+  updateUser(dataModel: SimpleUserDataModel): Promise<void>;
+
 }

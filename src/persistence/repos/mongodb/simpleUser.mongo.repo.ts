@@ -13,11 +13,11 @@ export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> im
   }
 
   async getByDomainId(id: string): Promise<SimpleUserDataModel | null> {
-    return this.findByDomainId(id);
+    return await this.findByDomainId(id);
   }
 
   async getById(id: number): Promise<SimpleUserDataModel | null> {
-    return this.schema.findOne({id});
+    return await this.schema.findOne({id});
   }
 
   async save(dataModel: SimpleUserDataModel): Promise<SimpleUserDataModel> {
@@ -25,7 +25,11 @@ export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> im
   }
 
   async getByUsername(username: string): Promise<SimpleUserDataModel | null> {
-    return this.schema.findOne({username});
+    return await this.schema.findOne({username});
+  }
+
+  async updateUser(dataModel: SimpleUserDataModel): Promise<void> {
+    await this.schema.updateOne({domainId: dataModel.domainId}, dataModel, {},);
   }
 
 }
@@ -45,6 +49,7 @@ const schema = model<SimpleUserDataModel>(`Simple User`, new Schema({
     type: String,
     unique: true
   },
+  chosenPhotoId: String
   // firstname: {
   //   type: String,
   //   required: [true, `MongoDB requires a SimpleUser first name.`]

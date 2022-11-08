@@ -17,7 +17,6 @@ describe('[Integration] ImageMongoRepo + FileMongoRepo + MongoDB server', functi
   const dto: ImageDto = {
     domainId: new UniqueEntityID().toString(),
     offset: 600,
-    format: 'png',
     file: {
       domainId: new UniqueEntityID().toString(),
       id: randStr.generate(),

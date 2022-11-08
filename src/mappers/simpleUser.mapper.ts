@@ -6,11 +6,10 @@ export function domainToDataModel(user: SimpleUser): SimpleUserDataModel {
     domainId: user.domainId.toString(),
     id: user.id,
     username: user.username,
-    // firstName: user.firstName,
-    // lastName: user.lastName
+    chosenPhotoId: user.chosenPhotoId
   };
 }
 
-export function dataModelToDomain({domainId, id, username/*, firstName, lastName*/}: SimpleUserDataModel): SimpleUser {
-  return new SimpleUser({id, username/*, firstname: firstName, lastname: lastName*/}, domainId);
+export function dataModelToDomain({domainId, id, username, chosenPhotoId}: SimpleUserDataModel): SimpleUser {
+  return new SimpleUser({id, username, chosenPhotoId}, domainId);
 }

@@ -52,4 +52,10 @@ export default class SimpleUserService implements ISimpleUserService {
       return mapper.dataModelToDomain(dataModel);
   }
 
+  async choosePhoto(chatId: number, photoId: string): Promise<void> {
+    const user = await this.getUserById(chatId);
+    user.chosenPhotoId = photoId;
+    await this.repo.updateUser(mapper.domainToDataModel(user));
+  }
+
 }

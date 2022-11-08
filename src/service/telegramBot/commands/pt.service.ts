@@ -1,7 +1,6 @@
 import {Inject, Service} from "typedi";
 import fs from "fs";
 import FormData from 'form-data';
-import moment from "moment";
 import axios from "axios";
 
 import IPtService from "../../iService/telegramBot/iPt.service";
@@ -11,9 +10,9 @@ import BotError from "../botError";
 import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/iConvoMemory.service";
 import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.service";
 import config from "../../../config";
-import IImageEditingService from "../../iService/iImageEditing.service";
-import {filesFolder, tempFolder} from "../../../config/constants";
+import {tempFolder} from "../../../config/constants";
 import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
+import IImageService from "../../iService/iImage.service";
 
 @Service()
 export default class PtService implements IPtService {
@@ -23,8 +22,8 @@ export default class PtService implements IPtService {
   constructor(
     @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
     @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
-    @Inject(config.deps.service.imageEditing.name) private imageEditingService: IImageEditingService,
     @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
+    @Inject(config.deps.service.image.name) private imageService: IImageService,
   ) {
   }
 
@@ -58,22 +57,6 @@ export default class PtService implements IPtService {
 
     if (this.channel)
       registarComando(bot, `pt_enviar`);
-
-    bot.command(`pt_img`, async msg => {
-      const title = msg.text.split(' ').slice(1).join(' ');
-      const {day, month, year} = this.textFormattingService.theDate();
-      moment.locale('pt-pt');
-      const date = moment().date(day).month(month).year(year).format("DD MMMM YYYY").toString();
-      const photo = fs.readFileSync(`${filesFolder}/rapaz.jpg`);
-      const generatedFile = await this.imageEditingService.generate(photo, date, title);
-      const generatedFileName = `./${moment().valueOf()}.png`;
-      fs.writeFileSync(generatedFileName, generatedFile);
-      const fd = new FormData();
-      fd.append('photo', fs.createReadStream(generatedFileName));
-      await axios.post(`${this.botUtils.methodsUrl}/sendPhoto`,
-        fd, {params: {chat_id: msg.chat.id}});
-      fs.unlinkSync(generatedFileName);
-    });
 
   }
 

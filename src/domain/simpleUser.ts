@@ -4,8 +4,7 @@ import UniqueEntityID from "./core/uniqueEntityId";
 export interface SimpleUserProps {
   id: number;
   username?: string;
-  // firstname: string;
-  // lastname: string | null;
+  chosenPhotoId?: string;
 }
 
 export default class SimpleUser extends Entity<SimpleUserProps> {
@@ -22,12 +21,12 @@ export default class SimpleUser extends Entity<SimpleUserProps> {
     return this.props.username;
   }
 
-  // get firstName() {
-  //   return this.props.firstname;
-  // }
-  //
-  // get lastName() {
-  //   return this.props.lastname;
-  // }
+  get chosenPhotoId() {
+    return this.props.chosenPhotoId;
+  }
+
+  set chosenPhotoId(value: string | undefined) {
+    this.props.chosenPhotoId = value;
+  }
 
 }

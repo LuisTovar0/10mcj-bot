@@ -79,7 +79,7 @@ describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
     assert.equal(res, undefined);
   });
 
-  it('Get user by domain ID', async () => {
+  it('Get user by domain ID success', async () => {
     const res = await repo.getByDomainId(dataModel.domainId);
     assert.ok(res);
     assert.equal(res.domainId, dataModel.domainId);
@@ -87,8 +87,37 @@ describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
     assert.equal(res.username, dataModel.username);
   });
 
-  it('Get user by domain ID', async () => {
+  it('Get user by domain ID not found', async () => {
     const res = await repo.getByDomainId(new UniqueEntityID().toString());
+    assert.equal(res, null);
+  });
+
+  it('Update user success', async () => {
+    const chosenPhotoId = randomstring.generate();
+    const updated = {
+      ...dataModel,
+      chosenPhotoId
+    } as SimpleUserDataModel;
+    await repo.updateUser(updated);
+
+    const res = await repo.getByDomainId(updated.domainId);
+    assert.ok(res);
+    assert.equal(res.domainId, dataModel.domainId);
+    assert.equal(res.id, dataModel.id);
+    assert.equal(res.username, dataModel.username);
+    assert.equal(res.chosenPhotoId, chosenPhotoId);
+  });
+
+  it('Update non existing user', async () => {
+    const nonExistingUser = {
+      domainId: new UniqueEntityID().toString(),
+      id: Math.floor(Math.random() * 10000000000),
+      username: randomstring.generate(),
+      chosenPhotoId: randomstring.generate()
+    } as SimpleUserDataModel;
+    await repo.updateUser(nonExistingUser);
+
+    const res = await repo.getByDomainId(nonExistingUser.domainId);
     assert.equal(res, null);
   });
 

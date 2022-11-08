@@ -10,4 +10,6 @@ export default interface ISimpleUserService {
 
   getByUsername(username: string): Promise<SimpleUser>;
 
+  choosePhoto(chatId: number, photoId: string): Promise<void>;
+
 }
