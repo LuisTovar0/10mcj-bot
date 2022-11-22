@@ -1,9 +1,7 @@
 import {Inject, Service} from "typedi";
 
-import {Bot, File, ReplyQueue} from "../types/botgram";
 import config from "../../../config";
 import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/iConvoMemory.service";
-import {messagePhoto, messageText} from "../types/model";
 import IImageCommandsService from "../../iService/iImageCommands.service";
 import IImageService from "../../iService/iImage.service";
 import IListsService from "../../iService/telegramBot/IListsService";
@@ -19,6 +17,7 @@ import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.s
 import IImageEditingService from "../../iService/iImageEditing.service";
 import FormData from "form-data";
 import ISimpleUserService from "../../iService/iSimpleUser.service";
+import {Telegraf} from "telegraf";
 
 @Service()
 export default class ImageCommands implements IImageCommandsService {
@@ -34,29 +33,29 @@ export default class ImageCommands implements IImageCommandsService {
   ) {
   }
 
-  registerCommands(bot: Bot) {
+  registerCommands(bot: Telegraf) {
 
-    bot.command('img_add', async (msg, reply) => {
-      await this.listsService.whitelist.onlyAdminsAllowed(msg, reply);
-      const chatId = msg.chat.id;
+    bot.command('img_add', async ctx => {
+      // await this.listsService.whitelist.onlyAdminsAllowed(ctx.chat.id); //todo
+      const chatId = ctx.chat.id;
       const existingConvo = await this.convoService.wholeConvo(chatId);
       if (existingConvo) {
-        reply.text(`You were using the ${existingConvo.command} command. Wanna /cancel?`);
+        ctx.reply(`You were using the ${existingConvo.command} command. Wanna /cancel?`);
         return;
       }
 
-      await this.convoService.set(chatId, {command: msg.command, data: {}});
-      reply.text('OK. manda a imagem e o identificador');
+      await this.convoService.set(chatId, {command: ctx.message.text, data: {}});
+      ctx.reply('OK. manda a imagem e o identificador');
     });
 
-    bot.command(`pt_img`, async msg => {
-      const title = msg.text.split(' ').slice(1).join(' ');
+    bot.command(`pt_img`, async ctx => {
+      const title = ctx.message.text.split(' ').slice(1).join(' ');
       const {day, month, year} = this.textFormattingService.theDate();
       moment.locale('pt-pt');
       const date = moment().date(day).month(month).year(year).format("DD MMMM YYYY").toString();
 
       // getting the chosen photo or using the default photo
-      const user = await this.simpleUserService.getUserById(msg.chat.id);
+      const user = await this.simpleUserService.getUserById(ctx.chat.id);
       const chosenPhotoId = user.chosenPhotoId;
       let photo;
       if (chosenPhotoId) {
@@ -74,29 +73,29 @@ export default class ImageCommands implements IImageCommandsService {
       const fd = new FormData();
       fd.append('photo', fs.createReadStream(generatedFileName));
       await axios.post(`${this.botUtils.methodsUrl}/sendPhoto`,
-        fd, {params: {chat_id: msg.chat.id}});
+        fd, {params: {chat_id: ctx.chat.id}});
       fs.unlinkSync(generatedFileName);
     });
 
-    bot.command(`img_choose`, async (msg, reply) => {
-      const imgId = msg.text.split(' ').slice(1).join(' ');
+    bot.command(`img_choose`, async ctx => {
+      const imgId = ctx.message.text.split(' ').slice(1).join(' ');
       const image = await this.imageService.getById(imgId);
       if (!image) {
-        reply.text(`Image not found. check out the available image IDs [here](http://localhost:15000/images)`, 'Markdown');
+        ctx.reply(`Image not found. check out the available image IDs [here](http://localhost:15000/images)`, {parse_mode: 'Markdown'});
         return;
       }
-      await this.simpleUserService.choosePhoto(msg.chat.id, imgId);
-      reply.text('Set \u{1F44D}');
+      await this.simpleUserService.choosePhoto(ctx.chat.id, imgId);
+      ctx.reply('Set \u{1F44D}');
     });
 
-    bot.command('chosen_img', async (msg, reply) => {
-      const user = await this.simpleUserService.getUserById(msg.chat.id);
-      reply.text(user.chosenPhotoId ? user.chosenPhotoId : 'No image set. Default will be used.');
+    bot.command('chosen_img', async ctx => {
+      const user = await this.simpleUserService.getUserById(ctx.chat.id);
+      ctx.reply(user.chosenPhotoId ? user.chosenPhotoId : 'No image set. Default will be used.');
     });
 
   }
 
-  async handlePhoto(bot: Bot, msg: messagePhoto, reply: ReplyQueue): Promise<void> {
+  async handlePhoto(bot: Telegraf, msg: messagePhoto, reply: ReplyQueue): Promise<void> {
     const chatId = msg.chat.id;
     const command = await this.convoService.getCommand(chatId);
     if (command === null) throw await ConvoError.new(this.convoService, chatId, 'getCommand at handle photo');

@@ -1,7 +1,4 @@
-import fs from "fs";
-
-import {Bot, Message, ReplyQueue} from "../../telegramBot/types/botgram";
-import {FileLike} from "../../telegramBot/types/model";
+import {Context} from "telegraf";
 
 export default interface IBotUtilsService {
   token: string;
@@ -13,15 +10,11 @@ export default interface IBotUtilsService {
 
   sendMessage(chatId: number, message: string): Promise<void>;
 
-  markdownHideLinks(reply: ReplyQueue, text: string): void;
-
-  textHideLinks(reply: ReplyQueue, text: string): void;
-
   deleteUserData(chatId: number): Promise<void>;
 
-  ensureMsgIsFromAdmin(msg: Message): void;
+  ensureMsgIsFromAdmin(ctx: Context): void;
 
-  msgIsFromAdmin(msg: Message): boolean;
+  msgIsFromAdmin(ctx: Context): boolean;
 
-  saveFile(bot: Bot, file: FileLike, fileName: fs.PathLike): Promise<void>;
+  // saveFile(bot: Telegraf, file: FileLike, fileName: fs.PathLike): Promise<void>;
 }

@@ -1,15 +1,13 @@
 import {Container, Service} from "typedi";
 import del from "del";
 import axios from "axios";
-import fs from "fs";
 
-import {FileLike} from "./types/model";
-import {Bot, Message, ReplyQueue} from "./types/botgram";
 import BotError from "./botError";
 import IBotUtilsService from "../iService/telegramBot/iBotUtils.service";
 import config, {loadEnvVar} from "../../config";
 import {tempFolder} from "../../config/constants";
 import IConvoMemoryService from "../iService/telegramBot/iConvoMemory.service";
+import {Context} from "telegraf";
 
 @Service()
 export default class BotUtilsService implements IBotUtilsService {
@@ -29,22 +27,22 @@ export default class BotUtilsService implements IBotUtilsService {
     await this.apiMethod('sendMessage', {chat_id: chatId, text: message});
   }
 
-  saveFile(bot: Bot, file: FileLike, fileName: fs.PathLike): Promise<void> {
-    return new Promise(resolve => {
-      bot.fileLoad(file, (err: any, buffer: any) => {
-        if (err) throw err;
-        let stream = fs.createWriteStream(fileName);
-        stream.on('close', async (err: any) => {
-          if (err) {
-            console.log(err);
-            throw new BotError(`Failed creating ${fileName}`);
-          }
-          resolve();
-        });
-        stream.end(buffer);
-      });
-    });
-  }
+  // saveFile(bot: Telegraf, file: FileLike, fileName: fs.PathLike): Promise<void> {
+  //   return new Promise(resolve => {
+  //     bot.fileLoad(file, (err: any, buffer: any) => {
+  //       if (err) throw err;
+  //       let stream = fs.createWriteStream(fileName);
+  //       stream.on('close', async (err: any) => {
+  //         if (err) {
+  //           console.log(err);
+  //           throw new BotError(`Failed creating ${fileName}`);
+  //         }
+  //         resolve();
+  //       });
+  //       stream.end(buffer);
+  //     });
+  //   });
+  // }
 
   async deleteUserData(chatId: number): Promise<void> {
     // delete audio if exists
@@ -54,22 +52,14 @@ export default class BotUtilsService implements IBotUtilsService {
     await convoService.delete(chatId);
   }
 
-  ensureMsgIsFromAdmin(msg: Message): void {
-    if (!this.msgIsFromAdmin(msg))
+  ensureMsgIsFromAdmin(ctx: Context): void {
+    if (!this.msgIsFromAdmin(ctx))
       throw new BotError('Not allowed.');
   }
 
-  markdownHideLinks(reply: ReplyQueue, text: string): void {
-    reply.sendGeneric("sendMessage",
-      {text: text, parse_mode: "Markdown", disable_web_page_preview: true});
-  }
-
-  msgIsFromAdmin(msg: Message): boolean {
-    return msg.chat.id === this.adminChatId;
-  }
-
-  textHideLinks(reply: ReplyQueue, text: string): void {
-    reply.sendGeneric("sendMessage", {text: text, disable_web_page_preview: true});
+  msgIsFromAdmin(ctx: Context): boolean {
+    if (!ctx || !ctx.chat) return false;
+    return ctx.chat.id === this.adminChatId;
   }
 
 }

@@ -4,15 +4,15 @@ import FormData from 'form-data';
 import axios from "axios";
 
 import IPtService from "../../iService/telegramBot/iPt.service";
-import {Bot, ReplyQueue} from "../types/botgram";
-import {InputFile, messageAudio, messageText} from "../types/model";
 import BotError from "../botError";
-import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/iConvoMemory.service";
+import IConvoMemoryService from "../../iService/telegramBot/iConvoMemory.service";
 import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.service";
 import config from "../../../config";
 import {tempFolder} from "../../../config/constants";
 import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
 import IImageService from "../../iService/iImage.service";
+import {Context, Telegraf} from "telegraf";
+import {InputFile} from "telegraf/types";
 
 @Service()
 export default class PtService implements IPtService {
@@ -27,29 +27,29 @@ export default class PtService implements IPtService {
   ) {
   }
 
-  registerCommands(bot: Bot): void {
+  registerCommands(bot: Telegraf): void {
 
-    bot.command(`pt`, async (msg, reply) => {
-      reply.text(`Comandos disponíveis:
+    bot.command(`pt`, async ctx => {
+      ctx.reply(`Comandos disponíveis:
 /pt_testar mostra o funcionamento normal do bot, mas sem enviar mensagens${this.channel ? `
 /pt_enviar pede algumas informações e envia a mensagen para o canal de Telegram` : ''}
 /pt_img`);
     });
 
     // para comandos de edição de áudios e textos
-    const registarComando = (bot: Bot, comando: string) => {
-      bot.command(comando, async (msg, reply) => {
-        const exists = await this.convoService.exists(msg.chat.id);
+    const registarComando = (bot: Telegraf, comando: string) => {
+      bot.command(comando, async ctx => {
+        const exists = await this.convoService.exists(ctx.chat.id);
         if (exists) {
-          reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
+          ctx.reply(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
           return;
         }
-        await this.convoService.set(msg.chat.id, {
+        await this.convoService.set(ctx.chat.id, {
           command: comando, data: {
             audio: false
           }
         });
-        reply.text(`okapa. que venham o áudio e o texto`);
+        ctx.reply(`okapa. que venham o áudio e o texto`);
       });
     };
 
@@ -60,43 +60,50 @@ export default class PtService implements IPtService {
 
   }
 
-  async handleAudio(bot: Bot, msg: messageAudio, reply: ReplyQueue): Promise<void> {
-    const chatId = msg.chat.id;
-    const hasAudio = await this.convoService.hasAudio(chatId);
-    if (hasAudio === null)
-      throw await ConvoError.new(this.convoService, chatId, 'hasAudio at handleAudio');
-    if (hasAudio) {
-      // audio was already received
-      reply.text(`já tinhas mandado áudio. manda aí texto`);
-      return;
-    }
+  // async handleAudio(bot: Telegraf, ctx: Context): Promise<void> {
+  //   if (!ctx || !ctx.chat) throw new Error();
+  //   const chatId = ctx.chat.id;
+  //   const hasAudio = await this.convoService.hasAudio(chatId);
+  //   if (hasAudio === null)
+  //     throw await ConvoError.new(this.convoService, chatId, 'hasAudio at handleAudio');
+  //   if (hasAudio) {
+  //     // audio was already received
+  //     await ctx.reply(`já tinhas mandado áudio. manda aí texto`);
+  //     return;
+  //   }
+  //
+  //   await ctx.reply(`péràí... a baixar`);
+  //   await ctx.reply(`\u{1F4E5}`);
+  //
+  //   // ctx.message.audio
+  //   // await this.botUtils.saveFile(bot, , `${tempFolder}/${chatId}`); // todo
+  //
+  //   await this.convoService.setAudio(chatId, true);
+  //   if (await this.convoService.getText(chatId))
+  //     await this.finally(ctx);
+  //   else await ctx.reply(`já tá! ganda meditação`);
+  // }
+  //
+  // async handleText(ctx:Context): Promise<void> {
+  //   if (!ctx || !ctx.chat) throw new Error();
+  //   const chatId = ctx.chat.id;
+  //   if (await this.convoService.hasAudio(chatId)) {
+  //     // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
+  //     await this.convoService.setText(chatId, this.textFormattingService.getFullInfo(text));
+  //     await this.finally(ctx);
+  //   } else {
+  //     if (await this.convoService.getText(chatId))
+  //       // if we don't have audio but already have text, let the user know
+  //       throw new BotError(`já tinhas mandado texto, agora tens de mandar áudio.\nou então /cancel`);
+  //     const texts = this.textFormattingService.getFullInfo(text);
+  //     await this.convoService.setText(chatId, texts);
+  //     await ctx.reply(`boa escolha de emojis ${texts.descr1.split(` `)[0]}`);
+  //   }
+  // }
 
-    reply.text(`péràí... a baixar`);
-    reply.text(`\u{1F4E5}`);
-    await this.botUtils.saveFile(bot, msg.file, `${tempFolder}/${chatId}`);
-    await this.convoService.setAudio(chatId, true);
-    if (await this.convoService.getText(chatId))
-      await this.finalResponse(chatId, reply);
-    else reply.text(`já tá! ganda meditação`);
-  }
-
-  async handleText(msg: messageText, reply: ReplyQueue): Promise<void> {
-    const chatId = msg.chat.id;
-    if (await this.convoService.hasAudio(chatId)) {
-      // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
-      await this.convoService.setText(chatId, this.textFormattingService.getFullInfo(msg.text));
-      await this.finalResponse(chatId, reply);
-    } else {
-      if (await this.convoService.getText(chatId))
-        // if we don't have audio but already have text, let the user know
-        throw new BotError(`já tinhas mandado texto, agora tens de mandar áudio.\nou então /cancel`);
-      const texts = this.textFormattingService.getFullInfo(msg.text);
-      await this.convoService.setText(chatId, texts);
-      reply.text(`boa escolha de emojis ${texts.descr1.split(` `)[0]}`);
-    }
-  }
-
-  async finalResponse(chatId: number, reply: ReplyQueue) {
+  async finally(ctx: Context) {
+    if (!ctx || !ctx.chat) throw new Error();
+    const chatId = ctx.chat.id;
     const texts = await this.convoService.getText(chatId);
     if (!texts) throw new BotError('Internal error: null values where should be text.');
     const badTitle = texts.descr1.trim();
@@ -107,7 +114,10 @@ export default class PtService implements IPtService {
       const file = fs.createReadStream(`${tempFolder}/${chatId}`);
       switch (await this.convoService.getCommand(chatId)) {
         case `pt_testar`:
-          reply.audio(file as unknown as InputFile, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
+          await ctx.replyWithAudio(file as unknown as InputFile, {
+            duration: parseInt(duration), performer: texts.date, title,
+            caption: texts.telegram, parse_mode: `Markdown`
+          });
           break;
         case `pt_enviar`:
           if (!this.channel) throw new BotError('Variável CHANNEL devia estar definida.');
@@ -123,7 +133,7 @@ export default class PtService implements IPtService {
             });
           break;
       }
-      this.botUtils.textHideLinks(reply, texts.signal);
+      await ctx.reply(texts.signal);
       await this.botUtils.deleteUserData(chatId);
     });
   }

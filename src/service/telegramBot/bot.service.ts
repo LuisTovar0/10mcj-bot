@@ -1,19 +1,16 @@
 import {Inject, Service} from "typedi";
+import {Telegraf} from "telegraf";
 
 import IBotService from "../iService/telegramBot/IBotService";
-import {Bot} from "./types/botgram";
 import config, {loadEnvVar} from "../../config";
 import IBotUtilsService from "../iService/telegramBot/iBotUtils.service";
 import IInRequestService from "../iService/iInRequest.service";
 import ITextFormattingService from "../iService/telegramBot/iTextFormatting.service";
-import IConvoMemoryService from "../iService/telegramBot/iConvoMemory.service";
+import IConvoMemoryService, {ConvoError} from "../iService/telegramBot/iConvoMemory.service";
 import IListsService from "../iService/telegramBot/IListsService";
 import IPtService from "../iService/telegramBot/iPt.service";
 import BotError from "./botError";
 import IImageCommandsService from "../iService/iImageCommands.service";
-
-
-const botgram = require("botgram");
 
 @Service()
 export default class BotService implements IBotService {
@@ -33,39 +30,39 @@ export default class BotService implements IBotService {
 
   async run() {
 
-    const bot: Bot = botgram(this.token);
+    const bot = new Telegraf(this.token);
 
     // middleware (before all the other message treatment)
-    bot.all(async (msg, reply, next) => {
-      if (msg.chat.type === 'channel') return; // ignore channel messages
-      if (msg.group) {
-        reply.text(`I don't talk in groups. Please remove me.`);
+    bot.use(async (ctx, next) => {
+      if (!ctx.chat) return;
+      if (ctx.chat.type === 'channel') return; // ignore channel messages
+      if (ctx.chat.type === 'group') {
+        await ctx.reply(`I don't talk in groups. Please remove me.`);
         return;
       }
 
-      if (msg.user)
+      if (ctx.chat.username)
         // save requester
-        await this.inRequestService.addInRequest(msg.user as { id: number, username: string/*, firstname, lastname*/ });
+        await this.inRequestService.addInRequest({id: ctx.chat.id, username: ctx.chat.username});
       else {
-        reply.text(`Only available to users...`);
+        await ctx.reply(`You don't look like a user... [\u{1FAD6}](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418)`, {
+          disable_web_page_preview: true,
+          parse_mode: 'Markdown'
+        });
         return;
       }
 
-      if (!this.botUtils.msgIsFromAdmin(msg)) {
-        if (!msg.chat.username) {
-          this.botUtils.markdownHideLinks(reply, `You don't look like a user... [\u{1FAD6}](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418)`);
-          return;
-        }
-        const username = msg.chat.username;
+      if (!this.botUtils.msgIsFromAdmin(ctx)) {
+        const username = ctx.chat.username;
         if (await this.listsService.blacklist.contains(username)) {
-          await reply.text(`You're blacklisted \u{1F620}`);
+          await ctx.reply(`You're blacklisted \u{1F620}`);
           return;
         }
         if (config.runningEnv === 'development') {
           await this.botUtils.sendMessage(this.botUtils.adminChatId, `@${username} tried to use the bot while in development.`);
           const isWhitelisted = await this.listsService.whitelist.contains(username);
           if (!isWhitelisted) {
-            reply.text(`Our beautiful devs are developing the bot at the moment. Please don't send messages. If using it is urgent, text @tovawr`);
+            await ctx.reply(`Our beautiful devs are developing the bot at the moment. Please don't send messages. If using it is urgent, text @tovawr`);
             return;
           }
         }
@@ -74,8 +71,8 @@ export default class BotService implements IBotService {
       try {
         await next();
       } catch (e) {
-        if (e.name !== "BotError") reply.text(`An error happened.`);
-        this.botUtils.textHideLinks(reply, e.message);
+        if (e.name !== "BotError") await ctx.reply(`An error happened.`);
+        await ctx.reply(e.message, {disable_web_page_preview: true});
         console.log(e.stack);
       }
     });
@@ -87,7 +84,7 @@ export default class BotService implements IBotService {
     //#region commands
 
     //#region info commands
-    bot.command(`start`, (msg, reply) => reply.text(`
+    bot.command(`start`, ctx => ctx.reply(`
 \u{1F1F5}\u{1F1F9} Bem-vindo, co-administrador dos @dezmincomjesus!
 \u{1F1EC}\u{1F1E7}\u{1F1FA}\u{1F1F8} Welcome, fellow @tenminuteswithjesus admin!
 \u{1F1EA}\u{1F1F8} Bienvenido, compañero administrador de @diezminutos!
@@ -99,95 +96,112 @@ Currently available languages: /pt
 
 Anytime you do something you didn't mean to, use the /cancel command`));
 
-    bot.command(`info`, (msg, reply) => reply.text(`/info_pt instruções\n
+    bot.command(`info`, ctx => ctx.replyWithHTML(`/info_pt instruções\n
 Contact @tovawr for an implementation in your language!
 Anyway, hit /start for an international welcome message \u{1F30F}\n
 <b>Privacy notice</b>: The number of messages you send to the bot is saved since this is meant to be a \
-more or less private bot.`, "HTML"));
+more or less private bot.`));
 
-    bot.command(`info_pt`, (msg, reply) => reply.text(`[Informação desatualizada]
+    bot.command(`info_pt`, ctx => ctx.reply(`[Informação desatualizada]
 
 Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto \
 e um áudio separadamente, por qualquer ordem, e eu respondo com tudo formatado.\n\nSempre que isto ficar confuso, usa \
 /cancel; isso vai apagar todos os registos feitos sobre o teu chat, para poderes começar de novo.\n\nPara saberes \
 que informações estão guardadas sobre o teu chat, /mystatus`));
 
-    bot.command(`mystatus`, async (msg, reply) => {
-      const convo = await this.convoService.wholeConvo(msg.chat.id);
-      reply.text(JSON.stringify(convo || {}, null, 3));
+    bot.command(`mystatus`, async ctx => {
+      const convo = await this.convoService.wholeConvo(ctx.chat.id);
+      await ctx.reply(JSON.stringify(convo || {}, null, 3));
     });
 
     //#endregion
 
-    bot.command(`en`, `fr`, `es`, `de`, (msg, reply) => {
-      reply.html(`<b><i>Not implemented</i></b>\n/info`);
-      reply.text(`\u{1F937}\u{200D}\u{2642}\u{FE0F}`);
+    bot.command([`en`, `fr`, `es`, `de`], async ctx => {
+      await ctx.replyWithHTML(`<b><i>Not implemented</i></b>\n/info`);
+      await ctx.reply(`\u{1F937}\u{200D}\u{2642}\u{FE0F}`);
     });
 
-    bot.command(`cancel`, async (msg, reply) => {
-      await this.botUtils.deleteUserData(msg.chat.id);
-      reply.text(`Ok irmom \u{1F5FF} registos apagados`);
+    bot.command(`cancel`, async ctx => {
+      await this.botUtils.deleteUserData(ctx.chat.id);
+      await ctx.reply(`Ok irmom \u{1F5FF} registos apagados`);
     });
 
-    bot.command(`debug`, async (msg, reply) => {
+    bot.command(`debug`, async ctx => {
       if (config.runningEnv === `production`)
         throw new BotError(`\u{26D4} This command is not allowed in production mode \u{26D4}`);
 
-      reply.text(`nothin's testin`);
+      await ctx.reply(`nothin's testin`);
     });
 
-    bot.command(`report`, async (msg, reply) => {
-      if (!this.botUtils.msgIsFromAdmin(msg)) {
-        reply.text(`I can't report to you.`);
+    bot.command(`report`, async ctx => {
+      if (!this.botUtils.msgIsFromAdmin(ctx)) {
+        ctx.reply(`I can't report to you.`);
         return;
       }
 
-      reply.text(this.textFormattingService.inRequestsToString(await this.inRequestService.getLastWeekRequests()));
+      ctx.reply(this.textFormattingService.inRequestsToString(await this.inRequestService.getLastWeekRequests()));
     });
 
-    bot.command((msg, reply) => reply.text(`Say what? I'm not recognizing that command.`));
+    bot.command([], ctx => ctx.reply(`Say what? I'm not recognizing that command.`));
     //#endregion
 
     //#region message treatment
-    bot.audio(async (msg, reply) => {
-      const chatId = msg.chat.id;
+    bot.on('audio', async ctx => {
+      const chatId = ctx.chat.id;
       const exists = await this.convoService.exists(chatId);
       if (!exists) {
         // a command has not been used
-        reply.text(`só processo áudios para serem mandados para o Telegram, por isso tens de usar o comando /pt primeiro`);
+        await ctx.reply(`só processo áudios para serem mandados para o Telegram, por isso tens de usar o comando /pt primeiro`);
         return;
       }
 
       const command = await this.convoService.getCommand(chatId) as string;
       if (this.pt.isPtCommand(command)) {
-        await this.pt.handleAudio(bot, msg, reply);
-      } else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
+        const hasAudio = await this.convoService.hasAudio(chatId);
+        if (hasAudio === null)
+          throw await ConvoError.new(this.convoService, chatId, 'hasAudio at handleAudio');
+        if (hasAudio) {
+          // audio was already received
+          await ctx.reply(`já tinhas mandado áudio. manda aí texto`);
+          return;
+        }
+
+        await ctx.reply(`péràí... a baixar`);
+        await ctx.reply(`\u{1F4E5}`);
+        ctx.message.audio.duration;
+        // await this.botUtils.saveFile(bot, , `${tempFolder}/${chatId}`); // todo
+
+        await this.convoService.setAudio(chatId, true);
+        if (await this.convoService.getText(chatId))
+          await this.pt.finally(ctx);
+        else ctx.reply(`já tá! ganda meditação`);
+      } else await ctx.reply(`Command incompatible with media. Use /info to learn how to use the bot.`);
     });
 
-    bot.photo(async (msg, reply) => {
-      const chatId = msg.chat.id;
+    bot.on('photo', async ctx => {
+      const chatId = ctx.chat.id;
       const exists = await this.convoService.exists(chatId);
       if (!exists) {
-        reply.text(`You didn't use a command. I'll be ignoring this photo.`);
+        ctx.reply(`You didn't use a command. I'll be ignoring this photo.`);
         return;
       }
 
       const command = await this.convoService.getCommand(chatId) as string;
       if (this.imageCommands.isImageCommand(command))
-        await this.imageCommands.handlePhoto(bot, msg, reply);
-      else reply.text(`This command doesn't want you to send photos.`);
+        await this.imageCommands.handlePhoto(bot, ctx);
+      else await ctx.reply(`This command doesn't want you to send photos.`);
     });
 
-    bot.text(async (msg, reply) => {
-      const chatId = msg.chat.id;
+    bot.on('text', async ctx => {
+      const chatId = ctx.chat.id;
       const exists = await this.convoService.exists(chatId);
       if (!exists) {
         // if a command hasn't been used, just return the formatted texts
         try {
-          reply.text(`You should use a command before sending text.`);
-          const texts = this.textFormattingService.getFullInfo(msg.text);
-          this.botUtils.markdownHideLinks(reply, texts.telegram);
-          this.botUtils.textHideLinks(reply, texts.signal);
+          ctx.reply(`You should use a command before sending text.`);
+          const texts = this.textFormattingService.getFullInfo(ctx.message.text);
+          await ctx.reply(texts.telegram, {parse_mode: 'Markdown', disable_web_page_preview: true});
+          await ctx.reply(texts.signal, {disable_web_page_preview: true});
           return;
         } catch (e) {
           if (e instanceof BotError) throw e;
@@ -196,11 +210,22 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       }
 
       const command = await this.convoService.getCommand(chatId) as string;
-      if (this.pt.isPtCommand(command))
-        await this.pt.handleText(msg, reply);
-      else if (this.imageCommands.isImageCommand(command))
-        await this.imageCommands.handleText(msg, reply);
-      else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
+      if (this.pt.isPtCommand(command)) {
+        if (await this.convoService.hasAudio(chatId)) {
+          // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
+          await this.convoService.setText(chatId, this.textFormattingService.getFullInfo(ctx.message.text));
+          await this.pt.finally(ctx);
+        } else {
+          if (await this.convoService.getText(chatId))
+            // if we don't have audio but already have text, let the user know
+            throw new BotError(`já tinhas mandado texto, agora tens de mandar áudio.\nou então /cancel`);
+          const texts = this.textFormattingService.getFullInfo(ctx.message.text);
+          await this.convoService.setText(chatId, texts);
+          await ctx.reply(`boa escolha de emojis ${texts.descr1.split(` `)[0]}`);
+        }
+      } else if (this.imageCommands.isImageCommand(command))
+        await this.imageCommands.handleText(ctx);
+      else ctx.reply(`Command incompatible with media. Use /info to learn how to use the bot.`);
     });
     //#endregion
 

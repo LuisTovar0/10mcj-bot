@@ -1,13 +1,14 @@
-import {Bot, ReplyQueue} from "../../telegramBot/types/botgram";
-import {messageAudio, messageText} from "../../telegramBot/types/model";
+import {Context, Telegraf} from "telegraf";
 
 export default interface IPtService {
 
-  registerCommands(bot: Bot): void;
+  registerCommands(bot: Telegraf): void;
 
-  handleAudio(bot: Bot, msg: messageAudio, reply: ReplyQueue): Promise<void>;
+  // handleAudio(bot: Telegraf, ctx: Context): Promise<void>;
 
-  handleText(msg: messageText, reply: ReplyQueue): Promise<void>;
+  // handleText(ctx: Context): Promise<void>;
+
+  finally(ctx: Context): Promise<void>;
 
   isPtCommand(command?: string): boolean;
 
