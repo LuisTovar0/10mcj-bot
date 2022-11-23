@@ -169,6 +169,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
 
         await ctx.reply(`péràí... a baixar`);
         await ctx.reply(`\u{1F4E5}`);
+        console.log(ctx.message);
         await this.botUtils.getFile(ctx.message.audio.file_id);
 
         await this.convoService.setAudio(chatId, true);
@@ -184,19 +185,19 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       const chatId = ctx.chat.id;
       const exists = await this.convoService.exists(chatId);
       if (!exists) {
-        ctx.reply(`You didn't use a command. I'll be ignoring this photo.`);
+        await ctx.reply(`You didn't use a command. I'll be ignoring this photo.`);
         return;
       }
 
       const command = await this.convoService.getCommand(chatId) as string;
       if (this.imageCommands.isImageCommand(command)) {
         //#region image command photo treatment
-        const command = await this.convoService.getCommand(chatId);
         if (command === null) throw await ConvoError.new(this.convoService, chatId, 'getCommand at handle photo');
 
         if (command !== 'img_add') throw new BotError(`Only images for the 'img_add' command are handled here.`);
 
         const a = ctx.message.photo[0];
+        console.log(ctx.message);
         //todo fix
         const buffer = await this.botUtils.getFile(a.file_id);
 

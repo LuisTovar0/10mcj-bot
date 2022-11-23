@@ -44,7 +44,7 @@ export default class ImageCommands implements IImageCommandsService {
         return;
       }
 
-      await this.convoService.set(chatId, {command: ctx.message.text, data: {}});
+      await this.convoService.set(chatId, {command: ctx.message.text.split(' ')[0].substring(1), data: {}});
       ctx.reply('OK. manda a imagem e o identificador');
     });
 

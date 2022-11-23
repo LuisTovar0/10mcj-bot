@@ -60,47 +60,6 @@ export default class PtService implements IPtService {
 
   }
 
-  // async handleAudio(bot: Telegraf, ctx: Context): Promise<void> {
-  //   if (!ctx || !ctx.chat) throw new Error();
-  //   const chatId = ctx.chat.id;
-  //   const hasAudio = await this.convoService.hasAudio(chatId);
-  //   if (hasAudio === null)
-  //     throw await ConvoError.new(this.convoService, chatId, 'hasAudio at handleAudio');
-  //   if (hasAudio) {
-  //     // audio was already received
-  //     await ctx.reply(`já tinhas mandado áudio. manda aí texto`);
-  //     return;
-  //   }
-  //
-  //   await ctx.reply(`péràí... a baixar`);
-  //   await ctx.reply(`\u{1F4E5}`);
-  //
-  //   // ctx.message.audio
-  //   // await this.botUtils.saveFile(bot, , `${tempFolder}/${chatId}`); // todo
-  //
-  //   await this.convoService.setAudio(chatId, true);
-  //   if (await this.convoService.getText(chatId))
-  //     await this.finally(ctx);
-  //   else await ctx.reply(`já tá! ganda meditação`);
-  // }
-  //
-  // async handleText(ctx:Context): Promise<void> {
-  //   if (!ctx || !ctx.chat) throw new Error();
-  //   const chatId = ctx.chat.id;
-  //   if (await this.convoService.hasAudio(chatId)) {
-  //     // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
-  //     await this.convoService.setText(chatId, this.textFormattingService.getFullInfo(text));
-  //     await this.finally(ctx);
-  //   } else {
-  //     if (await this.convoService.getText(chatId))
-  //       // if we don't have audio but already have text, let the user know
-  //       throw new BotError(`já tinhas mandado texto, agora tens de mandar áudio.\nou então /cancel`);
-  //     const texts = this.textFormattingService.getFullInfo(text);
-  //     await this.convoService.setText(chatId, texts);
-  //     await ctx.reply(`boa escolha de emojis ${texts.descr1.split(` `)[0]}`);
-  //   }
-  // }
-
   async finally(ctx: Context) {
     if (!ctx || !ctx.chat) throw new Error();
     const chatId = ctx.chat.id;
