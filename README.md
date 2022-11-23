@@ -1,6 +1,6 @@
 # 10 McJ bot
 
-Every day I receive an audio and text from [10 Minutes with Jesus](https://10minuteswithjesus.org/). I'm responsible for forwarding them to Telegram and Signal, but making a couple changes to the text.
+Daily, I receive an audio and text from [10 Minutes with Jesus](https://10minuteswithjesus.org/). I'm responsible for forwarding them to Telegram and Signal after making a couple changes to the text.
 
 <img align="right" style="width: 32%" src="../../wiki/bot-usage-screenshot.jpg">
 
@@ -8,10 +8,14 @@ That is a repetitive task that this repo's app automates. Currently, I just have
 
 ## List of features
 
-+ Message treatment in portuguese language
++ Message handling in portuguese language
   + Format text messages for Signal
   + Format an audio+text (or just text if audio is missing) message for Telegram
 + As a security measure, persist how many messages a user sent to the bot. The bot can't read group messages nor be added to a group.
++ Image editing
+  + Generate a thumbnail for the portuguese 10McJ channel
+  + Add an image to the image database
+  + Choose an image from the database to use in thumbnail generation
 
 ## Current works
 
@@ -22,8 +26,8 @@ The project is being upgraded now. The goal is to automate the entire process of
   + Telegram
   + Signal
 + Posting the YouTube video automatically
-  + Editing a cover image using the [Pixio Editor API](https://pixoeditor.com/documentation/editing-api/)
-  + Joining the image and the audio, using a video editing API (not yet planned)
+  + Editing a cover image
+  + Joining the image and the audio, using a video editing API
   + Posting the video on YouTube with the Google API
 + (Eventually) Posting the meditation to the podcast media (Spotify, Google Podcasts, etc.). This might not be needed since it is so quick and easy to do manually.
 
@@ -49,13 +53,15 @@ Building the app requires the following environment variables to be defined:
 + `ADMIN_CHAT_ID`: the admin's Telegram chat ID (a number). In the case of this bot, it's my chat ID. This value can be found on the bot's [updates](https://core.telegram.org/bots).
 + `RUNNING_ENV`: self-explained. Accepts 'production', ' development' or 'test' as value.
 + `DB_TYPE`: accepts 'local' or 'mongodb' as values.
-+ `DATABASE_URL`: if `DB_TYPE` refers to an actual database type, the access URL should be specified. It's not necessary otherwise.
-+ `TELEGRAM_CHANNEL`: if messages are meant to be sent directly to a Telegram channel, its public handler should be specified.
+  + `MONGODB_URL`: if `DB_TYPE` is 'mongodb', the access URL should be specified. It's not necessary otherwise.
++ `CHANNEL`: if messages are meant to be sent directly to a Telegram channel, its public handler should be specified.
 
-## Current development
+## Roadmap
 
-- [x] In-request persistence
-- [ ] Viewing the available images
-  - [ ] Storing images (if necessary)
-  - [ ] Webpage to view the images
-- [ ] Interacting with Pixio API
+(newest to oldest)
+
+- [ ] Editing a video
+- [x] Using CanvasJS to edit images
+- [x] Webpage to view the images
+- [x] Storing images
+- [x] Persisting in-requests

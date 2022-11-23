@@ -32,10 +32,10 @@ export default class PtService implements IPtService {
   registerCommands(bot: Bot): void {
 
     bot.command(`pt`, async (msg, reply) => {
-      reply.text(`Comandos disponíveis:
-/pt_testar mostra o funcionamento normal do bot, mas sem enviar mensagens${this.channel ? `
-/pt_enviar pede algumas informações e envia a mensagen para o canal de Telegram` : ''}
-/pt_img`);
+      reply.markdown(`Comandos disponíveis:
+/pt\\_testar - Mostra o funcionamento normal do bot, mas sem enviar mensagens${this.channel ? `
+/pt\\_enviar - Pede algumas informações e envia a mensagen para o canal de Telegram` : ''}
+/pt\\_img - Gera uma capa para um vídeo do YouTube. Utilização: \`/pt_img texto\`, onde "texto" é o texto que será colocado na imagem.`);
     });
 
     // para comandos de edição de áudios e textos

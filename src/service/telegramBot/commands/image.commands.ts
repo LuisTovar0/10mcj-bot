@@ -36,6 +36,17 @@ export default class ImageCommands implements IImageCommandsService {
 
   registerCommands(bot: Bot) {
 
+    bot.command('images', async (_, reply) => {
+      let isWhitelist;
+      if (_.chat.username)
+        isWhitelist = await this.listsService.whitelist.contains(_.chat.username);
+      else isWhitelist = false;
+      reply.markdown(`Bear in mind that most of these commands are reserved for admins.${isWhitelist ? `
+You can view the available images and their ID's [here](https://one0mcj.onrender.com/images)` : ''}
+/img\\_add - Add an image to the DB.
+/img\\_offset - Change the offset value that will be applied to an image in thumbnail generation.`);
+    });
+
     bot.command('img_add', async (msg, reply) => {
       await this.listsService.whitelist.onlyAdminsAllowed(msg, reply);
       const chatId = msg.chat.id;

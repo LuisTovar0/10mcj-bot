@@ -105,12 +105,7 @@ Anyway, hit /start for an international welcome message \u{1F30F}\n
 <b>Privacy notice</b>: The number of messages you send to the bot is saved since this is meant to be a \
 more or less private bot.`, "HTML"));
 
-    bot.command(`info_pt`, (msg, reply) => reply.text(`[Informação desatualizada]
-
-Usa /pt para eu fazer uma formatação. Vais ter de enviar um texto \
-e um áudio separadamente, por qualquer ordem, e eu respondo com tudo formatado.\n\nSempre que isto ficar confuso, usa \
-/cancel; isso vai apagar todos os registos feitos sobre o teu chat, para poderes começar de novo.\n\nPara saberes \
-que informações estão guardadas sobre o teu chat, /mystatus`));
+    bot.command(`info_pt`, (msg, reply) => reply.text(` Usa /pt para veres todos os comandos para os 10 Minutos portugueses.`));
 
     bot.command(`mystatus`, async (msg, reply) => {
       const convo = await this.convoService.wholeConvo(msg.chat.id);
