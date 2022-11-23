@@ -157,6 +157,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
 
       const command = await this.convoService.getCommand(chatId) as string;
       if (this.pt.isPtCommand(command)) {
+        //#region PT audio handling
         const hasAudio = await this.convoService.hasAudio(chatId);
         if (hasAudio === null)
           throw await ConvoError.new(this.convoService, chatId, 'hasAudio at handleAudio');
@@ -168,13 +169,14 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
 
         await ctx.reply(`péràí... a baixar`);
         await ctx.reply(`\u{1F4E5}`);
-        ctx.message.audio.duration;
-        // await this.botUtils.saveFile(bot, , `${tempFolder}/${chatId}`); // todo
+        await this.botUtils.getFile(ctx.message.audio.file_id);
 
         await this.convoService.setAudio(chatId, true);
         if (await this.convoService.getText(chatId))
           await this.pt.finally(ctx);
         else ctx.reply(`já tá! ganda meditação`);
+        //#endregion
+
       } else await ctx.reply(`Command incompatible with media. Use /info to learn how to use the bot.`);
     });
 
@@ -187,9 +189,26 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
       }
 
       const command = await this.convoService.getCommand(chatId) as string;
-      if (this.imageCommands.isImageCommand(command))
-        await this.imageCommands.handlePhoto(bot, ctx);
-      else await ctx.reply(`This command doesn't want you to send photos.`);
+      if (this.imageCommands.isImageCommand(command)) {
+        //#region image command photo treatment
+        const command = await this.convoService.getCommand(chatId);
+        if (command === null) throw await ConvoError.new(this.convoService, chatId, 'getCommand at handle photo');
+
+        if (command !== 'img_add') throw new BotError(`Only images for the 'img_add' command are handled here.`);
+
+        const a = ctx.message.photo[0];
+        //todo fix
+        const buffer = await this.botUtils.getFile(a.file_id);
+
+        const res = await this.convoService.setImg(chatId, buffer);
+        if (!res) throw new BotError('Image could not be loaded.');
+        const data = await this.convoService.getAddImageData(chatId);
+        if (data && data.image && data.name)
+          await this.imageCommands.finallyAddImage(chatId, ctx);
+        else ctx.reply('OK! falta o ID');
+        //#endregion
+
+      } else await ctx.reply(`This command doesn't want you to send photos.`);
     });
 
     bot.on('text', async ctx => {
@@ -211,6 +230,7 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
 
       const command = await this.convoService.getCommand(chatId) as string;
       if (this.pt.isPtCommand(command)) {
+        //#region PT command text handling
         if (await this.convoService.hasAudio(chatId)) {
           // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
           await this.convoService.setText(chatId, this.textFormattingService.getFullInfo(ctx.message.text));
@@ -223,11 +243,27 @@ que informações estão guardadas sobre o teu chat, /mystatus`));
           await this.convoService.setText(chatId, texts);
           await ctx.reply(`boa escolha de emojis ${texts.descr1.split(` `)[0]}`);
         }
-      } else if (this.imageCommands.isImageCommand(command))
-        await this.imageCommands.handleText(ctx);
-      else ctx.reply(`Command incompatible with media. Use /info to learn how to use the bot.`);
+        //#endregion
+      } else if (this.imageCommands.isImageCommand(command)) {
+        //#region image command text handling
+        const command = await this.convoService.getCommand(chatId);
+        if (command === null) throw await ConvoError.new(this.convoService, chatId, 'getCommand at handle photo');
+
+        if (command === 'img_add') {
+          const res = await this.convoService.setImgName(chatId, ctx.message.text);
+          if (!res) throw new BotError(`Coudn't set the image name`);
+
+          const data = await this.convoService.getAddImageData(chatId);
+          if (data && data.image && data.name)
+            await this.imageCommands.finallyAddImage(chatId, ctx);
+          else ctx.reply('OK! falta a foto');
+        }
+        //#endregion
+      } else ctx.reply(`Command incompatible with media. Use /info to learn how to use the bot.`);
     });
     //#endregion
+
+    await bot.launch();
 
     // inform me that it's running
     await this.botUtils.sendMessage(this.botUtils.adminChatId, 'Bot is running in ' + config.runningEnv);

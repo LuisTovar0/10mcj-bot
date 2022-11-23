@@ -2,12 +2,11 @@ import {Inject, Service} from "typedi";
 import IListsService from "../../iService/telegramBot/IListsService";
 import config from "../../../config";
 import IWhitelistRepo from "../../iRepos/iWhitelist.repo";
-import {Bot} from "../types/botgram";
 import ISimpleUserService from "../../iService/iSimpleUser.service";
-import {messageCommand} from "../types/model";
 import BotError from "../botError";
 import IBlacklistRepo from "../../iRepos/iBlacklist.repo";
 import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
+import {Telegraf} from "telegraf";
 
 @Service()
 export default class ListsService implements IListsService {
@@ -32,81 +31,81 @@ export default class ListsService implements IListsService {
     throw new Error("Method not implemented.");
   }
 
-  registerCommands(bot: Bot) {
+  registerCommands(bot: Telegraf) {
 
-    function analisa(msg: messageCommand) {
-      const split = msg.text.split(' ');
+    function analisa(text: string) {
+      const split = text.split(' ');
       if (split.length < 2)
-        throw new BotError(`Comando mal usado. Formato correto é: /${msg.command} <username>`);
+        throw new BotError(`Comando mal usado. Formato correto é: /${split[0]} <username>`);
 
       return split[1];
     }
 
-    bot.command(`whitelist_add`, async (msg, reply) => {
-      this.botUtils.ensureMsgIsFromAdmin(msg);
+    bot.command(`whitelist_add`, async ctx => {
+      // this.botUtils.ensureMsgIsFromAdmin(msg);
 
-      const username = analisa(msg);
+      const username = analisa(ctx.message.text);
       try {
         await this.userService.getByUsername(username);
       } catch (e) {
-        reply.text(`\u{26A0} Warning: user has not used bot.`)
+        ctx.reply(`\u{26A0} Warning: user has not used bot.`);
       }
       await this.whitelistRepo.add(username);
-      reply.text('Done');
+      ctx.reply('Done');
     });
 
-    bot.command(`whitelist_rm`, async (msg, reply) => {
-      this.botUtils.ensureMsgIsFromAdmin(msg);
+    bot.command(`whitelist_rm`, async ctx => {
+      // this.botUtils.ensureMsgIsFromAdmin(msg);
 
-      const username = analisa(msg);
+      const username = analisa(ctx.message.text);
       if (await this.whitelistRepo.contains(username)) {
         await this.whitelistRepo.remove(username);
-        reply.text('Done');
+        ctx.reply('Done');
         return;
       }
-      reply.text(`This username is not whitelisted.`)
+      ctx.reply(`This username is not whitelisted.`);
     });
 
-    bot.command(`whitelist_all`, async (msg, reply) => {
-      this.botUtils.ensureMsgIsFromAdmin(msg);
+    bot.command(`whitelist_all`, async ctx => {
+      // this.botUtils.ensureMsgIsFromAdmin(msg);
 
       const list = await this.whitelistRepo.fullList();
       const str = list.reduce((accum, curr) => `${accum}\n@${curr}`, '');
-      reply.text(str || 'List is empty')
-    })
+      ctx.reply(str || 'List is empty');
+    });
 
-    bot.command(`blacklist_add`, async (msg, reply) => {
-      this.botUtils.ensureMsgIsFromAdmin(msg);
+    bot.command(`blacklist_add`, async ctx => {
+      // this.botUtils.ensureMsgIsFromAdmin(msg);
 
-      const username = analisa(msg);
+      const username = analisa(ctx.message.text);
       try {
         await this.userService.getByUsername(username);
       } catch (e) {
-        reply.text(`\u{26A0} Warning: user has not used bot.`)
+        ctx.reply(`\u{26A0} Warning: user has not used bot.`);
       }
-      await this.blacklistRepo.add(username)
-      reply.text('Done');
-    })
+      await this.blacklistRepo.add(username);
+      ctx.reply('Done');
+    });
 
-    bot.command(`blacklist_rm`, async (msg, reply) => {
-      this.botUtils.ensureMsgIsFromAdmin(msg);
+    bot.command(`blacklist_rm`, async ctx => {
+      // this.botUtils.ensureMsgIsFromAdmin(msg);
 
-      const username = analisa(msg);
+      const username = analisa(ctx.message.text);
       if (await this.blacklistRepo.contains(username)) {
         await this.blacklistRepo.remove(username);
-        reply.text('Done');
+        ctx.reply('Done');
         return;
       }
-      reply.text(`This username is not blacklisted.`);
-    })
+      ctx.reply(`This username is not blacklisted.`);
+    });
 
-    bot.command(`blacklist_all`, async (msg, reply) => {
-      this.botUtils.ensureMsgIsFromAdmin(msg);
+    bot.command(`blacklist_all`, async ctx => {
+      // this.botUtils.ensureMsgIsFromAdmin(msg);
 
       const list = await this.blacklistRepo.fullList();
       const str = list.reduce((accum, curr) => `${accum}\n@${curr}`, '');
-      reply.text(str || 'List is empty')
-    })
+      ctx.reply(str || 'List is empty');
+    });
 
   }
 

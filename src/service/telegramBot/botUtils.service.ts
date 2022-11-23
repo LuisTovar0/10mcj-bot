@@ -8,6 +8,8 @@ import config, {loadEnvVar} from "../../config";
 import {tempFolder} from "../../config/constants";
 import IConvoMemoryService from "../iService/telegramBot/iConvoMemory.service";
 import {Context} from "telegraf";
+import * as fs from "fs";
+import moment from "moment";
 
 @Service()
 export default class BotUtilsService implements IBotUtilsService {
@@ -27,22 +29,24 @@ export default class BotUtilsService implements IBotUtilsService {
     await this.apiMethod('sendMessage', {chat_id: chatId, text: message});
   }
 
-  // saveFile(bot: Telegraf, file: FileLike, fileName: fs.PathLike): Promise<void> {
-  //   return new Promise(resolve => {
-  //     bot.fileLoad(file, (err: any, buffer: any) => {
-  //       if (err) throw err;
-  //       let stream = fs.createWriteStream(fileName);
-  //       stream.on('close', async (err: any) => {
-  //         if (err) {
-  //           console.log(err);
-  //           throw new BotError(`Failed creating ${fileName}`);
-  //         }
-  //         resolve();
-  //       });
-  //       stream.end(buffer);
-  //     });
-  //   });
-  // }
+  async getFile(fileAtTelegram: string): Promise<Buffer> {
+    //todo make it faster
+    const response = await axios.get(`${this.filesUrl}/${fileAtTelegram}`, {responseType: "stream"});
+    const fileName = moment().valueOf().toString();
+    response.data.pipe(fs.createWriteStream(fileName));
+    const tryReadFile = async (): Promise<Buffer> => {
+      console.count(`try read file ${fileName}`);
+      try {
+        return fs.readFileSync(fileName);
+      } catch (e) {
+        await new Promise(r => setTimeout(r, 50));
+        return await tryReadFile();
+      }
+    };
+    const buffer = await tryReadFile();
+    fs.rmSync(fileName);
+    return buffer;
+  }
 
   async deleteUserData(chatId: number): Promise<void> {
     // delete audio if exists

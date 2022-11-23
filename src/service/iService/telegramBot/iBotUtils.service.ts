@@ -16,5 +16,5 @@ export default interface IBotUtilsService {
 
   msgIsFromAdmin(ctx: Context): boolean;
 
-  // saveFile(bot: Telegraf, file: FileLike, fileName: fs.PathLike): Promise<void>;
+  getFile(filename: string): Promise<Buffer>;
 }
