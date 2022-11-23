@@ -5,13 +5,14 @@ import axios from "axios";
 
 import IPtService from "../../iService/telegramBot/iPt.service";
 import {Bot, ReplyQueue} from "../types/botgram";
-import {InputFile, messageAudio, messageText} from "../types/model";
+import {InputFile, messageAudio, messageCommand, messageText} from "../types/model";
 import BotError from "../botError";
 import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/iConvoMemory.service";
 import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.service";
 import config from "../../../config";
 import {tempFolder} from "../../../config/constants";
 import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
+import IListsService from "../../iService/telegramBot/IListsService";
 import IImageService from "../../iService/iImage.service";
 
 @Service()
@@ -23,6 +24,7 @@ export default class PtService implements IPtService {
     @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
     @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
     @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
+    @Inject(config.deps.service.lists.name) private listsService: IListsService,
     @Inject(config.deps.service.image.name) private imageService: IImageService,
   ) {
   }
@@ -37,26 +39,28 @@ export default class PtService implements IPtService {
     });
 
     // para comandos de edição de áudios e textos
-    const registarComando = (bot: Bot, comando: string) => {
-      bot.command(comando, async (msg, reply) => {
-        const exists = await this.convoService.exists(msg.chat.id);
-        if (exists) {
-          reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
-          return;
-        }
+    const sending = async (msg: messageCommand, reply: ReplyQueue) => {
+      const exists = await this.convoService.exists(msg.chat.id);
+      if (!exists) {
         await this.convoService.set(msg.chat.id, {
-          command: comando, data: {
+          command: msg.command, data: {
             audio: false
           }
         });
         reply.text(`okapa. que venham o áudio e o texto`);
-      });
+      } else reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
     };
 
-    registarComando(bot, `pt_testar`);
+    bot.command('pt_testar', sending);
 
     if (this.channel)
-      registarComando(bot, `pt_enviar`);
+      bot.command('pt_enviar', async (msg, reply) => {
+        if (msg.user?.username && await this.listsService.whitelist.contains(msg.user?.username)) {
+          await sending(msg, reply);
+          return;
+        }
+        reply.text('\u{1F6AB} Not allowed. \u{1F6AB}');
+      });
 
   }
 
