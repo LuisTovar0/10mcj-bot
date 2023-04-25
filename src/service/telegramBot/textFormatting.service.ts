@@ -1,8 +1,8 @@
 import {Service} from "typedi";
 
+import {NumberOfRequestsByUser} from "../iService/iInRequest.service";
 import ITextFormattingService, {AllInfo} from "../iService/telegramBot/iTextFormatting.service";
 import BotError from "./botError";
-import {NumberOfRequestsByUser} from "../iService/iInRequest.service";
 
 @Service()
 export default class TextFormattingService implements ITextFormattingService {
@@ -39,7 +39,7 @@ export default class TextFormattingService implements ITextFormattingService {
 https://youtu.be/dQw4w9WgXcQ\n\n\u{23F9}\u{1F649} *Para quê ouvir funk?*`);
 
     let url = split[0].trim(),
-      descr1 = split[2].replace(`*`, ``).replace(`*`, ``).trim(); // first line of description
+        descr1 = split[2].replace(`*`, ``).replace(`*`, ``).trim(); // first line of description
     let descr2: string | undefined; // second line of description
     for (let i = 1; i < split.length; i++)
       if (split[i].charAt(0).match(/[_A-Z]/)) {
@@ -53,9 +53,7 @@ https://youtu.be/dQw4w9WgXcQ\n\n\u{23F9}\u{1F649} *Para quê ouvir funk?*`);
   telegramSignalPT({ date, descr1, descr2, url }: AllInfo) {
     const telegram = `${date}\n\n*${descr1}*${descr2 ? `\n_${descr2}_` : ``}\n\n[\u{25B6} YouTube](${url})\
           [\u{1F310} +Info](https://t.me/dezmincomjesus/424)`;
-    const signal = `${date}\n\n${descr1}${descr2 ? `\n\n` + descr2 : ``}\n\n\u{25B6} YouTube: ${url}\n\n\u{1F4F2} \
-App 10 Minutos com Jesus. Disponível em:\n\u{1F34E} App Store - https://tinyurl.com/10mcj-ios\n\u{1F47E} Google Play - \
-https://tinyurl.com/10mcj-android\n\n\u{1F310} +Info: https://10minutoscomjesus.org`;
+    const signal = `${date}\n\n${descr1}${descr2 ? `\n\n` + descr2 : ``}\n\n\u{25B6} YouTube: ${url}\n\n\u{1F310} +Info: https://10minutoscomjesus.org`;
 
     return { telegram, signal };
   }
