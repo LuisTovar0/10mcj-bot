@@ -61,7 +61,7 @@ export default class BotUtilsService implements IBotUtilsService {
 
   markdownHideLinks(reply: ReplyQueue, text: string): void {
     reply.sendGeneric("sendMessage",
-      {text: text, parse_mode: "Markdown", disable_web_page_preview: true});
+        { text: text, parse_mode: "Markdown", disable_web_page_preview: true });
   }
 
   msgIsFromAdmin(msg: Message): boolean {
@@ -69,7 +69,7 @@ export default class BotUtilsService implements IBotUtilsService {
   }
 
   textHideLinks(reply: ReplyQueue, text: string): void {
-    reply.sendGeneric("sendMessage", {text: text, disable_web_page_preview: true});
+    reply.sendGeneric("sendMessage", { text: text, disable_web_page_preview: true });
   }
 
 }
