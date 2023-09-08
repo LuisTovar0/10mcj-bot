@@ -1,5 +1,5 @@
-import {Service} from "typedi";
 import {createCanvas, loadImage, registerFont} from 'canvas';
+import {Service} from "typedi";
 
 import IImageEditingService, {ImageEditingOptions} from "./iService/iImageEditing.service";
 
@@ -9,7 +9,7 @@ export default class CanvasService implements IImageEditingService {
   private readonly filesFolder = './files';
 
   constructor() {
-    registerFont('./files/Rockwell-Bold.ttf', {family: 'Rockwell', style: 'bold'});
+    registerFont('./files/Rockwell-Bold.ttf', { family: 'Rockwell', style: 'bold' });
   }
 
   async generate(photoSrc: Buffer, dateTxt: string, title: string, options?: ImageEditingOptions) {
@@ -20,7 +20,8 @@ export default class CanvasService implements IImageEditingService {
     // photo
     const photoImg = await loadImage(photoSrc);
     const photoDrawnWidth = photoImg.width * h / photoImg.height; // height = h, but keep the proportions
-    ctx.drawImage(photoImg, options?.imgAlign || 820, 0, photoDrawnWidth, h);
+    const offset = Number(options?.imgAlign);
+    ctx.drawImage(photoImg, 820 + (isNaN(offset) ? 0 : offset), 0, photoDrawnWidth, h);
 
     // the colored fill
     const formaImg = await loadImage(`${this.filesFolder}/forma.png`);

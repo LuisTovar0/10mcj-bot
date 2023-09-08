@@ -1,38 +1,38 @@
-import {Inject, Service} from "typedi";
-
-import {Bot, File, ReplyQueue} from "../types/botgram";
-import config from "../../../config";
-import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/iConvoMemory.service";
-import {messagePhoto, messageText} from "../types/model";
-import IImageCommandsService from "../../iService/iImageCommands.service";
-import IImageService from "../../iService/iImage.service";
-import IListsService from "../../iService/telegramBot/IListsService";
-import ImageDto from "../../../dto/image.dto";
-import UniqueEntityID from "../../../domain/core/uniqueEntityId";
-import BotError from "../botError";
-import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
 import axios from "axios";
+import FormData from "form-data";
 import fs from "fs";
 import moment from "moment";
+import {Inject, Service} from "typedi";
+import config from "../../../config";
 import {filesFolder} from "../../../config/constants";
-import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.service";
+import UniqueEntityID from "../../../domain/core/uniqueEntityId";
+import ImageDto from "../../../dto/image.dto";
+import IVideoService from "../../iService/i-video.service";
+import IImageService from "../../iService/iImage.service";
+import IImageCommandsService from "../../iService/iImageCommands.service";
 import IImageEditingService from "../../iService/iImageEditing.service";
-import FormData from "form-data";
 import ISimpleUserService from "../../iService/iSimpleUser.service";
+import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
+import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/iConvoMemory.service";
+import IListsService from "../../iService/telegramBot/IListsService";
+import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.service";
+import BotError from "../botError";
+import {Bot, File, ReplyQueue} from "../types/botgram";
+import {messagePhoto, messageText} from "../types/model";
 
 @Service()
 export default class ImageCommands implements IImageCommandsService {
 
   constructor(
-    @Inject(config.deps.service.lists.name) private listsService: IListsService,
-    @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
-    @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
-    @Inject(config.deps.service.imageEditing.name) private imageEditingService: IImageEditingService,
-    @Inject(config.deps.service.image.name) private imageService: IImageService,
-    @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
-    @Inject(config.deps.service.simpleUser.name) private simpleUserService: ISimpleUserService,
-  ) {
-  }
+      @Inject(config.deps.service.lists.name) private listsService: IListsService,
+      @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
+      @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
+      @Inject(config.deps.service.imageEditing.name) private imageEditingService: IImageEditingService,
+      @Inject(config.deps.service.image.name) private imageService: IImageService,
+      @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
+      @Inject(config.deps.service.simpleUser.name) private simpleUserService: ISimpleUserService,
+      @Inject(config.deps.service.shotstack.name) private shotstackService: IVideoService,
+  ) {}
 
   registerCommands(bot: Bot) {
 
@@ -56,13 +56,22 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
         return;
       }
 
-      await this.convoService.set(chatId, {command: msg.command, data: {}});
+      await this.convoService.set(chatId, { command: msg.command, data: {} });
       reply.text('OK. manda a imagem e o identificador');
     });
 
     bot.command(`pt_img`, async msg => {
-      const title = msg.text.split(' ').slice(1).join(' ');
-      const {day, month, year} = this.textFormattingService.theDate();
+      const noCommand = msg.text.split(' ').slice(1);
+      let offset: number | undefined = undefined;
+      let title = noCommand.join(' ');
+      const maybeOffset = Number(noCommand[0].slice(1, -1));
+      if (noCommand[0].at(0) === '('
+          && noCommand[0].at(-1) === ')'
+          && !isNaN(maybeOffset)) {
+        offset = maybeOffset;
+        title = noCommand.slice(1).join(' ');
+      }
+      const { day, month, year } = this.textFormattingService.theDate();
       moment.locale('pt-pt');
       const date = moment().date(day).month(month).year(year).format("DD MMMM YYYY").toString();
 
@@ -70,22 +79,24 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
       const user = await this.simpleUserService.getUserById(msg.chat.id);
       const chosenPhotoId = user.chosenPhotoId;
       let photo;
-      if (chosenPhotoId) {
+      if (!chosenPhotoId)
+        photo = fs.readFileSync(`${filesFolder}/rapaz.jpg`);
+      else {
         const f = (await this.imageService.getById(chosenPhotoId))?.file.file;
         if (f) photo = f;
         else
           photo = fs.readFileSync(`${filesFolder}/rapaz.jpg`);
-      } else {
-        photo = fs.readFileSync(`${filesFolder}/rapaz.jpg`);
       }
 
-      const generatedFile = await this.imageEditingService.generate(photo, date, title);
+      const generatedFile = await this.imageEditingService.generate(photo, date, title,
+          { imgAlign: offset });
       const generatedFileName = `./${moment().valueOf()}.png`;
       fs.writeFileSync(generatedFileName, generatedFile);
       const fd = new FormData();
       fd.append('photo', fs.createReadStream(generatedFileName));
       await axios.post(`${this.botUtils.methodsUrl}/sendPhoto`,
-        fd, {params: {chat_id: msg.chat.id}});
+          fd, { params: { chat_id: msg.chat.id } });
+      await this.shotstackService.createVideo(generatedFileName);
       fs.unlinkSync(generatedFileName);
     });
 
@@ -117,14 +128,14 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     //#region retrieving the image
     //todo make it faster
     const file = await new Promise<File>((resolve, reject) =>
-      bot.fileGet(msg.image.file.id, async (e, r) => {
-        if (e || !r) {
-          reject(e);
-          return;
-        }
-        resolve(r);
-      }));
-    const response = await axios.get(`${this.botUtils.filesUrl}/${file.path}`, {responseType: "stream"});
+        bot.fileGet(msg.image.file.id, async (e, r) => {
+          if (e || !r) {
+            reject(e);
+            return;
+          }
+          resolve(r);
+        }));
+    const response = await axios.get(`${this.botUtils.filesUrl}/${file.path}`, { responseType: "stream" });
     const fileName = moment().valueOf().toString() + '.jpg';
     response.data.pipe(fs.createWriteStream(fileName));
     const tryReadFile = async (): Promise<Buffer> => {
@@ -182,8 +193,8 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
       file: {
         domainId: new UniqueEntityID().toString(),
         file: data.image,
-        id: data.name
-      }
+        id: data.name,
+      },
     };
     const res = await this.imageService.save(dto);
     reply.text('Guardada!');
