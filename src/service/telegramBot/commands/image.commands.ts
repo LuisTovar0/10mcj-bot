@@ -24,13 +24,13 @@ import ISimpleUserService from "../../iService/iSimpleUser.service";
 export default class ImageCommands implements IImageCommandsService {
 
   constructor(
-    @Inject(config.deps.service.lists.name) private listsService: IListsService,
-    @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
-    @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
-    @Inject(config.deps.service.imageEditing.name) private imageEditingService: IImageEditingService,
-    @Inject(config.deps.service.image.name) private imageService: IImageService,
-    @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
-    @Inject(config.deps.service.simpleUser.name) private simpleUserService: ISimpleUserService,
+      @Inject(config.deps.service.lists.name) private listsService: IListsService,
+      @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
+      @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
+      @Inject(config.deps.service.imageEditing.name) private imageEditingService: IImageEditingService,
+      @Inject(config.deps.service.image.name) private imageService: IImageService,
+      @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
+      @Inject(config.deps.service.simpleUser.name) private simpleUserService: ISimpleUserService,
   ) {
   }
 
@@ -56,15 +56,15 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
         return;
       }
 
-      await this.convoService.set(chatId, {command: msg.command, data: {}});
+      await this.convoService.set(chatId, { command: msg.command, data: {} });
       reply.text('OK. manda a imagem e o identificador');
     });
 
     bot.command(`pt_img`, async msg => {
       const title = msg.text.split(' ').slice(1).join(' ');
-      const {day, month, year} = this.textFormattingService.theDate();
+      const { day, month, year } = this.textFormattingService.theDate();
       moment.locale('pt-pt');
-      const date = moment().date(day).month(month).year(year).format("DD MMMM YYYY").toString();
+      const date = moment().date(day).month(month - 1).year(year).format("DD MMMM YYYY").toString();
 
       // getting the chosen photo or using the default photo
       const user = await this.simpleUserService.getUserById(msg.chat.id);
@@ -85,7 +85,7 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
       const fd = new FormData();
       fd.append('photo', fs.createReadStream(generatedFileName));
       await axios.post(`${this.botUtils.methodsUrl}/sendPhoto`,
-        fd, {params: {chat_id: msg.chat.id}});
+          fd, { params: { chat_id: msg.chat.id } });
       fs.unlinkSync(generatedFileName);
     });
 
@@ -117,14 +117,14 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     //#region retrieving the image
     //todo make it faster
     const file = await new Promise<File>((resolve, reject) =>
-      bot.fileGet(msg.image.file.id, async (e, r) => {
-        if (e || !r) {
-          reject(e);
-          return;
-        }
-        resolve(r);
-      }));
-    const response = await axios.get(`${this.botUtils.filesUrl}/${file.path}`, {responseType: "stream"});
+        bot.fileGet(msg.image.file.id, async (e, r) => {
+          if (e || !r) {
+            reject(e);
+            return;
+          }
+          resolve(r);
+        }));
+    const response = await axios.get(`${this.botUtils.filesUrl}/${file.path}`, { responseType: "stream" });
     const fileName = moment().valueOf().toString() + '.jpg';
     response.data.pipe(fs.createWriteStream(fileName));
     const tryReadFile = async (): Promise<Buffer> => {
@@ -182,8 +182,8 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
       file: {
         domainId: new UniqueEntityID().toString(),
         file: data.image,
-        id: data.name
-      }
+        id: data.name,
+      },
     };
     const res = await this.imageService.save(dto);
     reply.text('Guardada!');
