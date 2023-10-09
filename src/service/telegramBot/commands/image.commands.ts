@@ -73,7 +73,7 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
       }
       const { day, month, year } = this.textFormattingService.theDate();
       moment.locale('pt-pt');
-      const date = moment().date(day).month(month).year(year).format("DD MMMM YYYY").toString();
+      const date = moment().date(day).month(month - 1).year(year).format("DD MMMM YYYY").toString();
 
       // getting the chosen photo or using the default photo
       const user = await this.simpleUserService.getUserById(msg.chat.id);
@@ -196,7 +196,7 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
         id: data.name,
       },
     };
-    const res = await this.imageService.save(dto);
+    await this.imageService.save(dto);
     reply.text('Guardada!');
   }
 
