@@ -22,23 +22,23 @@ const config = {
       } as Dep,
       simpleUser: {
         name: 'SimpleUserService',
-        path: './service/simpleUser.service',
+        path: './service/simple-user.service',
       } as Dep,
       inRequest: {
         name: 'InRequestService',
-        path: './service/inRequest.service',
+        path: './service/in-request.service',
       } as Dep,
       botUtils: {
         name: 'BotUtilsServive',
-        path: './service/telegramBot/botUtils.service',
+        path: './service/telegramBot/bot-utils.service',
       },
       textFormatting: {
         name: 'TextFormattingService',
-        path: './service/telegramBot/textFormatting.service',
+        path: './service/telegramBot/text-formatting.service',
       } as Dep,
       convoMemory: {
         name: 'LocalConvoMemoryService',
-        path: './service/telegramBot/localConvoMemory.service',
+        path: './service/telegramBot/local-convo-memory.service',
       } as Dep,
       lists: {
         name: 'WhitelistService',
