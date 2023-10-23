@@ -25,7 +25,7 @@
     "pretty": true,
     "sourceMap": true,
     "outDir": "./build",
-    "allowJs": true,
+    "allowJs": false,
     "noEmit": false
   },
   "include": [

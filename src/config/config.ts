@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
-import {camelCaseToMacroCase, repoDeps} from "./db";
 import {Dep} from "../loaders";
+import {camelCaseToMacroCase, repoDeps} from "./db";
 
 if (!dotenv.config()) throw '\u{26A0} Could not find .env file! \u{26A0}';
-const envs = loadEnvVars({runningEnv: '', dbType: ''});
+const envs = loadEnvVars({ runningEnv: '', dbType: '' });
 
 const config = {
 
@@ -14,11 +14,11 @@ const config = {
     service: {
       image: {
         name: 'ImageService',
-        path: './service/image.service'
+        path: './service/image.service',
       } as Dep,
       imageEditing: {
         name: 'CanvasService',
-        path: './service/canvas.service'
+        path: './service/canvas.service',
       } as Dep,
       simpleUser: {
         name: 'SimpleUserService',
@@ -26,38 +26,42 @@ const config = {
       } as Dep,
       inRequest: {
         name: 'InRequestService',
-        path: './service/inRequest.service'
+        path: './service/inRequest.service',
       } as Dep,
       botUtils: {
         name: 'BotUtilsServive',
-        path: './service/telegramBot/botUtils.service'
+        path: './service/telegramBot/botUtils.service',
       },
       textFormatting: {
         name: 'TextFormattingService',
-        path: './service/telegramBot/textFormatting.service'
+        path: './service/telegramBot/textFormatting.service',
       } as Dep,
       convoMemory: {
         name: 'LocalConvoMemoryService',
-        path: './service/telegramBot/localConvoMemory.service'
+        path: './service/telegramBot/localConvoMemory.service',
       } as Dep,
       lists: {
         name: 'WhitelistService',
-        path: './service/telegramBot/commands/lists.service'
+        path: './service/telegramBot/commands/lists.service',
       } as Dep,
       pt: {
         name: 'PtService',
-        path: './service/telegramBot/commands/pt.service'
+        path: './service/telegramBot/commands/pt.service',
+      } as Dep,
+      video: {
+        name: 'ShotstackService',
+        path: './service/shotstack.service',
       } as Dep,
       imageCommands: {
         name: 'ImageCommands',
-        path: './service/telegramBot/commands/image.commands'
+        path: './service/telegramBot/commands/image.commands',
       } as Dep,
       bot: {
         name: 'BotService',
-        path: './service/telegramBot/bot.service'
-      } as Dep
+        path: './service/telegramBot/bot.service',
+      } as Dep,
     },
-  }
+  },
 };
 
 export default config;

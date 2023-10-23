@@ -1,13 +1,6 @@
 import {Service} from "typedi";
-
 import IConvoMemoryService, {
-  AddImageData,
-  Convo,
-  Data,
-  InfosForText,
-  isAddImageData,
-  isTextData,
-  TextData
+  AddImageData, Convo, Data, InfosForText, isAddImageData, isTextData, isVideoData, TextData, VideoData,
 } from "../iService/telegramBot/iConvoMemory.service";
 
 interface ConvoMemory {
@@ -123,6 +116,58 @@ export default class LocalConvoMemoryService implements IConvoMemoryService {
     const data = await this.getAddImageData(chatId);
     if (!data) return false;
     (this.memory[chatId].data as AddImageData).name = name;
+    return true;
+  }
+
+  //#endregion
+
+  //#region video
+  async getVideoData(chatId: number) {
+    const data = await this.getData(chatId);
+    if (!data) return data;
+    if (!isVideoData(data)) return undefined;
+    return data;
+  }
+
+  async videoHasAudio(chatId: number): Promise<boolean | null | undefined> {
+    const data = await this.getData(chatId);
+    if (!data) return data;
+    if (!isVideoData(data)) return undefined;
+    return data.audio;
+  }
+
+  async getVideoImage(chatId: number): Promise<Buffer | null | undefined> {
+    const data = await this.getData(chatId);
+    if (!data) return data;
+    if (!isVideoData(data)) return undefined;
+    return data.image;
+  }
+
+  async getVideoText(chatId: number): Promise<string | null | undefined> {
+    const data = await this.getData(chatId);
+    if (!data) return data;
+    if (!isVideoData(data)) return undefined;
+    return data.text;
+  }
+
+  async setVideoAudio(chatId: number, audio: boolean): Promise<boolean> {
+    const data = await this.getVideoData(chatId);
+    if (!data) return false;
+    (this.memory[chatId].data as VideoData).audio = audio;
+    return true;
+  }
+
+  async setVideoImage(chatId: number, imgBuffer: Buffer): Promise<boolean> {
+    const data = await this.getVideoData(chatId);
+    if (!data) return false;
+    (this.memory[chatId].data as VideoData).image = imgBuffer;
+    return true;
+  }
+
+  async setVideoText(chatId: number, text: string): Promise<boolean> {
+    const data = await this.getVideoData(chatId);
+    if (!data) return false;
+    (this.memory[chatId].data as VideoData).text = text;
     return true;
   }
 

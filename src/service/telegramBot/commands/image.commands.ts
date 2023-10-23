@@ -1,24 +1,24 @@
-import {Inject, Service} from "typedi";
-
-import {Bot, File, ReplyQueue} from "../types/botgram";
-import config from "../../../config";
-import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/iConvoMemory.service";
-import {messagePhoto, messageText} from "../types/model";
-import IImageCommandsService from "../../iService/iImageCommands.service";
-import IImageService from "../../iService/iImage.service";
-import IListsService from "../../iService/telegramBot/IListsService";
-import ImageDto from "../../../dto/image.dto";
-import UniqueEntityID from "../../../domain/core/uniqueEntityId";
-import BotError from "../botError";
-import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
 import axios from "axios";
+import FormData from "form-data";
 import fs from "fs";
 import moment from "moment";
+import {Inject, Service} from "typedi";
+import config from "../../../config";
 import {filesFolder} from "../../../config/constants";
-import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.service";
+import UniqueEntityID from "../../../domain/core/uniqueEntityId";
+import ImageDto from "../../../dto/image.dto";
+import IVideoService from "../../iService/i-video.service";
+import IImageService from "../../iService/iImage.service";
+import IImageCommandsService from "../../iService/iImageCommands.service";
 import IImageEditingService from "../../iService/iImageEditing.service";
-import FormData from "form-data";
 import ISimpleUserService from "../../iService/iSimpleUser.service";
+import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
+import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/iConvoMemory.service";
+import IListsService from "../../iService/telegramBot/IListsService";
+import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.service";
+import BotError from "../botError";
+import {Bot, File, ReplyQueue} from "../types/botgram";
+import {messagePhoto, messageText} from "../types/model";
 
 @Service()
 export default class ImageCommands implements IImageCommandsService {
@@ -31,8 +31,8 @@ export default class ImageCommands implements IImageCommandsService {
       @Inject(config.deps.service.image.name) private imageService: IImageService,
       @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
       @Inject(config.deps.service.simpleUser.name) private simpleUserService: ISimpleUserService,
-  ) {
-  }
+      @Inject(config.deps.service.video.name) private videoService: IVideoService,
+  ) {}
 
   registerCommands(bot: Bot) {
 
@@ -61,7 +61,16 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     });
 
     bot.command(`pt_img`, async msg => {
-      const title = msg.text.split(' ').slice(1).join(' ');
+      const noCommand = msg.text.split(' ').slice(1);
+      let offset: number | undefined = undefined;
+      let title = noCommand.join(' ');
+      const maybeOffset = Number(noCommand[0].slice(1, -1));
+      if (noCommand[0].at(0) === '('
+          && noCommand[0].at(-1) === ')'
+          && !isNaN(maybeOffset)) {
+        offset = maybeOffset;
+        title = noCommand.slice(1).join(' ');
+      }
       const { day, month, year } = this.textFormattingService.theDate();
       moment.locale('pt-pt');
       const date = moment().date(day).month(month - 1).year(year).format("DD MMMM YYYY").toString();
@@ -70,16 +79,17 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
       const user = await this.simpleUserService.getUserById(msg.chat.id);
       const chosenPhotoId = user.chosenPhotoId;
       let photo;
-      if (chosenPhotoId) {
+      if (!chosenPhotoId)
+        photo = fs.readFileSync(`${filesFolder}/rapaz.jpg`);
+      else {
         const f = (await this.imageService.getById(chosenPhotoId))?.file.file;
         if (f) photo = f;
         else
           photo = fs.readFileSync(`${filesFolder}/rapaz.jpg`);
-      } else {
-        photo = fs.readFileSync(`${filesFolder}/rapaz.jpg`);
       }
 
-      const generatedFile = await this.imageEditingService.generate(photo, date, title);
+      const generatedFile = await this.imageEditingService.generate(photo, date, title,
+          { imgAlign: offset });
       const generatedFileName = `./${moment().valueOf()}.png`;
       fs.writeFileSync(generatedFileName, generatedFile);
       const fd = new FormData();
@@ -105,6 +115,33 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
       reply.text(user.chosenPhotoId ? user.chosenPhotoId : 'No image set. Default will be used.');
     });
 
+    bot.command('video', async (msg, reply) => {
+      await this.listsService.whitelist.onlyAdminsAllowed(msg, reply);
+      const chatId = msg.chat.id;
+      const existingConvo = await this.convoService.wholeConvo(chatId);
+      if (existingConvo) {
+        reply.text(`You were using the ${existingConvo.command} command. Wanna /cancel?`);
+        return;
+      }
+
+      reply.text('OK! agora um texto para o vídeo, e uma imagem');
+    });
+
+  }
+
+  async imgAddHandlePhoto(chatId: number, reply: ReplyQueue, imgBuffer: Buffer) {
+    const res = await this.convoService.setImg(chatId, imgBuffer);
+    if (!res) throw new BotError('Image could not be loaded.');
+    const data = await this.convoService.getAddImageData(chatId);
+    if (data && data.image && data.name)
+      await this.addImageToDb(chatId, reply);
+    else reply.text('OK! falta o ID');
+  }
+
+  async videoHandlePhoto(chatId: number, reply: ReplyQueue, imgBuffer: Buffer) {
+    await this.convoService.setVideoImage(chatId, imgBuffer)
+    || (() => {throw new BotError('Image could not be saved to the DB');})();
+    //todo
   }
 
   async handlePhoto(bot: Bot, msg: messagePhoto, reply: ReplyQueue): Promise<void> {
@@ -112,7 +149,8 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     const command = await this.convoService.getCommand(chatId);
     if (command === null) throw await ConvoError.new(this.convoService, chatId, 'getCommand at handle photo');
 
-    if (command !== 'img_add') throw new BotError(`Only images for the 'img_add' command are handled here.`);
+    if (command !== 'img_add' && command !== 'video')
+      throw new BotError(`Only images for the 'img_add' command are handled here.`);
 
     //#region retrieving the image
     //todo make it faster
@@ -140,12 +178,10 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     fs.rmSync(fileName);
     //#endregion
 
-    const res = await this.convoService.setImg(chatId, buffer);
-    if (!res) throw new BotError('Image could not be loaded.');
-    const data = await this.convoService.getAddImageData(chatId);
-    if (data && data.image && data.name)
-      await this.finallyAddImage(chatId, reply);
-    else reply.text('OK! falta o ID');
+    if (command === 'img_add')
+      await this.imgAddHandlePhoto(chatId, reply, buffer);
+    if (command === 'video')
+      await this.videoHandlePhoto(chatId, reply, buffer);
   }
 
   isImageCommand(command: string) {
@@ -168,12 +204,12 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
 
       const data = await this.convoService.getAddImageData(chatId);
       if (data && data.image && data.name)
-        await this.finallyAddImage(chatId, reply);
+        await this.addImageToDb(chatId, reply);
       else reply.text('OK! falta a foto');
     }
   }
 
-  async finallyAddImage(chatId: number, reply: ReplyQueue) {
+  async addImageToDb(chatId: number, reply: ReplyQueue) {
     const data = await this.convoService.getAddImageData(chatId);
     if (!data || !data.name || !data.image)
       throw new BotError('The image or the ID is missing.');
@@ -185,7 +221,7 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
         id: data.name,
       },
     };
-    const res = await this.imageService.save(dto);
+    await this.imageService.save(dto);
     reply.text('Guardada!');
   }
 
