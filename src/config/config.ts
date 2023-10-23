@@ -48,7 +48,7 @@ const config = {
         name: 'PtService',
         path: './service/telegramBot/commands/pt.service',
       } as Dep,
-      shotstack: {
+      video: {
         name: 'ShotstackService',
         path: './service/shotstack.service',
       } as Dep,

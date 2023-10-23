@@ -1,21 +1,31 @@
 import axios from "axios";
 import fs from "fs";
 import fetch from "node-fetch-commonjs";
+import {Subject} from "rxjs";
 import {Service} from "typedi";
 import {loadEnvVar} from "../config";
-import {filesFolder} from "../config/constants";
-import IVideoService from "./iService/i-video.service";
+import {tempFolder} from "../config/constants";
+import IVideoService, {VideoCreation$} from "./iService/i-video.service";
 
 @Service()
 export default class ShotstackService implements IVideoService {
 
-  async createVideo(image: string) {
+  createVideo(image: string) {
+    const ret = new Subject<VideoCreation$>();
+
+    this.asyncCreateVideo(ret, image);
+
+    return ret.asObservable();
+  }
+
+  async asyncCreateVideo(rxjsSubject: Subject<VideoCreation$>, image: string) {
     const fileStackResp = await fetch(`https://www.filestackapi.com/api/store/S3?key=${loadEnvVar('filestackApiKey')}`, {
       method: 'POST', body: fs.createReadStream(image), headers: {
         accept: 'application/json', 'Content-Type': 'image/jpg',
       },
     });
-    const fileStackData: any = await fileStackResp.json();
+
+    const imageUrl = (await fileStackResp.json() as any).url;
 
     const a = {
       output: {
@@ -38,7 +48,7 @@ export default class ShotstackService implements IVideoService {
                 transition: { out: "fade" },
               },
               {
-                asset: { type: "image", src: fileStackData.url },
+                asset: { type: "image", src: imageUrl },
                 start: 9,
                 length: 20,
                 transition: { in: "fade" },
@@ -55,6 +65,7 @@ export default class ShotstackService implements IVideoService {
     const id = renderResp.data.response.id;
     let done = false;
     let url: string | undefined = undefined;
+    const fileName = `${tempFolder}/${new Date().getTime()}.mp4`;
     while (!done) {
       const statusResp = await axios.get(`https://api.shotstack.io/edit/stage/render/${id}`,
           { headers: { "x-api-key": shotstackApiKey } });
@@ -68,9 +79,10 @@ export default class ShotstackService implements IVideoService {
     }
     if (url) {
       const file = await axios.get(url, { responseType: 'stream' });
-      const writer = fs.createWriteStream(`${filesFolder}/video.mp4`);
+      const writer = fs.createWriteStream(fileName);
       file.data.pipe(writer);
     }
+
   }
 
 }

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@types/express": "^4.17.13",
+    "@types/lodash": "^4.14.200",
     "@types/uuid": "^9.0.1",
     "axios": "^1.4.0",
     "botgram": "^2.2.0",
@@ -24,6 +25,7 @@
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
     "lodas": "^1.2.0",
+    "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
     "lorem-ipsum": "^2.0.8",
     "moment": "^2.29.4",
@@ -34,6 +36,7 @@
     "node-fetch-commonjs": "^3.3.1",
     "randomstring": "^1.2.2",
     "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.1",
     "shotstack-sdk": "^0.2.2",
     "ts-node": "^10.9.1",
     "typedi": "^0.10.0",

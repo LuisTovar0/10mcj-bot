@@ -31,7 +31,7 @@ export default class ImageCommands implements IImageCommandsService {
       @Inject(config.deps.service.image.name) private imageService: IImageService,
       @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
       @Inject(config.deps.service.simpleUser.name) private simpleUserService: ISimpleUserService,
-      @Inject(config.deps.service.shotstack.name) private shotstackService: IVideoService,
+      @Inject(config.deps.service.video.name) private videoService: IVideoService,
   ) {}
 
   registerCommands(bot: Bot) {
@@ -96,7 +96,6 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
       fd.append('photo', fs.createReadStream(generatedFileName));
       await axios.post(`${this.botUtils.methodsUrl}/sendPhoto`,
           fd, { params: { chat_id: msg.chat.id } });
-      await this.shotstackService.createVideo(generatedFileName);
       fs.unlinkSync(generatedFileName);
     });
 
@@ -116,6 +115,33 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
       reply.text(user.chosenPhotoId ? user.chosenPhotoId : 'No image set. Default will be used.');
     });
 
+    bot.command('video', async (msg, reply) => {
+      await this.listsService.whitelist.onlyAdminsAllowed(msg, reply);
+      const chatId = msg.chat.id;
+      const existingConvo = await this.convoService.wholeConvo(chatId);
+      if (existingConvo) {
+        reply.text(`You were using the ${existingConvo.command} command. Wanna /cancel?`);
+        return;
+      }
+
+      reply.text('OK! agora um texto para o vídeo, e uma imagem');
+    });
+
+  }
+
+  async imgAddHandlePhoto(chatId: number, reply: ReplyQueue, imgBuffer: Buffer) {
+    const res = await this.convoService.setImg(chatId, imgBuffer);
+    if (!res) throw new BotError('Image could not be loaded.');
+    const data = await this.convoService.getAddImageData(chatId);
+    if (data && data.image && data.name)
+      await this.addImageToDb(chatId, reply);
+    else reply.text('OK! falta o ID');
+  }
+
+  async videoHandlePhoto(chatId: number, reply: ReplyQueue, imgBuffer: Buffer) {
+    await this.convoService.setVideoImage(chatId, imgBuffer)
+    || (() => {throw new BotError('Image could not be saved to the DB');})();
+    //todo
   }
 
   async handlePhoto(bot: Bot, msg: messagePhoto, reply: ReplyQueue): Promise<void> {
@@ -123,7 +149,8 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     const command = await this.convoService.getCommand(chatId);
     if (command === null) throw await ConvoError.new(this.convoService, chatId, 'getCommand at handle photo');
 
-    if (command !== 'img_add') throw new BotError(`Only images for the 'img_add' command are handled here.`);
+    if (command !== 'img_add' && command !== 'video')
+      throw new BotError(`Only images for the 'img_add' command are handled here.`);
 
     //#region retrieving the image
     //todo make it faster
@@ -151,12 +178,10 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     fs.rmSync(fileName);
     //#endregion
 
-    const res = await this.convoService.setImg(chatId, buffer);
-    if (!res) throw new BotError('Image could not be loaded.');
-    const data = await this.convoService.getAddImageData(chatId);
-    if (data && data.image && data.name)
-      await this.finallyAddImage(chatId, reply);
-    else reply.text('OK! falta o ID');
+    if (command === 'img_add')
+      await this.imgAddHandlePhoto(chatId, reply, buffer);
+    if (command === 'video')
+      await this.videoHandlePhoto(chatId, reply, buffer);
   }
 
   isImageCommand(command: string) {
@@ -179,12 +204,12 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
 
       const data = await this.convoService.getAddImageData(chatId);
       if (data && data.image && data.name)
-        await this.finallyAddImage(chatId, reply);
+        await this.addImageToDb(chatId, reply);
       else reply.text('OK! falta a foto');
     }
   }
 
-  async finallyAddImage(chatId: number, reply: ReplyQueue) {
+  async addImageToDb(chatId: number, reply: ReplyQueue) {
     const data = await this.convoService.getAddImageData(chatId);
     if (!data || !data.name || !data.image)
       throw new BotError('The image or the ID is missing.');

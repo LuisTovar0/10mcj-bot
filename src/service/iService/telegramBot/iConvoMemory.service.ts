@@ -1,3 +1,5 @@
+import {isBoolean, isBuffer, isString} from "lodash";
+
 export default interface IConvoMemoryService {
 
   exists(chatId: number): Promise<boolean>;
@@ -59,11 +61,26 @@ export default interface IConvoMemoryService {
 
   //#endregion
 
+  //#region video data
+  getVideoText(chatId: number): Promise<string | null | undefined>;
+
+  videoHasAudio(chatId: number): Promise<boolean | null | undefined>;
+
+  getVideoImage(chatId: number): Promise<Buffer | null | undefined>;
+
+  setVideoText(chatId: number, text: string): Promise<boolean>;
+
+  setVideoAudio(chatId: number, audio: boolean): Promise<boolean>;
+
+  setVideoImage(chatId: number, imgBuffer: Buffer): Promise<boolean>;
+
+  //#endregion
+
 }
 
 export interface InfosForText {
   telegram: string;
-  signal: string,
+  signal: string;
   date: string;
   descr1: string;
   descr2?: string;
@@ -79,7 +96,7 @@ export function isInfosForText(v: any): v is InfosForText {
 
   const td2 = typeof ift.descr2;
   return isString(ift.telegram) && isString(ift.signal) && isString(ift.date) && isString(ift.descr1)
-    && (td2 === 'string' || td2 === 'undefined');
+      && (td2 === 'string' || td2 === 'undefined');
 }
 
 export interface AddImageData {
@@ -113,6 +130,19 @@ export function isTextData(v: any): v is TextData {
   const td = v as TextData;
   // noinspection SuspiciousTypeOfGuard
   return (typeof td.audio) === 'boolean' && (td.text === undefined || isInfosForText(td.text));
+}
+
+export interface VideoData {
+  audio: boolean;
+  image: Buffer;
+  text: string;
+}
+
+export function isVideoData(v: any): v is VideoData {
+  if (!v) return false;
+  const vd = v as VideoData;
+  // noinspection SuspiciousTypeOfGuard
+  return isBoolean(vd.audio) && isString(vd.text) && isBuffer(vd.image);
 }
 
 export type Data = TextData | AddImageData;
