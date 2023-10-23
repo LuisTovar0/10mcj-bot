@@ -1,12 +1,12 @@
+import del from "del";
+import fs from 'fs';
 import 'reflect-metadata';
 import {Container} from "typedi";
-import fs from 'fs';
-import del from "del";
+import config from "./config";
+import {tempFolder} from "./config/constants";
 
 import loaders from "./loaders";
 import server from "./server";
-import {tempFolder} from "./config/constants";
-import config from "./config";
 import IBotService from "./service/iService/telegramBot/IBotService";
 
 async function app() {
@@ -32,3 +32,4 @@ async function app() {
 }
 
 app();
+
