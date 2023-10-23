@@ -32,10 +32,6 @@ const config = {
         name: 'BotUtilsServive',
         path: './service/telegramBot/bot-utils.service',
       },
-      textFormatting: {
-        name: 'TextFormattingService',
-        path: './service/telegramBot/text-formatting.service',
-      } as Dep,
       convoMemory: {
         name: 'LocalConvoMemoryService',
         path: './service/telegramBot/local-convo-memory.service',

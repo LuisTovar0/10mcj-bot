@@ -1,17 +1,15 @@
 import {Inject, Service} from "typedi";
-
-import IBotService from "../iService/telegramBot/i-bot-service";
-import {Bot} from "./types/botgram";
 import config, {loadEnvVar} from "../../config";
-import IBotUtilsService from "../iService/telegramBot/i-bot-utils.service";
+import IImageCommandsService from "../iService/i-image-commands.service";
 import IInRequestService from "../iService/i-in-request.service";
-import ITextFormattingService from "../iService/telegramBot/i-text-formatting.service";
+import IBotService from "../iService/telegramBot/i-bot-service";
+import IBotUtilsService from "../iService/telegramBot/i-bot-utils.service";
 import IConvoMemoryService from "../iService/telegramBot/i-convo-memory.service";
 import IListsService from "../iService/telegramBot/i-lists-service";
 import IPtService from "../iService/telegramBot/i-pt.service";
 import BotError from "./botError";
-import IImageCommandsService from "../iService/i-image-commands.service";
-
+import * as textFormatting from "./text-formatting.service";
+import {Bot} from "./types/botgram";
 
 const botgram = require("botgram");
 
@@ -21,7 +19,6 @@ export default class BotService implements IBotService {
   constructor(
     @Inject(config.deps.service.inRequest.name) private inRequestService: IInRequestService,
     @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
-    @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
     @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
     @Inject(config.deps.service.lists.name) private listsService: IListsService,
     @Inject(config.deps.service.pt.name) private pt: IPtService,
@@ -137,7 +134,7 @@ more or less private bot.`, "HTML"));
         return;
       }
 
-      reply.text(this.textFormattingService.inRequestsToString(await this.inRequestService.getLastWeekRequests()));
+      reply.text(textFormatting.inRequestsToString(await this.inRequestService.getLastWeekRequests()));
     });
 
     bot.command((msg, reply) => reply.text(`Say what? I'm not recognizing that command.`));
@@ -180,7 +177,7 @@ more or less private bot.`, "HTML"));
         // if a command hasn't been used, just return the formatted texts
         try {
           reply.text(`You should use a command before sending text.`);
-          const texts = this.textFormattingService.getFullInfo(msg.text);
+          const texts = textFormatting.getFullInfo(msg.text);
           this.botUtils.markdownHideLinks(reply, texts.telegram);
           this.botUtils.textHideLinks(reply, texts.signal);
           return;

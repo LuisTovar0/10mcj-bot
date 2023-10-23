@@ -7,16 +7,15 @@ import config from "../../../config";
 import {filesFolder} from "../../../config/constants";
 import UniqueEntityID from "../../../domain/core/unique-entity-id";
 import ImageDto from "../../../dto/image.dto";
-import IVideoService from "../../iService/i-video.service";
-import IImageService from "../../iService/i-image.service";
 import IImageCommandsService from "../../iService/i-image-commands.service";
 import IImageEditingService from "../../iService/i-image-editing.service";
+import IImageService from "../../iService/i-image.service";
 import ISimpleUserService from "../../iService/i-simpleUser.service";
 import IBotUtilsService from "../../iService/telegramBot/i-bot-utils.service";
 import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/i-convo-memory.service";
 import IListsService from "../../iService/telegramBot/i-lists-service";
-import ITextFormattingService from "../../iService/telegramBot/i-text-formatting.service";
 import BotError from "../botError";
+import * as textFormatting from "../text-formatting.service";
 import {Bot, File, ReplyQueue} from "../types/botgram";
 import {messagePhoto, messageText} from "../types/model";
 
@@ -26,12 +25,10 @@ export default class ImageCommands implements IImageCommandsService {
   constructor(
       @Inject(config.deps.service.lists.name) private listsService: IListsService,
       @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
-      @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
       @Inject(config.deps.service.imageEditing.name) private imageEditingService: IImageEditingService,
       @Inject(config.deps.service.image.name) private imageService: IImageService,
       @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
       @Inject(config.deps.service.simpleUser.name) private simpleUserService: ISimpleUserService,
-      @Inject(config.deps.service.video.name) private videoService: IVideoService,
   ) {}
 
   registerCommands(bot: Bot) {
@@ -71,7 +68,7 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
         offset = maybeOffset;
         title = noCommand.slice(1).join(' ');
       }
-      const { day, month, year } = this.textFormattingService.theDate();
+      const { day, month, year } = textFormatting.theDate();
       moment.locale('pt-pt');
       const date = moment().date(day).month(month - 1).year(year).format("DD MMMM YYYY").toString();
 

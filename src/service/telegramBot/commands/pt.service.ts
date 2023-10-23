@@ -1,19 +1,17 @@
-import {Inject, Service} from "typedi";
-import fs from "fs";
-import FormData from 'form-data';
 import axios from "axios";
-
-import IPtService from "../../iService/telegramBot/i-pt.service";
-import {Bot, ReplyQueue} from "../types/botgram";
-import {InputFile, messageAudio, messageCommand, messageText} from "../types/model";
-import BotError from "../botError";
-import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/i-convo-memory.service";
-import ITextFormattingService from "../../iService/telegramBot/i-text-formatting.service";
+import FormData from 'form-data';
+import fs from "fs";
+import {Inject, Service} from "typedi";
 import config from "../../../config";
 import {tempFolder} from "../../../config/constants";
 import IBotUtilsService from "../../iService/telegramBot/i-bot-utils.service";
+import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/i-convo-memory.service";
 import IListsService from "../../iService/telegramBot/i-lists-service";
-import IImageService from "../../iService/i-image.service";
+import IPtService from "../../iService/telegramBot/i-pt.service";
+import BotError from "../botError";
+import * as textFormatting from "../text-formatting.service";
+import {Bot, ReplyQueue} from "../types/botgram";
+import {InputFile, messageAudio, messageCommand, messageText} from "../types/model";
 
 @Service()
 export default class PtService implements IPtService {
@@ -21,11 +19,9 @@ export default class PtService implements IPtService {
   private readonly channel = process.env.CHANNEL;
 
   constructor(
-    @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
-    @Inject(config.deps.service.textFormatting.name) private textFormattingService: ITextFormattingService,
-    @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
-    @Inject(config.deps.service.lists.name) private listsService: IListsService,
-    @Inject(config.deps.service.image.name) private imageService: IImageService,
+      @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
+      @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
+      @Inject(config.deps.service.lists.name) private listsService: IListsService,
   ) {
   }
 
@@ -44,8 +40,8 @@ export default class PtService implements IPtService {
       if (!exists) {
         await this.convoService.set(msg.chat.id, {
           command: msg.command, data: {
-            audio: false
-          }
+            audio: false,
+          },
         });
         reply.text(`okapa. que venham o áudio e o texto`);
       } else reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
@@ -88,13 +84,13 @@ export default class PtService implements IPtService {
     const chatId = msg.chat.id;
     if (await this.convoService.hasAudio(chatId)) {
       // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
-      await this.convoService.setText(chatId, this.textFormattingService.getFullInfo(msg.text));
+      await this.convoService.setText(chatId, textFormatting.getFullInfo(msg.text));
       await this.finalResponse(chatId, reply);
     } else {
       if (await this.convoService.getText(chatId))
-        // if we don't have audio but already have text, let the user know
+          // if we don't have audio but already have text, let the user know
         throw new BotError(`já tinhas mandado texto, agora tens de mandar áudio.\nou então /cancel`);
-      const texts = this.textFormattingService.getFullInfo(msg.text);
+      const texts = textFormatting.getFullInfo(msg.text);
       await this.convoService.setText(chatId, texts);
       reply.text(`boa escolha de emojis ${texts.descr1.split(` `)[0]}`);
     }
@@ -119,12 +115,12 @@ export default class PtService implements IPtService {
           const fd = new FormData();
           fd.append('audio', file);
           await axios.post(`${this.botUtils.methodsUrl}/sendAudio`,
-            fd, {
-              params: {
-                chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',
-                duration, title, performer: texts.date
-              }
-            });
+              fd, {
+                params: {
+                  chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',
+                  duration, title, performer: texts.date,
+                },
+              });
           break;
       }
       this.botUtils.textHideLinks(reply, texts.signal);
