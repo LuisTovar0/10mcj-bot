@@ -1,9 +1,9 @@
 import {model, Schema} from 'mongoose';
 import {Service} from "typedi";
 
-import ISimpleUserRepo from "../../../service/iRepos/iSimpleUser.repo";
-import SimpleUserDataModel from "../../dataModel/simpleUser.dataModel";
-import {MongoRepo} from "./general/mongoRepo";
+import ISimpleUserRepo from "../../../service/iRepos/i-simple-user.repo";
+import SimpleUserDataModel from "../../dataModel/simple-user.data-model";
+import {MongoRepo} from "./general/mongo-repo";
 
 @Service()
 export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> implements ISimpleUserRepo {

@@ -1,4 +1,4 @@
-import SimpleUserDataModel from "../../persistence/dataModel/simpleUser.dataModel";
+import SimpleUserDataModel from "../../persistence/dataModel/simple-user.data-model";
 
 export default interface ISimpleUserRepo {
 

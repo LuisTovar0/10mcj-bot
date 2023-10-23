@@ -1,6 +1,6 @@
 import {describe, it} from 'mocha';
 import * as assert from 'assert';
-import {isInfosForText, isTextData} from "../../../src/service/iService/telegramBot/iConvoMemory.service";
+import {isInfosForText, isTextData} from "../../../src/service/iService/telegramBot/i-convo-memory.service";
 
 describe('[Unit] Convo Memory general functions', () => {
 

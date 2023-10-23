@@ -1,7 +1,7 @@
 import {Container} from "typedi";
 
 import config from "./config";
-import DbConnector from "./persistence/repos/dbConnector";
+import DbConnector from "./persistence/repos/db-connector";
 
 export interface Dep {
   name: string;

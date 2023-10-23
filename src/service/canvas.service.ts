@@ -1,7 +1,7 @@
 import {createCanvas, loadImage, registerFont} from 'canvas';
 import {Service} from "typedi";
 
-import IImageEditingService, {ImageEditingOptions} from "./iService/iImageEditing.service";
+import IImageEditingService, {ImageEditingOptions} from "./iService/i-image-editing.service";
 
 @Service()
 export default class CanvasService implements IImageEditingService {

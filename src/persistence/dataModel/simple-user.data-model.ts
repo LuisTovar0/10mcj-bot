@@ -1,4 +1,4 @@
-import DataModel from './dataModel';
+import DataModel from './data-model';
 
 export default interface SimpleUserDataModel extends DataModel {
   id: number;

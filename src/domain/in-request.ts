@@ -1,7 +1,7 @@
 import moment, {Moment} from "moment";
-import SimpleUser from "./simpleUser";
+import SimpleUser from "./simple-user";
 import Entity from "./core/entity";
-import UniqueEntityID from "./core/uniqueEntityId";
+import UniqueEntityID from "./core/unique-entity-id";
 
 interface InRequestProps {
   user: SimpleUser;

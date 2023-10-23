@@ -1,5 +1,5 @@
 import config from "../../config";
-import MongoDbConnector from "./mongodb/general/mongoDbConnector";
+import MongoDbConnector from "./mongodb/general/mongo-db-connector";
 
 // Singleton
 export default class DbConnector {

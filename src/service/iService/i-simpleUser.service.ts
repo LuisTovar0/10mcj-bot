@@ -1,4 +1,4 @@
-import SimpleUser, {SimpleUserProps} from "../../domain/simpleUser";
+import SimpleUser, {SimpleUserProps} from "../../domain/simple-user";
 
 export default interface ISimpleUserService {
 

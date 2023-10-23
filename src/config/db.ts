@@ -9,11 +9,11 @@ export const repoDeps = (dbType: string) => {
   const local: RepoDeps = {
     simpleUser: {
       name: 'SimpleUserLocalRepo',
-      path: './persistence/repos/local/simpleUser.local.repo'
+      path: './persistence/repos/local/simple-user.local.repo',
     },
     inRequest: {
       name: 'InRequestLocalRepo',
-      path: './persistence/repos/local/inRequest.local.repo'
+      path: './persistence/repos/local/in-request.local.repo',
     },
     blacklist: {
       name: 'BlacklistLocalRepo',
@@ -23,11 +23,11 @@ export const repoDeps = (dbType: string) => {
   const mongodb: RepoDeps = {
     inRequest: {
       name: 'InRequestMongoDb',
-      path: './persistence/repos/mongodb/inRequest.mongo.repo'
+      path: './persistence/repos/mongodb/in-request.mongo.repo',
     },
     simpleUser: {
       name: 'SimpleUserMongoDb',
-      path: './persistence/repos/mongodb/simpleUser.mongo.repo'
+      path: './persistence/repos/mongodb/simple-user.mongo.repo',
     },
     whitelist: {
       name: 'WhitelistMongoRepo',

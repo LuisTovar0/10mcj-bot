@@ -1,7 +1,7 @@
 import * as fileMapper from './file.mapper';
 import ImageDto from "../dto/image.dto";
-import ImageDataModel from "../persistence/dataModel/image.dataModel";
-import FileDataModel from "../persistence/dataModel/file.dataModel";
+import ImageDataModel from "../persistence/dataModel/image.data-model";
+import FileDataModel from "../persistence/dataModel/file.data-model";
 
 export function dataModelToDto(img: ImageDataModel, file: FileDataModel): ImageDto {
   return {

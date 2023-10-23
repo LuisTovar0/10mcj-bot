@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 
 import config, {loadEnvVar} from "../../../../config";
-import {IDbConnector} from "../../dbConnector";
+import {IDbConnector} from "../../db-connector";
 import {Container} from "typedi";
-import IBotUtilsService from "../../../../service/iService/telegramBot/iBotUtils.service";
+import IBotUtilsService from "../../../../service/iService/telegramBot/i-bot-utils.service";
 
 export default class MongoDbConnector implements IDbConnector {
 

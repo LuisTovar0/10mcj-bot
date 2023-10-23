@@ -7,13 +7,13 @@ import {tempFolder} from "./config/constants";
 
 import loaders from "./loaders";
 import server from "./server";
-import IBotService from "./service/iService/telegramBot/IBotService";
+import IBotService from "./service/iService/telegramBot/i-bot-service";
 
 async function app() {
   loaders();
   server();
 
-  //#region make sure our audios folder exists, or clean it
+  //make sure our audios folder exists, or clean it
   async function newCleanFolder(folderName: string) {
     await del(folderName);
     fs.access(folderName, (error) => {
@@ -23,7 +23,6 @@ async function app() {
     });
   }
 
-  //#endregion
   await newCleanFolder(tempFolder);
 
   // set up and run the bot

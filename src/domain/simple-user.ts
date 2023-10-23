@@ -1,5 +1,5 @@
 import Entity from "./core/entity";
-import UniqueEntityID from "./core/uniqueEntityId";
+import UniqueEntityID from "./core/unique-entity-id";
 
 export interface SimpleUserProps {
   id: number;

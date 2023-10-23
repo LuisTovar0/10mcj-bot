@@ -1,7 +1,7 @@
 import {Service} from "typedi";
 
-import {NumberOfRequestsByUser} from "../iService/iInRequest.service";
-import ITextFormattingService, {AllInfo} from "../iService/telegramBot/iTextFormatting.service";
+import {NumberOfRequestsByUser} from "../iService/i-in-request.service";
+import ITextFormattingService, {AllInfo} from "../iService/telegramBot/i-text-formatting.service";
 import BotError from "./botError";
 
 @Service()

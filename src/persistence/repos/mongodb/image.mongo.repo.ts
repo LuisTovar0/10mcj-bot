@@ -2,12 +2,12 @@ import {Inject, Service} from "typedi";
 import {model, Schema} from "mongoose";
 
 import config from "../../../config";
-import IFileRepo from "../../../service/iRepos/iFileRepo";
-import {MongoRepo} from "./general/mongoRepo";
-import ImageDataModel from "../../dataModel/image.dataModel";
+import IFileRepo from "../../../service/iRepos/i-file-repo";
+import {MongoRepo} from "./general/mongo-repo";
+import ImageDataModel from "../../dataModel/image.data-model";
 import * as imageMapper from '../../../mappers/image.mapper';
 import ImageDto from "../../../dto/image.dto";
-import IImageRepo from "../../../service/iRepos/iImage.repo";
+import IImageRepo from "../../../service/iRepos/i-image.repo";
 
 @Service()
 export default class ImageMongoRepo extends MongoRepo<ImageDataModel> implements IImageRepo {
