@@ -1,16 +1,16 @@
 import {Inject, Service} from "typedi";
 
-import IBotService from "../iService/telegramBot/IBotService";
+import IBotService from "../iService/telegramBot/i-bot-service";
 import {Bot} from "./types/botgram";
 import config, {loadEnvVar} from "../../config";
-import IBotUtilsService from "../iService/telegramBot/iBotUtils.service";
-import IInRequestService from "../iService/iInRequest.service";
-import ITextFormattingService from "../iService/telegramBot/iTextFormatting.service";
-import IConvoMemoryService from "../iService/telegramBot/iConvoMemory.service";
-import IListsService from "../iService/telegramBot/IListsService";
-import IPtService from "../iService/telegramBot/iPt.service";
+import IBotUtilsService from "../iService/telegramBot/i-bot-utils.service";
+import IInRequestService from "../iService/i-in-request.service";
+import ITextFormattingService from "../iService/telegramBot/i-text-formatting.service";
+import IConvoMemoryService from "../iService/telegramBot/i-convo-memory.service";
+import IListsService from "../iService/telegramBot/i-lists-service";
+import IPtService from "../iService/telegramBot/i-pt.service";
 import BotError from "./botError";
-import IImageCommandsService from "../iService/iImageCommands.service";
+import IImageCommandsService from "../iService/i-image-commands.service";
 
 
 const botgram = require("botgram");

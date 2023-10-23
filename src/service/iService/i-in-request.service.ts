@@ -1,5 +1,5 @@
-import InRequest from "../../domain/inRequest";
-import {SimpleUserProps} from "../../domain/simpleUser";
+import InRequest from "../../domain/in-request";
+import {SimpleUserProps} from "../../domain/simple-user";
 
 export type NumberOfRequestsByUser = { user?: string, requests: number }[];
 

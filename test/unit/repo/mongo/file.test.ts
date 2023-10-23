@@ -4,9 +4,9 @@ import * as randStr from 'randomstring';
 import * as fs from "fs";
 
 import FileMongoRepo from "../../../../src/persistence/repos/mongodb/file.mongo.repo";
-import FileDataModel from "../../../../src/persistence/dataModel/file.dataModel";
-import UniqueEntityID from "../../../../src/domain/core/uniqueEntityId";
-import DbConnector from "../../../../src/persistence/repos/dbConnector";
+import FileDataModel from "../../../../src/persistence/dataModel/file.data-model";
+import UniqueEntityID from "../../../../src/domain/core/unique-entity-id";
+import DbConnector from "../../../../src/persistence/repos/db-connector";
 
 describe('[Unit] FileMongoRepo + MongoDB server', () => {
 

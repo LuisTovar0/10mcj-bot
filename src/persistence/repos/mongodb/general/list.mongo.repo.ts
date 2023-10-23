@@ -1,5 +1,5 @@
 import {model, Schema} from "mongoose";
-import IListRepo from "../../../../service/iRepos/iList.repo";
+import IListRepo from "../../../../service/iRepos/i-list.repo";
 
 export interface WhitelistElem {
   username: string;

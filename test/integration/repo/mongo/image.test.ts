@@ -5,9 +5,9 @@ import * as fs from "fs";
 
 import FileMongoRepo from "../../../../src/persistence/repos/mongodb/file.mongo.repo";
 import ImageMongoRepo from "../../../../src/persistence/repos/mongodb/image.mongo.repo";
-import DbConnector from "../../../../src/persistence/repos/dbConnector";
+import DbConnector from "../../../../src/persistence/repos/db-connector";
 import ImageDto from "../../../../src/dto/image.dto";
-import UniqueEntityID from "../../../../src/domain/core/uniqueEntityId";
+import UniqueEntityID from "../../../../src/domain/core/unique-entity-id";
 
 describe('[Integration] ImageMongoRepo + FileMongoRepo + MongoDB server', function () {
   this.timeout(5000);

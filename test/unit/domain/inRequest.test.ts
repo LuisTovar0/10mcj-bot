@@ -2,9 +2,9 @@ import * as assert from 'assert';
 import { describe, it } from 'mocha';
 import moment from 'moment';
 
-import InRequest from "../../../src/domain/inRequest";
-import SimpleUser from "../../../src/domain/simpleUser";
-import UniqueEntityID from "../../../src/domain/core/uniqueEntityId";
+import InRequest from "../../../src/domain/in-request";
+import SimpleUser from "../../../src/domain/simple-user";
+import UniqueEntityID from "../../../src/domain/core/unique-entity-id";
 
 describe('[Unit] InRequest class', () => {
 

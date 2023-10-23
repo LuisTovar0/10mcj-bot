@@ -1,4 +1,4 @@
-import IListRepo from "./iList.repo";
+import IListRepo from "./i-list.repo";
 
 export default interface IBlacklistRepo extends IListRepo {
 

@@ -1,4 +1,4 @@
-import IBlacklistRepo from "../../../service/iRepos/iBlacklist.repo";
+import IBlacklistRepo from "../../../service/iRepos/i-blacklist.repo";
 import ListLocalRepo from "./list.local.repo";
 import {Service} from "typedi";
 

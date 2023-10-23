@@ -1,6 +1,6 @@
 import {Service} from "typedi";
 
-import IWhitelistRepo from "../../../service/iRepos/iWhitelist.repo";
+import IWhitelistRepo from "../../../service/iRepos/i-whitelist.repo";
 import ListMongoRepo from "./general/list.mongo.repo";
 import {Message, ReplyQueue} from "../../../service/telegramBot/types/botgram";
 import BotError from "../../../service/telegramBot/botError";

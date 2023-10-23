@@ -1,4 +1,4 @@
-import {NumberOfRequestsByUser} from "../iInRequest.service";
+import {NumberOfRequestsByUser} from "../i-in-request.service";
 
 export interface TextInfo {
   url: string;

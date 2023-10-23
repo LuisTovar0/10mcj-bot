@@ -1,10 +1,10 @@
 import {Inject, Service} from "typedi";
 
 import config from "../config";
-import * as mapper from '../mappers/simpleUser.mapper';
-import SimpleUser, {SimpleUserProps} from "../domain/simpleUser";
-import ISimpleUserService from "./iService/iSimpleUser.service";
-import ISimpleUserRepo from "./iRepos/iSimpleUser.repo";
+import * as mapper from '../mappers/simple-user.mapper';
+import SimpleUser, {SimpleUserProps} from "../domain/simple-user";
+import ISimpleUserService from "./iService/i-simpleUser.service";
+import ISimpleUserRepo from "./iRepos/i-simple-user.repo";
 
 @Service()
 export default class SimpleUserService implements ISimpleUserService {

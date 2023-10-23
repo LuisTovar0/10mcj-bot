@@ -1,13 +1,13 @@
 import {Inject, Service} from "typedi";
-import IListsService from "../../iService/telegramBot/IListsService";
+import IListsService from "../../iService/telegramBot/i-lists-service";
 import config from "../../../config";
-import IWhitelistRepo from "../../iRepos/iWhitelist.repo";
+import IWhitelistRepo from "../../iRepos/i-whitelist.repo";
 import {Bot} from "../types/botgram";
-import ISimpleUserService from "../../iService/iSimpleUser.service";
+import ISimpleUserService from "../../iService/i-simpleUser.service";
 import {messageCommand} from "../types/model";
 import BotError from "../botError";
-import IBlacklistRepo from "../../iRepos/iBlacklist.repo";
-import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
+import IBlacklistRepo from "../../iRepos/i-blacklist.repo";
+import IBotUtilsService from "../../iService/telegramBot/i-bot-utils.service";
 
 @Service()
 export default class ListsService implements IListsService {

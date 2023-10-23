@@ -1,6 +1,6 @@
 import {Bot} from "../../telegramBot/types/botgram";
-import IBlacklistRepo from "../../iRepos/iBlacklist.repo";
-import IWhitelistRepo from "../../iRepos/iWhitelist.repo";
+import IBlacklistRepo from "../../iRepos/i-blacklist.repo";
+import IWhitelistRepo from "../../iRepos/i-whitelist.repo";
 
 export default interface IListsService {
 

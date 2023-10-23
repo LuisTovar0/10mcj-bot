@@ -1,4 +1,4 @@
-import DataModel from "./dataModel";
+import DataModel from "./data-model";
 
 export default interface FileDataModel extends DataModel {
   id: string

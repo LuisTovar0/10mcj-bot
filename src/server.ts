@@ -4,8 +4,8 @@ import fs from "fs";
 
 import config from "./config";
 import {filesFolder} from "./config/constants";
-import IBotUtilsService from "./service/iService/telegramBot/iBotUtils.service";
-import IImageService from "./service/iService/iImage.service";
+import IBotUtilsService from "./service/iService/telegramBot/i-bot-utils.service";
+import IImageService from "./service/iService/i-image.service";
 
 export default () => {
 

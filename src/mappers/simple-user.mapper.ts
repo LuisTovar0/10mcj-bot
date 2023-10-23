@@ -1,5 +1,5 @@
-import SimpleUser from "../domain/simpleUser";
-import SimpleUserDataModel from "../persistence/dataModel/simpleUser.dataModel";
+import SimpleUser from "../domain/simple-user";
+import SimpleUserDataModel from "../persistence/dataModel/simple-user.data-model";
 
 export function domainToDataModel(user: SimpleUser): SimpleUserDataModel {
   return {

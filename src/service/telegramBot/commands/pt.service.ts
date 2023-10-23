@@ -3,17 +3,17 @@ import fs from "fs";
 import FormData from 'form-data';
 import axios from "axios";
 
-import IPtService from "../../iService/telegramBot/iPt.service";
+import IPtService from "../../iService/telegramBot/i-pt.service";
 import {Bot, ReplyQueue} from "../types/botgram";
 import {InputFile, messageAudio, messageCommand, messageText} from "../types/model";
 import BotError from "../botError";
-import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/iConvoMemory.service";
-import ITextFormattingService from "../../iService/telegramBot/iTextFormatting.service";
+import IConvoMemoryService, {ConvoError} from "../../iService/telegramBot/i-convo-memory.service";
+import ITextFormattingService from "../../iService/telegramBot/i-text-formatting.service";
 import config from "../../../config";
 import {tempFolder} from "../../../config/constants";
-import IBotUtilsService from "../../iService/telegramBot/iBotUtils.service";
-import IListsService from "../../iService/telegramBot/IListsService";
-import IImageService from "../../iService/iImage.service";
+import IBotUtilsService from "../../iService/telegramBot/i-bot-utils.service";
+import IListsService from "../../iService/telegramBot/i-lists-service";
+import IImageService from "../../iService/i-image.service";
 
 @Service()
 export default class PtService implements IPtService {
