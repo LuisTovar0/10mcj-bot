@@ -30,19 +30,19 @@ const config = {
       } as Dep,
       botUtils: {
         name: 'BotUtilsServive',
-        path: './service/telegramBot/bot-utils.service',
+        path: './service/telegram-bot/bot-utils.service',
       },
       convoMemory: {
         name: 'LocalConvoMemoryService',
-        path: './service/telegramBot/local-convo-memory.service',
+        path: './service/telegram-bot/local-convo-memory.service',
       } as Dep,
       lists: {
         name: 'WhitelistService',
-        path: './service/telegramBot/commands/lists.service',
+        path: './service/telegram-bot/commands/lists.service',
       } as Dep,
       pt: {
         name: 'PtService',
-        path: './service/telegramBot/commands/pt.service',
+        path: './service/telegram-bot/commands/pt.service',
       } as Dep,
       video: {
         name: 'ShotstackService',
@@ -50,11 +50,11 @@ const config = {
       } as Dep,
       imageCommands: {
         name: 'ImageCommands',
-        path: './service/telegramBot/commands/image.commands',
+        path: './service/telegram-bot/commands/image.commands',
       } as Dep,
       bot: {
         name: 'BotService',
-        path: './service/telegramBot/bot.service',
+        path: './service/telegram-bot/bot.service',
       } as Dep,
     },
   },

@@ -1,4 +1,4 @@
-import IListRepo from "../../../service/iRepos/i-list.repo";
+import IListRepo from "../../../service/i-repos/i-list.repo";
 
 export default abstract class ListLocalRepo implements IListRepo {
 

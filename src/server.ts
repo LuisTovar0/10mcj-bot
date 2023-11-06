@@ -1,11 +1,11 @@
 import express, {Request, Response} from "express";
-import {Container} from "typedi";
 import fs from "fs";
+import {Container} from "typedi";
 
 import config from "./config";
 import {filesFolder} from "./config/constants";
-import IBotUtilsService from "./service/iService/telegramBot/i-bot-utils.service";
-import IImageService from "./service/iService/i-image.service";
+import IImageService from "./service/i-service/i-image.service";
+import IBotUtilsService from "./service/i-service/telegram-bot/i-bot-utils.service";
 
 export default () => {
 

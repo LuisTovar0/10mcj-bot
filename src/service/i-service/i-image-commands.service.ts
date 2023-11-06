@@ -1,5 +1,5 @@
-import {Bot, ReplyQueue} from "../telegramBot/types/botgram";
-import {messagePhoto, messageText} from "../telegramBot/types/model";
+import {Bot, ReplyQueue} from "../telegram-bot/types/botgram";
+import {messagePhoto, messageText} from "../telegram-bot/types/model";
 
 export default interface IImageCommandsService {
 

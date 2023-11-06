@@ -1,15 +1,15 @@
-import {Container, Service} from "typedi";
-import del from "del";
 import axios from "axios";
+import del from "del";
 import fs from "fs";
-
-import {FileLike} from "./types/model";
-import {Bot, Message, ReplyQueue} from "./types/botgram";
-import BotError from "./botError";
-import IBotUtilsService from "../iService/telegramBot/i-bot-utils.service";
+import {Container, Service} from "typedi";
 import config, {loadEnvVar} from "../../config";
 import {tempFolder} from "../../config/constants";
-import IConvoMemoryService from "../iService/telegramBot/i-convo-memory.service";
+import IBotUtilsService from "../i-service/telegram-bot/i-bot-utils.service";
+import IConvoMemoryService from "../i-service/telegram-bot/i-convo-memory.service";
+import BotError from "./bot-error";
+import {Bot, Message, ReplyQueue} from "./types/botgram";
+
+import {FileLike} from "./types/model";
 
 @Service()
 export default class BotUtilsService implements IBotUtilsService {

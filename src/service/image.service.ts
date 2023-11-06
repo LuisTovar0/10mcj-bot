@@ -1,8 +1,8 @@
 import {Inject, Service} from "typedi";
 import config from "../config";
 import ImageDto from "../dto/image.dto";
-import IImageRepo from "./iRepos/i-image.repo";
-import IImageService from "./iService/i-image.service";
+import IImageRepo from "./i-repos/i-image.repo";
+import IImageService from "./i-service/i-image.service";
 
 @Service()
 export default class ImageService implements IImageService {

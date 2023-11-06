@@ -1,4 +1,4 @@
-import FileDataModel from "../../persistence/dataModel/file.data-model";
+import FileDataModel from "../../persistence/data-model/file.data-model";
 
 export default interface IFileRepo {
 

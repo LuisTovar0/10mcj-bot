@@ -402,30 +402,30 @@ declare namespace botgram {
 
   // Model
 
-  export import Message = model.Message;
-  export import MessageEntity = model.MessageEntity;
+  export import Animation = model.Animation;
+  export import CallbackQuery = model.CallbackQuery;
   export import Chat = model.Chat;
+  export import ChatMember = model.ChatMember;
+  export import ChosenInlineResult = model.ChosenInlineResult;
   export import File = model.File;
+  export import formatCommand = model.formatCommand;
+  export import formatKeyboard = model.formatKeyboard;
+  export import GameHighScore = model.GameHighScore;
   export import Image = model.Image;
   export import InlineQuery = model.InlineQuery;
-  export import ChosenInlineResult = model.ChosenInlineResult;
   export import Location = model.Location;
-  export import CallbackQuery = model.CallbackQuery;
-  export import ChatMember = model.ChatMember;
-  export import Animation = model.Animation;
-  export import GameHighScore = model.GameHighScore;
   export import MaskPosition = model.MaskPosition;
-  export import Sticker = model.Sticker;
-  export import StickerSet = model.StickerSet;
-  export import resolveFile = model.resolveFile;
+  export import Message = model.Message;
+  export import MessageEntity = model.MessageEntity;
+  export import parseCommand = model.parseCommand;
+  export import parsePhoto = model.parsePhoto;
   export import resolveChat = model.resolveChat;
+  export import resolveFile = model.resolveFile;
   export import resolveMessage = model.resolveMessage;
   export import resolveSticker = model.resolveSticker;
   export import resolveStickerSet = model.resolveStickerSet;
-  export import parsePhoto = model.parsePhoto;
-  export import parseCommand = model.parseCommand;
-  export import formatCommand = model.formatCommand;
-  export import formatKeyboard = model.formatKeyboard;
+  export import Sticker = model.Sticker;
+  export import StickerSet = model.StickerSet;
 
 }
 

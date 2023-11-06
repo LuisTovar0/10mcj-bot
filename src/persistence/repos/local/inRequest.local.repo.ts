@@ -1,8 +1,8 @@
 import moment from 'moment';
 import {Service} from "typedi";
 
-import IInRequestRepo from "../../../service/iRepos/i-in-request.repo";
-import InRequestDataModel from "../../dataModel/in-request.data-model";
+import IInRequestRepo from "../../../service/i-repos/i-in-request.repo";
+import InRequestDataModel from "../../data-model/in-request.data-model";
 
 @Service()
 export default class InRequestLocalRepo implements IInRequestRepo {

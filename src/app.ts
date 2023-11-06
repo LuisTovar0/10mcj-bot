@@ -7,7 +7,7 @@ import {tempFolder} from "./config/constants";
 
 import loaders from "./loaders";
 import server from "./server";
-import IBotService from "./service/iService/telegramBot/i-bot-service";
+import IBotService from "./service/i-service/telegram-bot/i-bot-service";
 
 async function app() {
   loaders();

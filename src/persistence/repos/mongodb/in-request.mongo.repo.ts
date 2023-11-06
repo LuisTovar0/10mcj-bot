@@ -1,10 +1,10 @@
+import moment from "moment";
 import {Document, model, Schema, Types} from "mongoose";
 import {Service} from "typedi";
-import moment from "moment";
+import IInRequestRepo from "../../../service/i-repos/i-in-request.repo";
+import InRequestDataModel from "../../data-model/in-request.data-model";
 
 import {MongoRepo} from "./general/mongo-repo";
-import InRequestDataModel from "../../dataModel/in-request.data-model";
-import IInRequestRepo from "../../../service/iRepos/i-in-request.repo";
 
 @Service()
 export default class InRequestMongoDb extends MongoRepo<ActualDataModel> implements IInRequestRepo {

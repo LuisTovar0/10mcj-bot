@@ -1,5 +1,5 @@
+import {Message, ReplyQueue} from "../telegram-bot/types/botgram";
 import IListRepo from "./i-list.repo";
-import {Message, ReplyQueue} from "../telegramBot/types/botgram";
 
 export default interface IWhitelistRepo extends IListRepo {
 

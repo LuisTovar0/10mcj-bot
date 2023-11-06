@@ -1,4 +1,4 @@
-import SimpleUserDataModel from "../../dataModel/simple-user.data-model";
+import SimpleUserDataModel from "../../data-model/simple-user.data-model";
 
 // @Service()
 export default class SimpleUserLocalRepo /*implements ISimpleUserRepo*/ {

@@ -1,5 +1,5 @@
-import {NumberOfRequestsByUser} from "../iService/i-in-request.service";
-import BotError from "./botError";
+import {NumberOfRequestsByUser} from "../i-service/i-in-request.service";
+import BotError from "./bot-error";
 
 interface TextInfo {
   url: string;

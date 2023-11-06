@@ -1,13 +1,13 @@
 import {Inject, Service} from "typedi";
 import config, {loadEnvVar} from "../../config";
-import IImageCommandsService from "../iService/i-image-commands.service";
-import IInRequestService from "../iService/i-in-request.service";
-import IBotService from "../iService/telegramBot/i-bot-service";
-import IBotUtilsService from "../iService/telegramBot/i-bot-utils.service";
-import IConvoMemoryService from "../iService/telegramBot/i-convo-memory.service";
-import IListsService from "../iService/telegramBot/i-lists-service";
-import IPtService from "../iService/telegramBot/i-pt.service";
-import BotError from "./botError";
+import IImageCommandsService from "../i-service/i-image-commands.service";
+import IInRequestService from "../i-service/i-in-request.service";
+import IBotService from "../i-service/telegram-bot/i-bot-service";
+import IBotUtilsService from "../i-service/telegram-bot/i-bot-utils.service";
+import IConvoMemoryService from "../i-service/telegram-bot/i-convo-memory.service";
+import IListsService from "../i-service/telegram-bot/i-lists-service";
+import IPtService from "../i-service/telegram-bot/i-pt.service";
+import BotError from "./bot-error";
 import * as textFormatting from "./text-formatting.service";
 import {Bot} from "./types/botgram";
 

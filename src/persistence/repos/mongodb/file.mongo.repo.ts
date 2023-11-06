@@ -1,8 +1,8 @@
-import {Service} from "typedi";
-import {MongoRepo} from "./general/mongo-repo";
 import {model, Schema} from "mongoose";
-import FileDataModel from "../../dataModel/file.data-model";
-import IFileRepo from "../../../service/iRepos/i-file-repo";
+import {Service} from "typedi";
+import IFileRepo from "../../../service/i-repos/i-file-repo";
+import FileDataModel from "../../data-model/file.data-model";
+import {MongoRepo} from "./general/mongo-repo";
 
 @Service()
 export default class FileMongoRepo extends MongoRepo<FileDataModel> implements IFileRepo {

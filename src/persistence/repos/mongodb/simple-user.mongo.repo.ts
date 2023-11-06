@@ -1,8 +1,8 @@
 import {model, Schema} from 'mongoose';
 import {Service} from "typedi";
 
-import ISimpleUserRepo from "../../../service/iRepos/i-simple-user.repo";
-import SimpleUserDataModel from "../../dataModel/simple-user.data-model";
+import ISimpleUserRepo from "../../../service/i-repos/i-simple-user.repo";
+import SimpleUserDataModel from "../../data-model/simple-user.data-model";
 import {MongoRepo} from "./general/mongo-repo";
 
 @Service()

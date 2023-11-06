@@ -5,7 +5,7 @@ import {Subject} from "rxjs";
 import {Service} from "typedi";
 import {loadEnvVar} from "../config";
 import {tempFolder} from "../config/constants";
-import IVideoService, {VideoCreation$} from "./iService/i-video.service";
+import IVideoService, {VideoCreation$} from "./i-service/i-video.service";
 
 @Service()
 export default class ShotstackService implements IVideoService {

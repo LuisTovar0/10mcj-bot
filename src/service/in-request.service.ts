@@ -1,13 +1,13 @@
-import {Inject, Service} from "typedi";
 import moment from 'moment';
+import {Inject, Service} from "typedi";
 
 import config from "../config";
-import IInRequestService from "./iService/i-in-request.service";
-import InRequest from "../domain/in-request";
-import IInRequestRepo from "./iRepos/i-in-request.repo";
-import ISimpleUserService from "./iService/i-simpleUser.service";
-import SimpleUser, {SimpleUserProps} from "../domain/simple-user";
 import UniqueEntityID from "../domain/core/unique-entity-id";
+import InRequest from "../domain/in-request";
+import SimpleUser, {SimpleUserProps} from "../domain/simple-user";
+import IInRequestRepo from "./i-repos/i-in-request.repo";
+import IInRequestService from "./i-service/i-in-request.service";
+import ISimpleUserService from "./i-service/i-simpleUser.service";
 
 type RequestList = {
   user?: string;

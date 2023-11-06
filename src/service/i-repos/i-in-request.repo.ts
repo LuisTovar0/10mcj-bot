@@ -1,4 +1,4 @@
-import InRequestDataModel from "../../persistence/dataModel/in-request.data-model";
+import InRequestDataModel from "../../persistence/data-model/in-request.data-model";
 
 export default interface IInRequestRepo {
 

@@ -1,7 +1,7 @@
 import {Service} from "typedi";
 import IConvoMemoryService, {
   AddImageData, Convo, Data, InfosForText, isAddImageData, isTextData, isVideoData, TextData, VideoData,
-} from "../iService/telegramBot/i-convo-memory.service";
+} from "../i-service/telegram-bot/i-convo-memory.service";
 
 interface ConvoMemory {
   [k: string]: Convo;

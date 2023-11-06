@@ -1,7 +1,7 @@
 import fs from "fs";
 
-import {Bot, Message, ReplyQueue} from "../../telegramBot/types/botgram";
-import {FileLike} from "../../telegramBot/types/model";
+import {Bot, Message, ReplyQueue} from "../../telegram-bot/types/botgram";
+import {FileLike} from "../../telegram-bot/types/model";
 
 export default interface IBotUtilsService {
   token: string;

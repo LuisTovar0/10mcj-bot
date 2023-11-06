@@ -1,6 +1,6 @@
 import {Model} from "mongoose";
 
-import DataModel from "../../../dataModel/data-model";
+import DataModel from "../../../data-model/data-model";
 
 export abstract class MongoRepo<TDataModel extends DataModel> {
 
