@@ -1,19 +1,19 @@
+import del from "del";
+import fs from 'fs';
 import 'reflect-metadata';
 import {Container} from "typedi";
-import fs from 'fs';
-import del from "del";
+import config from "./config";
+import {tempFolder} from "./config/constants";
 
 import loaders from "./loaders";
 import server from "./server";
-import {tempFolder} from "./config/constants";
-import config from "./config";
-import IBotService from "./service/iService/telegramBot/IBotService";
+import IBotService from "./service/i-service/telegram-bot/i-bot-service";
 
 async function app() {
   loaders();
   server();
 
-  //#region make sure our audios folder exists, or clean it
+  //make sure our audios folder exists, or clean it
   async function newCleanFolder(folderName: string) {
     await del(folderName);
     fs.access(folderName, (error) => {
@@ -23,7 +23,6 @@ async function app() {
     });
   }
 
-  //#endregion
   await newCleanFolder(tempFolder);
 
   // set up and run the bot

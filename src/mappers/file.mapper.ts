@@ -1,5 +1,5 @@
-import FileDataModel from "../persistence/dataModel/file.dataModel";
 import FileDto from "../dto/file.dto";
+import FileDataModel from "../persistence/data-model/file.data-model";
 
 export function dataModelToDto({domainId, id, file}: FileDataModel): FileDto {
   return {domainId, id, file};

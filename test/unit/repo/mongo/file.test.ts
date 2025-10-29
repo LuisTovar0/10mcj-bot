@@ -1,12 +1,12 @@
-import {describe, it} from 'mocha';
 import * as assert from 'assert';
-import * as randStr from 'randomstring';
 import * as fs from "fs";
+import {describe, it} from 'mocha';
+import * as randStr from 'randomstring';
+import UniqueEntityID from "../../../../src/domain/core/unique-entity-id";
+import FileDataModel from "../../../../src/persistence/data-model/file.data-model";
+import DbConnector from "../../../../src/persistence/repos/db-connector";
 
 import FileMongoRepo from "../../../../src/persistence/repos/mongodb/file.mongo.repo";
-import FileDataModel from "../../../../src/persistence/dataModel/file.dataModel";
-import UniqueEntityID from "../../../../src/domain/core/uniqueEntityId";
-import DbConnector from "../../../../src/persistence/repos/dbConnector";
 
 describe('[Unit] FileMongoRepo + MongoDB server', () => {
 

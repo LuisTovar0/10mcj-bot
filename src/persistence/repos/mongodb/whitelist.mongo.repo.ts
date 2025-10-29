@@ -1,9 +1,9 @@
 import {Service} from "typedi";
 
-import IWhitelistRepo from "../../../service/iRepos/iWhitelist.repo";
+import IWhitelistRepo from "../../../service/i-repos/i-whitelist.repo";
+import BotError from "../../../service/telegram-bot/bot-error";
+import {Message, ReplyQueue} from "../../../service/telegram-bot/types/botgram";
 import ListMongoRepo from "./general/list.mongo.repo";
-import {Message, ReplyQueue} from "../../../service/telegramBot/types/botgram";
-import BotError from "../../../service/telegramBot/botError";
 
 @Service()
 export default class WhitelistMongoRepo extends ListMongoRepo implements IWhitelistRepo {

@@ -1,13 +1,13 @@
-import {describe, it} from 'mocha';
 import * as assert from 'assert';
+import {describe, it} from 'mocha';
 import moment from "moment";
 
 import config from "../../../../src/config";
-import InRequestMongoDb from "../../../../src/persistence/repos/mongodb/inRequest.mongo.repo";
-import UniqueEntityID from "../../../../src/domain/core/uniqueEntityId";
-import InRequest from "../../../../src/domain/inRequest";
-import InRequestDataModel from "../../../../src/persistence/dataModel/inRequest.dataModel";
-import DbConnector from "../../../../src/persistence/repos/dbConnector";
+import UniqueEntityID from "../../../../src/domain/core/unique-entity-id";
+import InRequest from "../../../../src/domain/in-request";
+import InRequestDataModel from "../../../../src/persistence/data-model/in-request.data-model";
+import DbConnector from "../../../../src/persistence/repos/db-connector";
+import InRequestMongoDb from "../../../../src/persistence/repos/mongodb/in-request.mongo.repo";
 
 describe('[Unit] InRequestMongoRepo class + DB server', () => {
   if (config.dbType !== 'mongodb') return;

@@ -1,12 +1,12 @@
-import {describe, it} from 'mocha';
 import * as assert from 'assert';
+import {describe, it} from 'mocha';
 import randomstring from 'randomstring';
 
 import config from "../../../../src/config";
-import DbConnector from "../../../../src/persistence/repos/dbConnector";
-import SimpleUserMongoDb from "../../../../src/persistence/repos/mongodb/simpleUser.mongo.repo";
-import SimpleUserDataModel from "../../../../src/persistence/dataModel/simpleUser.dataModel";
-import UniqueEntityID from "../../../../src/domain/core/uniqueEntityId";
+import UniqueEntityID from "../../../../src/domain/core/unique-entity-id";
+import SimpleUserDataModel from "../../../../src/persistence/data-model/simple-user.data-model";
+import DbConnector from "../../../../src/persistence/repos/db-connector";
+import SimpleUserMongoDb from "../../../../src/persistence/repos/mongodb/simple-user.mongo.repo";
 
 describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
   if (config.dbType !== 'mongodb') return;

@@ -1,8 +1,8 @@
-import {Service} from "typedi";
-import {MongoRepo} from "./general/mongoRepo";
 import {model, Schema} from "mongoose";
-import FileDataModel from "../../dataModel/file.dataModel";
-import IFileRepo from "../../../service/iRepos/iFileRepo";
+import {Service} from "typedi";
+import IFileRepo from "../../../service/i-repos/i-file-repo";
+import FileDataModel from "../../data-model/file.data-model";
+import {MongoRepo} from "./general/mongo-repo";
 
 @Service()
 export default class FileMongoRepo extends MongoRepo<FileDataModel> implements IFileRepo {
@@ -20,7 +20,8 @@ export default class FileMongoRepo extends MongoRepo<FileDataModel> implements I
   }
 
   async remove(id: string) {
-    return this.schema.findOneAndDelete({id});
+    const result = await this.schema.findOneAndDelete({id});
+    return result?.value ?? null;
   }
 
   constructor() {

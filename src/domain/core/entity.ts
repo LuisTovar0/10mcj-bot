@@ -1,4 +1,4 @@
-import UniqueEntityID from "./uniqueEntityId";
+import UniqueEntityID from "./unique-entity-id";
 
 export default class Entity<T> {
 

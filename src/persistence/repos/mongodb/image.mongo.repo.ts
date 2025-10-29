@@ -1,13 +1,13 @@
-import {Inject, Service} from "typedi";
 import {model, Schema} from "mongoose";
+import {Inject, Service} from "typedi";
 
 import config from "../../../config";
-import IFileRepo from "../../../service/iRepos/iFileRepo";
-import {MongoRepo} from "./general/mongoRepo";
-import ImageDataModel from "../../dataModel/image.dataModel";
-import * as imageMapper from '../../../mappers/image.mapper';
 import ImageDto from "../../../dto/image.dto";
-import IImageRepo from "../../../service/iRepos/iImage.repo";
+import * as imageMapper from '../../../mappers/image.mapper';
+import IFileRepo from "../../../service/i-repos/i-file-repo";
+import IImageRepo from "../../../service/i-repos/i-image.repo";
+import ImageDataModel from "../../data-model/image.data-model";
+import {MongoRepo} from "./general/mongo-repo";
 
 @Service()
 export default class ImageMongoRepo extends MongoRepo<ImageDataModel> implements IImageRepo {
@@ -39,8 +39,8 @@ export default class ImageMongoRepo extends MongoRepo<ImageDataModel> implements
     const removedFile = await this.fileRepo.remove(id);
     if (!removedFile) return null;
     const removedImg = await this.schema.findOneAndDelete({fileDomainId: removedFile.domainId});
-    if (!removedImg) return null;
-    return imageMapper.dataModelToDto(removedImg, removedFile);
+    if (!removedImg?.value) return null;
+    return imageMapper.dataModelToDto(removedImg.value, removedFile);
   }
 
   async getAll(): Promise<ImageDto[]> {

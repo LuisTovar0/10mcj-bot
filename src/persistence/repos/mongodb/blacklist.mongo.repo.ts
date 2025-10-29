@@ -1,6 +1,6 @@
 import {Service} from "typedi";
 
-import IBlacklistRepo from "../../../service/iRepos/iBlacklist.repo";
+import IBlacklistRepo from "../../../service/i-repos/i-blacklist.repo";
 import ListMongoRepo from "./general/list.mongo.repo";
 
 @Service()
