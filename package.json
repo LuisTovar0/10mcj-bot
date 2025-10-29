@@ -1,7 +1,7 @@
 {
   "name": "10mcj-bot",
   "engines": {
-    "node": ">=16 <20"
+    "node": "20"
   },
   "scripts": {
     "start": "node build/app.js",
@@ -24,7 +24,6 @@
     "del": "^6.0.0",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
-    "lodas": "^1.2.0",
     "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
     "lorem-ipsum": "^2.0.8",

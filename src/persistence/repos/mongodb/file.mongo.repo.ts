@@ -20,7 +20,8 @@ export default class FileMongoRepo extends MongoRepo<FileDataModel> implements I
   }
 
   async remove(id: string) {
-    return this.schema.findOneAndDelete({id});
+    const result = await this.schema.findOneAndDelete({id});
+    return result?.value ?? null;
   }
 
   constructor() {

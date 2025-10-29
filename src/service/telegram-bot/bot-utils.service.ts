@@ -34,13 +34,7 @@ export default class BotUtilsService implements IBotUtilsService {
       bot.fileLoad(file, (err: any, buffer: any) => {
         if (err) throw err;
         let stream = fs.createWriteStream(fileName);
-        stream.on('close', async (err: any) => {
-          if (err) {
-            console.log(err);
-            throw new BotError(`Failed creating ${fileName}`);
-          }
-          resolve();
-        });
+        stream.on('close', resolve);
         stream.end(buffer);
       });
     });
