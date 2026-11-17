@@ -1,4 +1,4 @@
-import {NumberOfRequestsByUser} from "../i-service/i-in-request.service";
+import { NumberOfRequestsByUser } from "../i-service/i-in-request.service";
 import BotError from "./bot-error";
 
 interface TextInfo {
@@ -15,25 +15,21 @@ export function inRequestsToString(reqs: NumberOfRequestsByUser) {
   let res = '';
   reqs.forEach(req => {
     const u = req.user ? '@' + req.user : 'unkown';
-    res += `${u}: ${req.requests}\n`;
+    res += `${ u }: ${ req.requests }\n`;
   });
   return res;
 }
 
 export function theDate() {
-  let date = new Date(), day = date.getDate(), month = date.getMonth() + 1;
-  if (date.getHours() > 14) {
-    const tomorrow = new Date();
-    tomorrow.setDate(date.getDate() + 1);
-    day = tomorrow.getDate();
-    month = tomorrow.getMonth() + 1;
-  }
-  return { day, month, year: date.getFullYear() };
+  const date = new Date();
+  if (date.getHours() > 14)
+    date.setDate(date.getDate() + 1);
+  return { day: date.getDate(), month: date.getMonth() + 1, year: date.getFullYear() };
 }
 
 export function getDateStr() {
   const { day, month, year } = theDate();
-  return `${day}-${(month < 10 ? `0` : ``) + month}-${year.toString().substring(2, 4)}`;
+  return `${ day }-${ (month < 10 ? `0` : ``) + month }-${ year.toString().substring(2, 4) }`;
 }
 
 export function analyseMsgPT(text: string) {
@@ -55,9 +51,9 @@ https://youtu.be/dQw4w9WgXcQ\n\n\u{23F9}\u{1F649} *Para quê ouvir funk?*`);
 }
 
 export function telegramSignalPT({ date, descr1, descr2, url }: AllInfo) {
-  const telegram = `${date}\n\n*${descr1}*${descr2 ? `\n_${descr2}_` : ``}\n\n[\u{25B6} YouTube](${url})\
+  const telegram = `${ date }\n\n*${ descr1 }*${ descr2 ? `\n_${ descr2 }_` : `` }\n\n[\u{25B6} YouTube](${ url })\
           [\u{1F310} +Info](https://t.me/dezmincomjesus/424)`;
-  const signal = `${date}\n\n${descr1}${descr2 ? `\n\n` + descr2 : ``}\n\n\u{25B6} YouTube: ${url}\n\n\u{1F310} +Info: https://10minutoscomjesus.org`;
+  const signal = `${ date }\n\n${ descr1 }${ descr2 ? `\n\n` + descr2 : `` }\n\n\u{25B6} YouTube: ${ url }\n\n\u{1F310} +Info: https://10minutoscomjesus.org`;
 
   return { telegram, signal };
 }
