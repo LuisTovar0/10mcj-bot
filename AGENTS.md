@@ -23,8 +23,6 @@
     - Use get_symbol_info for language documentation.
     - Use rename_refactoring **WHENEVER** you want to move or rename a folder, file, function, variable, etc.
 - If you need to create a temporary file/folder, create it in the current directory; **not** in C:\Temp\ or /tmp/.
-- Python commands have to be used through the `py` utility (`powershell.exe -Command "py ..."` if in WSL), instead of
-  `python`, `python.exe` or `python3`.
 - Always use `pnpm` for the JS. **`npm` is strictly prohibited.**
 - Always use `uv` package manager for the backend.
 - **No Package Manager Ingestion:**
