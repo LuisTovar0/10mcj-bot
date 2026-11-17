@@ -1,67 +1,74 @@
 # 10 McJ bot
 
-Daily, I receive an audio and text from [10 Minutes with Jesus](https://10minuteswithjesus.org/). I'm responsible for forwarding them to Telegram and Signal after making a couple changes to the text.
+A Telegram bot that helps prepare Portuguese [10 Minutes with Jesus](https://10minuteswithjesus.org/)
+messages and media for forwarding. The previous production deployment has been retired.
+The app is being reworked as a Telegram bot, with Fly.io as the deployment target.
 
-<img align="right" style="width: 32%" src="../../wiki/bot-usage-screenshot.jpg">
+The existing code formats text for Telegram and Signal, handles audio, generates thumbnails,
+stores images, and tracks requests and access lists. Video creation is experimental.
 
-That is a repetitive task that this repo's app automates. Currently, I just have to forward the text and audio to the [Telegram bot](https://t.me/dez_mcj_bot), and it gives me the text and audio messages ready to be forwarded to Telegram and Signal.
+## Local development
 
-## List of features
+Requirements: Node.js 26 LTS (at least 26.13.0), pnpm 12.16.1, MongoDB, and a Telegram bot token
+from [BotFather](https://t.me/BotFather). Use a separate bot for development.
 
-+ Message handling in portuguese language
-  + Format text messages for Signal
-  + Format an audio+text (or just text if audio is missing) message for Telegram
-+ As a security measure, persist how many messages a user sent to the bot. The bot can't read group messages nor be added to a group.
-+ Image editing
-  + Generate a thumbnail for the portuguese 10McJ channel
-  + Add an image to the image database
-  + Choose an image from the database to use in thumbnail generation
+```sh
+nvm use
+pnpm install --frozen-lockfile
+cp .env.example .env
+```
 
-## Current works
+Fill in `.env`, then run this command from the repository root:
 
-The project is being upgraded now. The goal is to automate the entire process of publishing the 10 Minutes with Jesus meditations. These are the current goals:
+```sh
+pnpm dev
+```
 
-+ Sending every message automatically
-  + WhatsApp
-  + Telegram
-  + Signal
-+ Posting the YouTube video automatically
-  + Editing a cover image
-  + Joining the image and the audio, using a video editing API
-  + Posting the video on YouTube with the Google API
-+ (Eventually) Posting the meditation to the podcast media (Spotify, Google Podcasts, etc.). This might not be needed since it is so quick and easy to do manually.
+Development compiles TypeScript and restarts the compiled app when it changes. The bot polls
+Telegram; the accompanying image server listens on `PORT` (default `15000`). Start a chat with
+your bot before running it, so it can send startup messages to `ADMIN_CHAT_ID`.
 
-Check out the [wiki](https://github.com/LuisTovar0/10mcj-bot/wiki), where I plan the project.
+`canvas` needs native libraries. Prebuilt binaries cover common platforms; if installation falls
+back to compilation, follow the [node-canvas build instructions](https://github.com/Automattic/node-canvas#compiling).
+The pnpm configuration allows its native install script.
 
-## Developing
+## Configuration
 
-You can use this app to control your own bot. From here on out, a little knowledge about the [Telegram Bot API](https://core.telegram.org/bots) is useful to understand some topics.
+| Variable            | Purpose                                                                                       |
+|---------------------|-----------------------------------------------------------------------------------------------|
+| `BOT_TOKEN`         | Telegram bot token.                                                                           |
+| `ADMIN_CHAT_ID`     | Numeric Telegram chat ID of the administrator.                                                |
+| `RUNNING_ENV`       | `development`, `test`, or `production`. Development limits access to the admin and whitelist. |
+| `DB_TYPE`           | Use `mongodb`. The legacy `local` repositories do not cover all required services.            |
+| `MONGODB_URL`       | MongoDB connection URI.                                                                       |
+| `PORT`              | Optional HTTP port; defaults to `15000`.                                                      |
+| `FILESTACK_API_KEY` | Only needed for the experimental video upload flow.                                           |
+| `SHOTSTACK_API_KEY` | Only needed for the experimental video render flow.                                           |
 
-### Running scripts
+Runtime configuration can come from `.env` locally or injected environment variables on Fly.io.
+Keep real credentials out of Git.
 
-`npm start` is optimal for production because it compiles the TypeScript code to JavaScript and then runs the JS, which makes the app faster than if the TS is run directly with [`ts-node`](https://npmjs.com/package/ts-node).
+## Checks and production build
 
-However, `ts-node` is better for development because it doesn't allow the app to start if build is failing. So despite the coolness of the `npm run dev` script, which concurrently runs `tsc -w` and `nodemon build/app.js`, `npm run ts-dev` is most likely preferable. Note: in dev we're constantly recompiling the app, which leaves behind a `build/` directory, which doesn't happen in production builds. That's why compiling->running is no problem in production while making things confusing in dev.
+```sh
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm start
+```
 
-Run tests with `npm run test`, but create a `.test.env` file first. Speaking of envs...
+`pnpm test` runs the domain and service tests, including thumbnail generation, without a database
+or Telegram credentials. Tests are compiled before Mocha runs them, preserving TypeDI decorator metadata.
+`pnpm start` runs the existing build; compile during deployment, before starting the process.
 
-### Environment variables
+The repository tests require a disposable MongoDB database. Create an ignored `.test.env` with
+`RUNNING_ENV=test`, `DB_TYPE=mongodb`, and a `MONGODB_URL` pointing to that database, then run
+`pnpm test-repos`. These tests write records; never point them at production data.
+`pnpm test-services` runs only the service tests.
 
-Building the app requires the following environment variables to be defined:
+## Project notes
 
-+ `BOT_TOKEN`: the bot's Token, the one [The Botfather](https://t.me/BotFather) gave you.
-+ `ADMIN_CHAT_ID`: the admin's Telegram chat ID (a number). In the case of this bot, it's my chat ID. This value can be found on the bot's [updates](https://core.telegram.org/bots).
-+ `RUNNING_ENV`: self-explained. Accepts 'production', ' development' or 'test' as value.
-+ `DB_TYPE`: accepts 'local' or 'mongodb' as values.
-  + `MONGODB_URL`: if `DB_TYPE` is 'mongodb', the access URL should be specified. It's not necessary otherwise.
-+ `CHANNEL`: if messages are meant to be sent directly to a Telegram channel, its public handler should be specified.
+- [Architecture](docs/architecture.md): entry points, storage, and existing integrations.
+- [Fly.io deployment](docs/deployment.md): deployment constraints and remaining setup.
 
-## Roadmap
-
-(newest to oldest)
-
-- [ ] Editing a video
-- [x] Using CanvasJS to edit images
-- [x] Webpage to view the images
-- [x] Storing images
-- [x] Persisting in-requests
+Licensed under the [MIT License](LICENSE.txt).

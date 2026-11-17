@@ -1,11 +1,11 @@
-import {v4} from 'uuid';
+import { randomUUID } from 'node:crypto';
 
 export default class UniqueEntityID {
 
   private readonly value: string;
 
   constructor(id?: string) {
-    this.value = id ? id : v4();
+    this.value = id ? id : randomUUID();
   }
 
   public getValue(): string {

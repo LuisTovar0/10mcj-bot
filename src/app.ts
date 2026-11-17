@@ -1,9 +1,8 @@
-import del from "del";
-import fs from 'fs';
+import { mkdir, rm } from 'node:fs/promises';
 import 'reflect-metadata';
-import {Container} from "typedi";
+import { Container } from "typedi";
 import config from "./config";
-import {tempFolder} from "./config/constants";
+import { tempFolder } from "./config/constants";
 
 import loaders from "./loaders";
 import server from "./server";
@@ -15,12 +14,8 @@ async function app() {
 
   //make sure our audios folder exists, or clean it
   async function newCleanFolder(folderName: string) {
-    await del(folderName);
-    fs.access(folderName, (error) => {
-      if (error) fs.mkdir(folderName, (error) => {
-        if (error) throw error;
-      });
-    });
+    await rm(folderName, { recursive: true, force: true });
+    await mkdir(folderName, { recursive: true });
   }
 
   await newCleanFolder(tempFolder);

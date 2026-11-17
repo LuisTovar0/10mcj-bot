@@ -1,14 +1,14 @@
-import {model, Schema} from "mongoose";
-import {Service} from "typedi";
+import { model, Schema } from "mongoose";
+import { Service } from "typedi";
 import IFileRepo from "../../../service/i-repos/i-file-repo";
 import FileDataModel from "../../data-model/file.data-model";
-import {MongoRepo} from "./general/mongo-repo";
+import { MongoRepo } from "./general/mongo-repo";
 
 @Service()
 export default class FileMongoRepo extends MongoRepo<FileDataModel> implements IFileRepo {
 
   async getById(id: string) {
-    return this.schema.findOne({id});
+    return this.schema.findOne({ id });
   }
 
   async save(dataModel: FileDataModel) {
@@ -20,8 +20,8 @@ export default class FileMongoRepo extends MongoRepo<FileDataModel> implements I
   }
 
   async remove(id: string) {
-    const result = await this.schema.findOneAndDelete({id});
-    return result?.value ?? null;
+    const result = await this.schema.findOneAndDelete({ id });
+    return result;
   }
 
   constructor() {
@@ -33,14 +33,14 @@ export default class FileMongoRepo extends MongoRepo<FileDataModel> implements I
 const schema = model<FileDataModel>('File', new Schema({
   domainId: {
     type: String,
-    required: [true, 'MongoDB requires the file to have a domainId.']
+    required: [ true, 'MongoDB requires the file to have a domainId.' ],
   },
   id: {
     type: String,
-    required: [true, 'MongoDB requires the file to have a fileId.']
+    required: [ true, 'MongoDB requires the file to have a fileId.' ],
   },
   file: {
     type: Buffer,
-    required: [true, 'MongoDB requires the file to have a file (buffer).']
-  }
+    required: [ true, 'MongoDB requires the file to have a file (buffer).' ],
+  },
 }));

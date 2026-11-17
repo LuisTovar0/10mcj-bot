@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
-import {Dep} from "../loaders";
-import {camelCaseToMacroCase, repoDeps} from "./db";
+import { Dep } from "../loaders";
+import { camelCaseToMacroCase, repoDeps } from "./db";
 
-if (!dotenv.config()) throw '\u{26A0} Could not find .env file! \u{26A0}';
+dotenv.config({ quiet: true });
 const envs = loadEnvVars({ runningEnv: '', dbType: '' });
 
 const config = {
@@ -67,7 +67,7 @@ export type Envs = { [k: string]: string; };
 export function loadEnvVar(camelCaseName: string) {
   const envVarName = camelCaseToMacroCase(camelCaseName);
   const env = process.env[envVarName];
-  if (!env) throw new Error(`${envVarName} environment variable is not defined.`);
+  if (!env) throw new Error(`${ envVarName } environment variable is not defined.`);
   return env;
 }
 

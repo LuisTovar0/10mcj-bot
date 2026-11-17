@@ -1,9 +1,9 @@
-import express, {Request, Response} from "express";
+import express, { Request, Response } from "express";
 import fs from "fs";
-import {Container} from "typedi";
+import { Container } from "typedi";
 
 import config from "./config";
-import {filesFolder} from "./config/constants";
+import { filesFolder } from "./config/constants";
 import IImageService from "./service/i-service/i-image.service";
 import IBotUtilsService from "./service/i-service/telegram-bot/i-bot-utils.service";
 
@@ -12,16 +12,16 @@ export default () => {
   const app = express();
 
   app.get('/', (req, res) =>
-    fs.readFile(`${filesFolder}/index.html`, 'utf8', (err, html) => {
-      if (err) res.status(500).send('Sorry, out of order');
-      res.send(html);
-    })
+      fs.readFile(`${ filesFolder }/index.html`, 'utf8', (err, html) => {
+        if (err) res.status(500).send('Sorry, out of order');
+        res.send(html);
+      }),
   );
 
   const imageService = Container.get(config.deps.service.image.name) as IImageService;
   const botUtils = Container.get(config.deps.service.botUtils.name) as IBotUtilsService;
 
-  const getImage = async (req: Request, res: Response) => {
+  const getImage = async (req: Request<{ id: string }>, res: Response) => {
     if (!req.params.id)
       return res.status(400).send('Bad ID');
     const id = req.params.id;
@@ -31,8 +31,8 @@ export default () => {
     res.send(img.file.file);
   };
 
-  app.get('/image/:id', getImage);
   app.get('/image/:id.png', getImage);
+  app.get('/image/:id', getImage);
 
   app.get('/images', async (req, res) => {
     const allImages = await imageService.getAll();
@@ -47,11 +47,11 @@ export default () => {
     <div style="height: 80px; width: 100%"></div>
     <div style="text-align: center; font-family: Ubuntu,'Comic Sans MS',emoji">
     Available images
-        <table> ${allImages.map(i => `
+        <table> ${ allImages.map(i => `
           <tr>
-              <td>${i.file.id}</td>
-              <td><img style="max-height: 300px; max-width: 500px" src="/image/${i.file.id}" alt=""></td>
-          </tr> `)} 
+              <td>${ i.file.id }</td>
+              <td><img style="max-height: 300px; max-width: 500px" src="/image/${ i.file.id }" alt=""></td>
+          </tr> `) }
         </table>
     </div>
 </body>

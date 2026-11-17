@@ -1,11 +1,10 @@
 import axios from "axios";
 import fs from "fs";
-import fetch from "node-fetch-commonjs";
-import {Subject} from "rxjs";
-import {Service} from "typedi";
-import {loadEnvVar} from "../config";
-import {tempFolder} from "../config/constants";
-import IVideoService, {VideoCreation$} from "./i-service/i-video.service";
+import { Subject } from "rxjs";
+import { Service } from "typedi";
+import { loadEnvVar } from "../config";
+import { tempFolder } from "../config/constants";
+import IVideoService, { VideoCreation$ } from "./i-service/i-video.service";
 
 @Service()
 export default class ShotstackService implements IVideoService {
@@ -19,13 +18,14 @@ export default class ShotstackService implements IVideoService {
   }
 
   async asyncCreateVideo(rxjsSubject: Subject<VideoCreation$>, image: string) {
-    const fileStackResp = await fetch(`https://www.filestackapi.com/api/store/S3?key=${loadEnvVar('filestackApiKey')}`, {
-      method: 'POST', body: fs.createReadStream(image), headers: {
-        accept: 'application/json', 'Content-Type': 'image/jpg',
-      },
-    });
+    const fileStackResp = await axios.post<{ url: string }>(
+        `https://www.filestackapi.com/api/store/S3?key=${ loadEnvVar('filestackApiKey') }`,
+        fs.createReadStream(image), {
+          headers: { accept: 'application/json', 'Content-Type': 'image/jpg' },
+        },
+    );
 
-    const imageUrl = (await fileStackResp.json() as any).url;
+    const imageUrl = fileStackResp.data.url;
 
     const a = {
       output: {
@@ -65,9 +65,9 @@ export default class ShotstackService implements IVideoService {
     const id = renderResp.data.response.id;
     let done = false;
     let url: string | undefined = undefined;
-    const fileName = `${tempFolder}/${new Date().getTime()}.mp4`;
+    const fileName = `${ tempFolder }/${ new Date().getTime() }.mp4`;
     while (!done) {
-      const statusResp = await axios.get(`https://api.shotstack.io/edit/stage/render/${id}`,
+      const statusResp = await axios.get(`https://api.shotstack.io/edit/stage/render/${ id }`,
           { headers: { "x-api-key": shotstackApiKey } });
       console.log(statusResp.data.response.status);
       if (statusResp.data.response.status === 'done') {

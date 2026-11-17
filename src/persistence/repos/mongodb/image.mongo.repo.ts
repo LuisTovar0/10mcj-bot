@@ -1,5 +1,5 @@
-import {model, Schema} from "mongoose";
-import {Inject, Service} from "typedi";
+import { model, Schema } from "mongoose";
+import { Inject, Service } from "typedi";
 
 import config from "../../../config";
 import ImageDto from "../../../dto/image.dto";
@@ -7,13 +7,13 @@ import * as imageMapper from '../../../mappers/image.mapper';
 import IFileRepo from "../../../service/i-repos/i-file-repo";
 import IImageRepo from "../../../service/i-repos/i-image.repo";
 import ImageDataModel from "../../data-model/image.data-model";
-import {MongoRepo} from "./general/mongo-repo";
+import { MongoRepo } from "./general/mongo-repo";
 
 @Service()
 export default class ImageMongoRepo extends MongoRepo<ImageDataModel> implements IImageRepo {
 
   async save(dto: ImageDto): Promise<ImageDto> {
-    const {img, file} = imageMapper.dtoToDataModel(dto);
+    const { img, file } = imageMapper.dtoToDataModel(dto);
     const persistedFile = await this.fileRepo.save(file);
     const persistedImg = await this.persist(img);
     return imageMapper.dataModelToDto(persistedImg, persistedFile);
@@ -22,7 +22,7 @@ export default class ImageMongoRepo extends MongoRepo<ImageDataModel> implements
   async getById(id: string): Promise<ImageDto | null> {
     const file = await this.fileRepo.getById(id);
     if (!file) return null;
-    const img = await this.schema.findOne({fileDomainId: file.domainId});
+    const img = await this.schema.findOne({ fileDomainId: file.domainId });
     if (!img) return null;
     return imageMapper.dataModelToDto(img, file);
   }
@@ -38,9 +38,9 @@ export default class ImageMongoRepo extends MongoRepo<ImageDataModel> implements
   async remove(id: string): Promise<ImageDto | null> {
     const removedFile = await this.fileRepo.remove(id);
     if (!removedFile) return null;
-    const removedImg = await this.schema.findOneAndDelete({fileDomainId: removedFile.domainId});
-    if (!removedImg?.value) return null;
-    return imageMapper.dataModelToDto(removedImg.value, removedFile);
+    const removedImg = await this.schema.findOneAndDelete({ fileDomainId: removedFile.domainId });
+    if (!removedImg) return null;
+    return imageMapper.dataModelToDto(removedImg, removedFile);
   }
 
   async getAll(): Promise<ImageDto[]> {
@@ -55,18 +55,18 @@ export default class ImageMongoRepo extends MongoRepo<ImageDataModel> implements
   }
 
   constructor(
-    @Inject(config.deps.repo.file.name) private fileRepo: IFileRepo
+      @Inject(config.deps.repo.file.name) private fileRepo: IFileRepo,
   ) {
     super(model<ImageDataModel>('Image', new Schema({
       domainId: {
         type: String,
-        required: [true, 'MongoDB requires the image to have a domainId.']
+        required: [ true, 'MongoDB requires the image to have a domainId.' ],
       },
       fileDomainId: {
         type: String,
-        required: [true, 'MongoDB requires the image to have a file domainId']
+        required: [ true, 'MongoDB requires the image to have a file domainId' ],
       },
-      offset: Number
+      offset: Number,
     })));
   }
 

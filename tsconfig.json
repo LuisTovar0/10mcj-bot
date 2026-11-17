@@ -1,32 +1,30 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES2022",
     "lib": [
-      "esnext",
-      "esnext.asynciterable"
+      "ES2022"
     ],
-    "typeRoots": [
-      "./node_modules/@types",
-      "./src/service/telegram-bot/types"
-    ],
+    "types": ["node"],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "useUnknownInCatchVariables": false,
-    "moduleResolution": "node",
-    "module": "commonjs",
+    "moduleResolution": "Node16",
+    "module": "Node16",
     "pretty": true,
     "sourceMap": true,
     "outDir": "./build",
+    "rootDir": "./src",
     "allowJs": false,
-    "noEmit": false
+    "noEmit": false,
+    "noEmitOnError": true
   },
   "include": [
     "./src/**/*"
