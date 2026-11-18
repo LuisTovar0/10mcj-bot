@@ -1,9 +1,0 @@
-allowBuilds:
-  canvas: true
-
-# Mocha 12 still selects versions affected by GHSA-3g3m-2fjr-6pw4 and GHSA-g3hv-75wg-m249.
-# Keep these scoped to Mocha; Botgram uses an older, compatible minimatch API.
-# Remove when Mocha's own dependency ranges include the fixes.
-overrides:
-  mocha>glob: ^14.0.6
-  mocha>minimatch: ^11.0.8

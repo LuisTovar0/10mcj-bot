@@ -1,8 +1,9 @@
 # Guidelines
 
 - If any of the commands in the guidelines/instructions do not work, tell me what needs fixing.
-- Figure out if you're running on Windows, Linux or WSL. If you're running in WSL and need to use a command tool like `uv`,
-  `ov`, `pnpm`, `gh`, `fly`, `supabase`, etc. (basically all programming tools), wrap commands in
+- Figure out if you're running on Windows, Linux or WSL. If you're running in WSL and need to use a command tool like
+  `uv`,
+  `ov`, `bun`, `gh`, `fly`, `supabase`, etc. (basically all programming tools), wrap commands in
   `powershell.exe -Command "..."`.
 - **Conventional Commits:** You MUST write all git commit messages conforming to Conventional Commits (e.g.,
   `feat: ...`, `fix: ...`, `docs: ...`).
@@ -23,12 +24,13 @@
     - Use get_symbol_info for language documentation.
     - Use rename_refactoring **WHENEVER** you want to move or rename a folder, file, function, variable, etc.
 - If you need to create a temporary file/folder, create it in the current directory; **not** in C:\Temp\ or /tmp/.
-- Always use `pnpm` for the JS. **`npm` is strictly prohibited.**
+- Always use `bun` for JavaScript dependencies and scripts. **`npm` is strictly prohibited.**
 - Always use `uv` package manager for the backend.
 - **No Package Manager Ingestion:**
-    - In `web/`, do NOT run or generate an `npm` lockfile (`package-lock.json`). Use only `pnpm-lock.yaml`.
+    - Do NOT generate `package-lock.json` or `pnpm-lock.yaml`. Use only `bun.lock` for JavaScript dependencies.
     - In `backend/`, do NOT use standard `pip` packages unless specified; always use `uv` and lock versions.
-- Use **fly CLI** for managing deployments and reading deployment logs. Always prepend `fly`/`flyctl` commands with `FLY_CONFIG_DIR="$HOME/.fly-account3" ` so that the correct account is used.
+- Use **fly CLI** for managing deployments and reading deployment logs. Always prepend `fly`/`flyctl` commands with
+  `FLY_CONFIG_DIR="$HOME/.fly-account3" ` so that the correct account is used.
 - **Code**:
     - Try to reuse code if it's repeated more than 2 times.
 - **Secrets Protection:** Never read environment files directly nor check in real API keys, Supabase JWT secrets, or AWS
