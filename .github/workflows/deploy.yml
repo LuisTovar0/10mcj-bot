@@ -42,14 +42,14 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: >-
-          FLY_CONFIG_DIR="$HOME/.fly-account3" fly deploy --app 10mcj-bot
+          FLY_CONFIG_DIR="$HOME/.fly-account3" flyctl deploy --app 10mcj-bot
           --local-only --depot=false --ha=false --no-public-ips --dns-checks=false --yes
       - name: Wait for worker readiness
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           for attempt in $(seq 1 18); do
-            status=$(FLY_CONFIG_DIR="$HOME/.fly-account3" fly status --app 10mcj-bot --json)
+            status=$(FLY_CONFIG_DIR="$HOME/.fly-account3" flyctl status --app 10mcj-bot --json)
             if echo "$status" | jq -e '
               [.Machines[]? | select(.config.metadata.fly_process_group == "bot")] |
               length == 1 and .[0].state == "started" and
