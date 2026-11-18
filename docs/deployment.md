@@ -43,6 +43,13 @@ Stop local polling processes using this bot token before starting the Fly worker
 The immediate deployment strategy replaces the single worker without a parallel canary.
 It skips waiting for health checks, so verify readiness and startup logs after each deploy.
 
+GitHub Actions deploys pushes to `main` after typechecking and offline tests pass. The
+workflow builds on the GitHub runner and serializes deployments to avoid overlapping
+pollers. It waits for exactly one running worker and a passing readiness check. The
+repository secret `FLY_API_TOKEN` must contain a deploy token scoped to `10mcj-bot`;
+rotate the token before its expiry. Fly billing must be enabled for the worker to keep
+running beyond the trial's five-minute limit.
+
 ```sh
 bun run typecheck
 bun run test

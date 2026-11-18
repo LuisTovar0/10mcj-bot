@@ -1,0 +1,65 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fly-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run test
+
+  deploy:
+    name: Deploy and check readiness
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: superfly/flyctl-actions/setup-flyctl@98172f70657cb3e15db199af139be99bd3e61200
+        with:
+          version: 0.5.1
+      - name: Deploy one private worker
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: >-
+          FLY_CONFIG_DIR="$HOME/.fly-account3" fly deploy --app 10mcj-bot
+          --local-only --depot=false --ha=false --no-public-ips --dns-checks=false --yes
+      - name: Wait for worker readiness
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          for attempt in $(seq 1 18); do
+            status=$(FLY_CONFIG_DIR="$HOME/.fly-account3" fly status --app 10mcj-bot --json)
+            if echo "$status" | jq -e '
+              [.Machines[]? | select(.config.metadata.fly_process_group == "bot")] |
+              length == 1 and .[0].state == "started" and
+              any(.[0].checks[]?; .name == "readiness" and .status == "passing")
+            ' > /dev/null; then
+              echo "The single bot worker is running and ready."
+              exit 0
+            fi
+            echo "Waiting for the single bot worker to become ready ($attempt/18)."
+            sleep 10
+          done
+          echo "The bot worker did not become ready."
+          exit 1
