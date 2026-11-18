@@ -1,0 +1,19 @@
+# Only application source, dependency manifests, and checked-in media enter the build context.
+**
+!Dockerfile
+!package.json
+!bun.lock
+!tsconfig.json
+!src/
+!src/**
+!files/
+!files/Rockwell-Bold.ttf
+!files/animation.mp4
+!files/forma-data.png
+!files/forma.png
+!files/index.html
+!files/rapaz.jpg
+!files/symbol.png
+**/.env
+**/.env.*
+**/*.env

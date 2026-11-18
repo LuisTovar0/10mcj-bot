@@ -1,0 +1,41 @@
+app = "10mcj-bot"
+primary_region = "cdg"
+kill_signal = "SIGTERM"
+kill_timeout = "10s"
+
+[build]
+dockerfile = "Dockerfile"
+
+[deploy]
+strategy = "immediate"
+
+[env]
+NODE_ENV = "production"
+RUNNING_ENV = "production"
+DB_TYPE = "mongodb"
+PORT = "15000"
+
+[processes]
+bot = "bun build/app.js"
+
+# Telegram uses outbound long polling; no public HTTP service is required.
+[checks]
+[checks.readiness]
+type = "http"
+port = 15000
+method = "GET"
+path = "/health"
+interval = "15s"
+timeout = "5s"
+grace_period = "45s"
+processes = ["bot"]
+
+[[restart]]
+policy = "always"
+processes = ["bot"]
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory = "512mb"
+processes = ["bot"]

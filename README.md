@@ -9,28 +9,28 @@ stores images, and tracks requests and access lists. Video creation is experimen
 
 ## Local development
 
-Requirements: Node.js 26 LTS (at least 26.13.0), pnpm 12.16.1, MongoDB, and a Telegram bot token
+Requirements: [Bun](https://bun.sh/docs/installation) 1.4.4 (pinned in `.bun-version` and `package.json`),
+MongoDB, and a Telegram bot token
 from [BotFather](https://t.me/BotFather). Use a separate bot for development.
 
 ```sh
-nvm use
-pnpm install --frozen-lockfile
+bun install --frozen-lockfile
 cp .env.example .env
 ```
 
 Fill in `.env`, then run this command from the repository root:
 
 ```sh
-pnpm dev
+bun run dev
 ```
 
-Development compiles TypeScript and restarts the compiled app when it changes. The bot polls
+Development compiles TypeScript and restarts the compiled app with Bun when it changes. The bot polls
 Telegram; the accompanying image server listens on `PORT` (default `15000`). Start a chat with
 your bot before running it, so it can send startup messages to `ADMIN_CHAT_ID`.
 
 `canvas` needs native libraries. Prebuilt binaries cover common platforms; if installation falls
 back to compilation, follow the [node-canvas build instructions](https://github.com/Automattic/node-canvas#compiling).
-The pnpm configuration allows its native install script.
+`trustedDependencies` in `package.json` allows its native install script.
 
 ## Configuration
 
@@ -51,24 +51,28 @@ Keep real credentials out of Git.
 ## Checks and production build
 
 ```sh
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm start
+bun run typecheck
+bun run test
+bun run build
+bun run start
 ```
 
-`pnpm test` runs the domain and service tests, including thumbnail generation, without a database
-or Telegram credentials. Tests are compiled before Mocha runs them, preserving TypeDI decorator metadata.
-`pnpm start` runs the existing build; compile during deployment, before starting the process.
+`bun run test` runs the domain and service tests, including thumbnail generation, without a database
+or Telegram credentials. Tests are compiled before Mocha runs them on Bun, preserving TypeDI decorator metadata.
+Use `bun run test` for this Mocha suite; `bun test` invokes Bun's separate built-in test runner.
+`bun run start` runs the existing build; compile during deployment, before starting the process.
+Keep the TypeScript build: it erases interface imports in decorated services before Bun runs them.
+Running `src/app.ts` directly currently fails on those imports.
 
 The repository tests require a disposable MongoDB database. Create an ignored `.test.env` with
 `RUNNING_ENV=test`, `DB_TYPE=mongodb`, and a `MONGODB_URL` pointing to that database, then run
-`pnpm test-repos`. These tests write records; never point them at production data.
-`pnpm test-services` runs only the service tests.
+`bun run test-repos`. The environment loader overrides inherited values with `.test.env` for this command.
+These tests write records; never point them at production data.
+`bun run test-services` runs only the service tests.
 
 ## Project notes
 
 - [Architecture](docs/architecture.md): entry points, storage, and existing integrations.
-- [Fly.io deployment](docs/deployment.md): deployment constraints and remaining setup.
+- [Fly.io deployment](docs/deployment.md): worker configuration, deployment, checks, and private gallery access.
 
 Licensed under the [MIT License](LICENSE.txt).

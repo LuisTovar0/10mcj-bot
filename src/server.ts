@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import fs from "fs";
+import mongoose from "mongoose";
 import { Container } from "typedi";
 
 import config from "./config";
@@ -10,6 +11,11 @@ import IBotUtilsService from "./service/i-service/telegram-bot/i-bot-utils.servi
 export default () => {
 
   const app = express();
+
+  app.get('/health', (_req, res) => {
+    const connected = mongoose.connection.readyState === 1;
+    res.status(connected ? 200 : 503).json({ status: connected ? 'ok' : 'unavailable' });
+  });
 
   app.get('/', (req, res) =>
       fs.readFile(`${ filesFolder }/index.html`, 'utf8', (err, html) => {
