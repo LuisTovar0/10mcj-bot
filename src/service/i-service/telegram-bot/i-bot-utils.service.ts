@@ -1,7 +1,7 @@
 import fs from "fs";
 
-import {Bot, Message, ReplyQueue} from "../../telegram-bot/types/botgram";
-import {FileLike} from "../../telegram-bot/types/model";
+import { Bot, ReplyQueue } from "../../telegram-bot/types/botgram";
+import { FileLike } from "../../telegram-bot/types/model";
 
 export default interface IBotUtilsService {
   token: string;
@@ -19,9 +19,7 @@ export default interface IBotUtilsService {
 
   deleteUserData(chatId: number): Promise<void>;
 
-  ensureMsgIsFromAdmin(msg: Message): void;
-
-  msgIsFromAdmin(msg: Message): boolean;
+  loadFile(bot: Bot, file: FileLike): Promise<Buffer>;
 
   saveFile(bot: Bot, file: FileLike, fileName: fs.PathLike): Promise<void>;
 }

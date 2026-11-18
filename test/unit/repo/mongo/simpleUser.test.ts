@@ -1,5 +1,6 @@
 import * as assert from 'assert';
-import {describe, it} from 'mocha';
+import { describe, it } from 'mocha';
+import mongoose from 'mongoose';
 import randomstring from 'randomstring';
 
 import config from "../../../../src/config";
@@ -15,10 +16,13 @@ describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
   const dataModel = {
     domainId: new UniqueEntityID().toString(),
     id: Math.floor(Math.random() * 10000000000),
-    username: randomstring.generate()
+    username: randomstring.generate(),
   } as SimpleUserDataModel;
 
-  before(async () => await DbConnector.getInstance().connect(true));
+  before(async () => {
+    await DbConnector.getInstance().connect(true);
+    await mongoose.model('Simple User').init();
+  });
 
   it('Create user success', async () => {
     const persisted = await repo.save(dataModel);
@@ -32,7 +36,7 @@ describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
       await repo.save({
         domainId: dataModel.domainId,
         id: Math.floor(Math.random() * 10000000000),
-        username: randomstring.generate()
+        username: randomstring.generate(),
       });
       assert.fail('Should throw an exception');
     } catch (e) {
@@ -45,7 +49,7 @@ describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
       await repo.save({
         domainId: new UniqueEntityID().toString(),
         id: dataModel.id,
-        username: randomstring.generate()
+        username: randomstring.generate(),
       });
       assert.fail('Should throw an exception');
     } catch (e) {
@@ -53,16 +57,23 @@ describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
     }
   });
 
-  it('Create user fail (username already exists)', async () => {
-    try {
-      await repo.save({
+  it('allows different user IDs to reuse a username', async () => {
+    const reused = await repo.save({
+      domainId: new UniqueEntityID().toString(),
+      id: Math.floor(Math.random() * 10000000000),
+      username: dataModel.username,
+    });
+    assert.notEqual(reused.id, dataModel.id);
+    assert.equal(reused.username, dataModel.username);
+  });
+
+  it('allows multiple users without a username', async () => {
+    for (let index = 0; index < 2; index++) {
+      const user = await repo.save({
         domainId: new UniqueEntityID().toString(),
         id: Math.floor(Math.random() * 10000000000),
-        username: dataModel.username
       });
-      assert.fail('Should throw an exception');
-    } catch (e) {
-      assert.equal(e.name, 'MongoServerError');
+      assert.equal(user.username, undefined);
     }
   });
 
@@ -96,7 +107,7 @@ describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
     const chosenPhotoId = randomstring.generate();
     const updated = {
       ...dataModel,
-      chosenPhotoId
+      chosenPhotoId,
     } as SimpleUserDataModel;
     await repo.updateUser(updated);
 
@@ -113,7 +124,7 @@ describe('[Unit] SimpleUserMongoRepo class + DB server', () => {
       domainId: new UniqueEntityID().toString(),
       id: Math.floor(Math.random() * 10000000000),
       username: randomstring.generate(),
-      chosenPhotoId: randomstring.generate()
+      chosenPhotoId: randomstring.generate(),
     } as SimpleUserDataModel;
     await repo.updateUser(nonExistingUser);
 

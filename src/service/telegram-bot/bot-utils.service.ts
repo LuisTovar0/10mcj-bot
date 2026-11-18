@@ -1,13 +1,13 @@
 import axios from "axios";
 import fs from "fs";
-import { rm } from "node:fs/promises";
+import { rm, writeFile } from "node:fs/promises";
 import { Container, Service } from "typedi";
 import config, { loadEnvVar } from "../../config";
 import { tempFolder } from "../../config/constants";
 import IBotUtilsService from "../i-service/telegram-bot/i-bot-utils.service";
 import IConvoMemoryService from "../i-service/telegram-bot/i-convo-memory.service";
-import BotError from "./bot-error";
-import { Bot, Message, ReplyQueue } from "./types/botgram";
+import { parseTelegramUserId } from "./telegram-user-id";
+import { Bot, ReplyQueue } from "./types/botgram";
 
 import { FileLike } from "./types/model";
 
@@ -17,7 +17,13 @@ export default class BotUtilsService implements IBotUtilsService {
   readonly token = loadEnvVar('botToken');
   readonly filesUrl = `https://api.telegram.org/file/bot${ this.token }`;
   readonly methodsUrl = `https://api.telegram.org/bot${ this.token }`;
-  readonly adminChatId = Number(loadEnvVar('adminChatId'));
+  readonly adminChatId: number;
+
+  constructor() {
+    const adminChatId = parseTelegramUserId(loadEnvVar('adminChatId'));
+    if (adminChatId === undefined) throw new Error('ADMIN_CHAT_ID must be a positive decimal Telegram user ID.');
+    this.adminChatId = adminChatId;
+  }
 
   async apiMethod(method: string, params: any) {
     // const apiFunc = `/${method}?${new URLSearchParams(params).toString()}`;
@@ -29,15 +35,17 @@ export default class BotUtilsService implements IBotUtilsService {
     await this.apiMethod('sendMessage', { chat_id: chatId, text: message });
   }
 
-  saveFile(bot: Bot, file: FileLike, fileName: fs.PathLike): Promise<void> {
-    return new Promise(resolve => {
-      bot.fileLoad(file, (err: any, buffer: any) => {
-        if (err) throw err;
-        let stream = fs.createWriteStream(fileName);
-        stream.on('close', resolve);
-        stream.end(buffer);
+  loadFile(bot: Bot, file: FileLike): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      bot.fileLoad(file, (error, buffer) => {
+        if (error || !buffer) reject(error ?? new Error('Telegram returned no file data.'));
+        else resolve(buffer);
       });
     });
+  }
+
+  async saveFile(bot: Bot, file: FileLike, fileName: fs.PathLike): Promise<void> {
+    await writeFile(fileName, await this.loadFile(bot, file));
   }
 
   async deleteUserData(chatId: number): Promise<void> {
@@ -48,18 +56,9 @@ export default class BotUtilsService implements IBotUtilsService {
     await convoService.delete(chatId);
   }
 
-  ensureMsgIsFromAdmin(msg: Message): void {
-    if (!this.msgIsFromAdmin(msg))
-      throw new BotError('Not allowed.');
-  }
-
   markdownHideLinks(reply: ReplyQueue, text: string): void {
     reply.sendGeneric("sendMessage",
         { text: text, parse_mode: "Markdown", disable_web_page_preview: true });
-  }
-
-  msgIsFromAdmin(msg: Message): boolean {
-    return msg.chat.id === this.adminChatId;
   }
 
   textHideLinks(reply: ReplyQueue, text: string): void {

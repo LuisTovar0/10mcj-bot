@@ -1,15 +1,15 @@
-import IBlacklistRepo from "../../i-repos/i-blacklist.repo";
-import IWhitelistRepo from "../../i-repos/i-whitelist.repo";
-import {Bot} from "../../telegram-bot/types/botgram";
+import { Bot, Message } from "../../telegram-bot/types/botgram";
 
 export default interface IListsService {
 
   registerCommands(bot: Bot): void;
 
-  isListsCommand(command: string): boolean;
+  admission(userId: number): Promise<'allowed' | 'blocked' | 'development'>;
 
-  get blacklist(): IBlacklistRepo;
+  isAdmin(msg: Message): boolean;
 
-  get whitelist(): IWhitelistRepo;
+  canEdit(msg: Message): Promise<boolean>;
+
+  ensureEditor(msg: Message, activeWorkflow?: boolean): Promise<void>;
 
 }

@@ -1,4 +1,4 @@
-import {Service} from "typedi";
+import { Service } from "typedi";
 
 import IBlacklistRepo from "../../../service/i-repos/i-blacklist.repo";
 import ListMongoRepo from "./general/list.mongo.repo";
@@ -7,7 +7,7 @@ import ListMongoRepo from "./general/list.mongo.repo";
 export default class BlacklistMongoRepo extends ListMongoRepo implements IBlacklistRepo {
 
   constructor() {
-    super(`Black-list`);
+    super('telegram-blacklist');
   }
 
 }

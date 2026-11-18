@@ -1,38 +1,36 @@
-import {model, Schema} from "mongoose";
+import { model, Schema } from "mongoose";
 import IListRepo from "../../../../service/i-repos/i-list.repo";
-
-export interface WhitelistElem {
-  username: string;
-}
+import { isTelegramUserId } from "../../../../service/telegram-bot/telegram-user-id";
 
 export default abstract class ListMongoRepo implements IListRepo {
 
-  private schema;
+  private readonly schema;
 
-  protected constructor(name: string) {
-    this.schema = model<WhitelistElem>(name, new Schema({
-      username: {
-        type: String,
+  protected constructor(collection: string) {
+    this.schema = model<{ userId: number }>(collection, new Schema({
+      userId: {
+        type: Number,
         unique: true,
-        required: [true, `MongoDB requires a username in a ${name} elem.`]
-      }
-    }));
+        required: true,
+        validate: isTelegramUserId,
+      },
+    }), collection);
   }
 
-  async add(username: string): Promise<void> {
-    await this.schema.create({username});
+  async add(userId: number): Promise<void> {
+    await this.schema.init();
+    await this.schema.updateOne({ userId }, { $setOnInsert: { userId } }, { upsert: true, runValidators: true });
   }
 
-  async contains(username: string): Promise<boolean> {
-    const here = await this.schema.findOne({username});
-    return !!here;
+  async contains(userId: number): Promise<boolean> {
+    return !!(await this.schema.exists({ userId }));
   }
 
-  async remove(username: string): Promise<void> {
-    await this.schema.deleteOne({username});
+  async remove(userId: number): Promise<boolean> {
+    return (await this.schema.deleteOne({ userId })).deletedCount > 0;
   }
 
-  async fullList(): Promise<string[]> {
-    return (await this.schema.find()).map(a => a.username);
+  async fullList(): Promise<number[]> {
+    return (await this.schema.find().sort({ userId: 1 })).map(entry => entry.userId);
   }
 }

@@ -1,11 +1,11 @@
 export default interface IListRepo {
 
-  contains(username: string): Promise<boolean>;
+  contains(userId: number): Promise<boolean>;
 
-  add(username: string): Promise<void>;
+  add(userId: number): Promise<void>;
 
-  remove(username: string): Promise<void>;
+  remove(userId: number): Promise<boolean>;
 
-  fullList(): Promise<string[]>;
+  fullList(): Promise<number[]>;
 
 }

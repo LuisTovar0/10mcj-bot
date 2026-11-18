@@ -2,9 +2,9 @@ import axios from "axios";
 import FormData from "form-data";
 import fs from "fs";
 import moment from "moment";
-import {Inject, Service} from "typedi";
+import { Inject, Service } from "typedi";
 import config from "../../../config";
-import {filesFolder} from "../../../config/constants";
+import { filesFolder } from "../../../config/constants";
 import UniqueEntityID from "../../../domain/core/unique-entity-id";
 import ImageDto from "../../../dto/image.dto";
 import IImageCommandsService from "../../i-service/i-image-commands.service";
@@ -12,12 +12,12 @@ import IImageEditingService from "../../i-service/i-image-editing.service";
 import IImageService from "../../i-service/i-image.service";
 import ISimpleUserService from "../../i-service/i-simpleUser.service";
 import IBotUtilsService from "../../i-service/telegram-bot/i-bot-utils.service";
-import IConvoMemoryService, {ConvoError} from "../../i-service/telegram-bot/i-convo-memory.service";
+import IConvoMemoryService, { ConvoError } from "../../i-service/telegram-bot/i-convo-memory.service";
 import IListsService from "../../i-service/telegram-bot/i-lists-service";
 import BotError from "../bot-error";
 import * as textFormatting from "../text-formatting.service";
-import {Bot, File, ReplyQueue} from "../types/botgram";
-import {messagePhoto, messageText} from "../types/model";
+import { Bot, Message, ReplyQueue } from "../types/botgram";
+import { messagePhoto, messageText } from "../types/model";
 
 @Service()
 export default class ImageCommands implements IImageCommandsService {
@@ -33,23 +33,20 @@ export default class ImageCommands implements IImageCommandsService {
 
   registerCommands(bot: Bot) {
 
-    bot.command('images', async (_, reply) => {
-      let isWhitelist;
-      if (_.chat.username)
-        isWhitelist = await this.listsService.whitelist.contains(_.chat.username);
-      else isWhitelist = false;
-      reply.markdown(`Bear in mind that most of these commands are reserved for admins.${isWhitelist ? `
-You can view the available images and their ID's [here](https://one0mcj.onrender.com/images)` : ''}
+    bot.command('images', async (msg, reply) => {
+      const canEdit = await this.listsService.canEdit(msg);
+      reply.markdown(`Image uploads are reserved for approved editors.${ canEdit ? `
+You can view the available images and their ID's [here](https://one0mcj.onrender.com/images)` : '' }
 /img\\_add - Add an image to the DB.
 /img\\_offset - Change the offset value that will be applied to an image in thumbnail generation.`);
     });
 
     bot.command('img_add', async (msg, reply) => {
-      await this.listsService.whitelist.onlyAdminsAllowed(msg, reply);
+      await this.listsService.ensureEditor(msg);
       const chatId = msg.chat.id;
       const existingConvo = await this.convoService.wholeConvo(chatId);
       if (existingConvo) {
-        reply.text(`You were using the ${existingConvo.command} command. Wanna /cancel?`);
+        reply.text(`You were using the ${ existingConvo.command } command. Wanna /cancel?`);
         return;
       }
 
@@ -77,21 +74,21 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
       const chosenPhotoId = user.chosenPhotoId;
       let photo;
       if (!chosenPhotoId)
-        photo = fs.readFileSync(`${filesFolder}/rapaz.jpg`);
+        photo = fs.readFileSync(`${ filesFolder }/rapaz.jpg`);
       else {
         const f = (await this.imageService.getById(chosenPhotoId))?.file.file;
         if (f) photo = f;
         else
-          photo = fs.readFileSync(`${filesFolder}/rapaz.jpg`);
+          photo = fs.readFileSync(`${ filesFolder }/rapaz.jpg`);
       }
 
       const generatedFile = await this.imageEditingService.generate(photo, date, title,
           { imgAlign: offset });
-      const generatedFileName = `./${moment().valueOf()}.png`;
+      const generatedFileName = `./${ moment().valueOf() }.png`;
       fs.writeFileSync(generatedFileName, generatedFile);
       const fd = new FormData();
       fd.append('photo', fs.createReadStream(generatedFileName));
-      await axios.post(`${this.botUtils.methodsUrl}/sendPhoto`,
+      await axios.post(`${ this.botUtils.methodsUrl }/sendPhoto`,
           fd, { params: { chat_id: msg.chat.id } });
       fs.unlinkSync(generatedFileName);
     });
@@ -113,11 +110,11 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     });
 
     bot.command('video', async (msg, reply) => {
-      await this.listsService.whitelist.onlyAdminsAllowed(msg, reply);
+      await this.listsService.ensureEditor(msg);
       const chatId = msg.chat.id;
       const existingConvo = await this.convoService.wholeConvo(chatId);
       if (existingConvo) {
-        reply.text(`You were using the ${existingConvo.command} command. Wanna /cancel?`);
+        reply.text(`You were using the ${ existingConvo.command } command. Wanna /cancel?`);
         return;
       }
 
@@ -126,12 +123,13 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
 
   }
 
-  async imgAddHandlePhoto(chatId: number, reply: ReplyQueue, imgBuffer: Buffer) {
+  private async imgAddHandlePhoto(msg: messagePhoto, reply: ReplyQueue, imgBuffer: Buffer) {
+    const chatId = msg.chat.id;
     const res = await this.convoService.setImg(chatId, imgBuffer);
     if (!res) throw new BotError('Image could not be loaded.');
     const data = await this.convoService.getAddImageData(chatId);
     if (data && data.image && data.name)
-      await this.addImageToDb(chatId, reply);
+      await this.addImageToDb(msg, reply);
     else reply.text('OK! falta o ID');
   }
 
@@ -149,34 +147,10 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     if (command !== 'img_add' && command !== 'video')
       throw new BotError(`Only images for the 'img_add' command are handled here.`);
 
-    //#region retrieving the image
-    //todo make it faster
-    const file = await new Promise<File>((resolve, reject) =>
-        bot.fileGet(msg.image.file.id, async (e, r) => {
-          if (e || !r) {
-            reject(e);
-            return;
-          }
-          resolve(r);
-        }));
-    const response = await axios.get(`${this.botUtils.filesUrl}/${file.path}`, { responseType: "stream" });
-    const fileName = moment().valueOf().toString() + '.jpg';
-    response.data.pipe(fs.createWriteStream(fileName));
-    const tryReadFile = async (): Promise<Buffer> => {
-      console.count('try read file');
-      try {
-        return fs.readFileSync(fileName);
-      } catch (e) {
-        await new Promise(r => setTimeout(r, 50));
-        return await tryReadFile();
-      }
-    };
-    const buffer = await tryReadFile();
-    fs.rmSync(fileName);
-    //#endregion
+    const buffer = await this.botUtils.loadFile(bot, msg.image.file);
 
     if (command === 'img_add')
-      await this.imgAddHandlePhoto(chatId, reply, buffer);
+      await this.imgAddHandlePhoto(msg, reply, buffer);
     if (command === 'video')
       await this.videoHandlePhoto(chatId, reply, buffer);
   }
@@ -201,13 +175,13 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
 
       const data = await this.convoService.getAddImageData(chatId);
       if (data && data.image && data.name)
-        await this.addImageToDb(chatId, reply);
+        await this.addImageToDb(msg, reply);
       else reply.text('OK! falta a foto');
     }
   }
 
-  async addImageToDb(chatId: number, reply: ReplyQueue) {
-    const data = await this.convoService.getAddImageData(chatId);
+  private async addImageToDb(msg: Message, reply: ReplyQueue) {
+    const data = await this.convoService.getAddImageData(msg.chat.id);
     if (!data || !data.name || !data.image)
       throw new BotError('The image or the ID is missing.');
     const dto: ImageDto = {
@@ -218,7 +192,9 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
         id: data.name,
       },
     };
+    await this.listsService.ensureEditor(msg, true);
     await this.imageService.save(dto);
+    await this.botUtils.deleteUserData(msg.chat.id);
     reply.text('Guardada!');
   }
 

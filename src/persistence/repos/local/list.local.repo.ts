@@ -2,21 +2,21 @@ import IListRepo from "../../../service/i-repos/i-list.repo";
 
 export default abstract class ListLocalRepo implements IListRepo {
 
-  private whitelist: string[] = []
+  private readonly userIds = new Set<number>();
 
-  async add(username: string): Promise<void> {
-    this.whitelist.push(username)
+  async add(userId: number): Promise<void> {
+    this.userIds.add(userId);
   }
 
-  async contains(username: string): Promise<boolean> {
-    return this.whitelist.indexOf(username) !== -1;
+  async contains(userId: number): Promise<boolean> {
+    return this.userIds.has(userId);
   }
 
-  async remove(username: string): Promise<void> {
-    this.whitelist = this.whitelist.filter(v => v !== username);
+  async remove(userId: number): Promise<boolean> {
+    return this.userIds.delete(userId);
   }
 
-  async fullList(): Promise<string[]> {
-    return [...this.whitelist]; // copy
+  async fullList(): Promise<number[]> {
+    return [ ...this.userIds ].sort((a, b) => a - b);
   }
 }

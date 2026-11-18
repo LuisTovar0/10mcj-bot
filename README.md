@@ -37,7 +37,7 @@ back to compilation, follow the [node-canvas build instructions](https://github.
 | Variable            | Purpose                                                                                       |
 |---------------------|-----------------------------------------------------------------------------------------------|
 | `BOT_TOKEN`         | Telegram bot token.                                                                           |
-| `ADMIN_CHAT_ID`     | Numeric Telegram chat ID of the administrator.                                                |
+| `ADMIN_CHAT_ID`     | Positive numeric Telegram user ID of the administrator.                                       |
 | `RUNNING_ENV`       | `development`, `test`, or `production`. Development limits access to the admin and whitelist. |
 | `DB_TYPE`           | Use `mongodb`. The legacy `local` repositories do not cover all required services.            |
 | `MONGODB_URL`       | MongoDB connection URI.                                                                       |
@@ -47,6 +47,76 @@ back to compilation, follow the [node-canvas build instructions](https://github.
 
 Runtime configuration can come from `.env` locally or injected environment variables on Fly.io.
 Keep real credentials out of Git.
+
+## Telegram permissions
+
+In production, users can format messages and generate thumbnail previews unless they are
+blocked. The admin and allowlisted editors can also use `/img_add` and, when `CHANNEL` is set,
+`/pt_enviar`. Development admits only the admin and allowlisted editors. A block takes precedence
+over a grant. Editors can get their own Telegram user ID from [@userinfobot](https://t.me/userinfobot)
+and send it to the admin. Usernames can change without affecting permissions.
+
+Only the admin can manage lists or run `/report`.
+
+| Command                    | Action                 |
+|----------------------------|------------------------|
+| `/whitelist_add <user_id>` | Grant editor access    |
+| `/whitelist_rm <user_id>`  | Remove editor access   |
+| `/whitelist_all`           | Show approved user IDs |
+| `/blacklist_add <user_id>` | Block a user           |
+| `/blacklist_rm <user_id>`  | Remove a block         |
+| `/blacklist_all`           | Show blocked user IDs  |
+
+Add and remove commands accept one positive decimal ID up to `4503599627370495`, the
+52-bit limit for [Telegram user IDs](https://core.telegram.org/bots/api#user). Repeating an add
+command leaves a single entry.
+
+### Migrate existing access lists
+
+1. Review the legacy `white-lists` and `black-lists` MongoDB collections. Collect the IDs from
+   approved editors and resolve any legacy blocks that should remain in force before cutover.
+   Keep both legacy collections for reference.
+2. In `mongosh`, select the database used by the bot. Fill in the two arrays with confirmed
+   decimal IDs as strings, then run the snippet. It creates the unique indexes and can be rerun.
+
+   ```javascript
+   const editorIds = [];
+   const blockedIds = [];
+   const lists = [
+     ["telegram-whitelist", editorIds],
+     ["telegram-blacklist", blockedIds],
+   ].map(([name, ids]) => [name, ids.map(value => {
+     const id = Number(value);
+     if (!/^[0-9]+$/.test(value) || !Number.isSafeInteger(id) || id < 1 || id > 2 ** 52 - 1) {
+       throw new Error(`Invalid Telegram user ID: ${value}`);
+     }
+     return id;
+   })]);
+
+   for (const [name, ids] of lists) {
+     const collection = db.getCollection(name);
+     collection.createIndex({ userId: 1 }, { unique: true });
+     for (const userId of ids) {
+       collection.updateOne({ userId }, { $setOnInsert: { userId } }, { upsert: true });
+     }
+   }
+   ```
+
+3. Stop the old Telegram poller. In the same database, drop the old username index before
+   starting the new release. This preserves the existing user records and the unique `id` and
+   `domainId` indexes.
+
+   ```javascript
+   const users = db.getCollection("simple users");
+   if (db.getCollectionNames().includes("simple users") &&
+       users.getIndexes().some(index => index.name === "username_1")) {
+     users.dropIndex("username_1");
+   }
+   ```
+
+4. Start the new release. It uses `telegram-whitelist` and `telegram-blacklist`. Use designated
+   test accounts to verify an ordinary user can format text and preview a thumbnail, an editor
+   can complete an approved workflow, and a blocked user gets denied before activity is recorded.
 
 ## Checks and production build
 

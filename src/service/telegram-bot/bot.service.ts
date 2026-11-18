@@ -1,5 +1,5 @@
-import {Inject, Service} from "typedi";
-import config, {loadEnvVar} from "../../config";
+import { Inject, Service } from "typedi";
+import config, { loadEnvVar } from "../../config";
 import IImageCommandsService from "../i-service/i-image-commands.service";
 import IInRequestService from "../i-service/i-in-request.service";
 import IBotService from "../i-service/telegram-bot/i-bot-service";
@@ -8,29 +8,36 @@ import IConvoMemoryService from "../i-service/telegram-bot/i-convo-memory.servic
 import IListsService from "../i-service/telegram-bot/i-lists-service";
 import IPtService from "../i-service/telegram-bot/i-pt.service";
 import BotError from "./bot-error";
+import { privateSender } from "./telegram-user-id";
 import * as textFormatting from "./text-formatting.service";
-import {Bot} from "./types/botgram";
+import { Bot } from "./types/botgram";
 
 const botgram = require("botgram");
 
 @Service()
 export default class BotService implements IBotService {
 
+  private readonly pendingByChat = new Map<number, Promise<void>>();
+
   constructor(
-    @Inject(config.deps.service.inRequest.name) private inRequestService: IInRequestService,
-    @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
-    @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
-    @Inject(config.deps.service.lists.name) private listsService: IListsService,
-    @Inject(config.deps.service.pt.name) private pt: IPtService,
-    @Inject(config.deps.service.imageCommands.name) private imageCommands: IImageCommandsService,
+      @Inject(config.deps.service.inRequest.name) private inRequestService: IInRequestService,
+      @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
+      @Inject(config.deps.service.convoMemory.name) private convoService: IConvoMemoryService,
+      @Inject(config.deps.service.lists.name) private listsService: IListsService,
+      @Inject(config.deps.service.pt.name) private pt: IPtService,
+      @Inject(config.deps.service.imageCommands.name) private imageCommands: IImageCommandsService,
   ) {
   }
 
   token = loadEnvVar('botToken');
 
   async run() {
-
     const bot: Bot = botgram(this.token);
+    this.registerCommands(bot);
+    await this.botUtils.sendMessage(this.botUtils.adminChatId, 'Bot is running in ' + config.runningEnv);
+  }
+
+  registerCommands(bot: Bot): void {
 
     // middleware (before all the other message treatment)
     bot.all(async (msg, reply, next) => {
@@ -40,40 +47,50 @@ export default class BotService implements IBotService {
         return;
       }
 
-      if (msg.user)
-        // save requester
-        await this.inRequestService.addInRequest(msg.user as { id: number, username: string/*, firstname, lastname*/ });
-      else {
+      const sender = privateSender(msg);
+      if (!sender) {
         reply.text(`Only available to users...`);
         return;
       }
 
-      if (!this.botUtils.msgIsFromAdmin(msg)) {
-        if (!msg.chat.username) {
-          this.botUtils.markdownHideLinks(reply, `You don't look like a user... [\u{1FAD6}](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418)`);
-          return;
-        }
-        const username = msg.chat.username;
-        if (await this.listsService.blacklist.contains(username)) {
-          await reply.text(`You're blacklisted \u{1F620}`);
-          return;
-        }
-        if (config.runningEnv === 'development') {
-          await this.botUtils.sendMessage(this.botUtils.adminChatId, `@${username} tried to use the bot while in development.`);
-          const isWhitelisted = await this.listsService.whitelist.contains(username);
-          if (!isWhitelisted) {
+      // Botgram can dispatch several updates for one chat without waiting for the earlier handlers.
+      const chatId = msg.chat.id;
+      const pending = (this.pendingByChat.get(chatId) ?? Promise.resolve()).then(async () => {
+        try {
+          const admission = await this.listsService.admission(sender.id);
+          if (admission !== 'allowed' && await this.convoService.exists(chatId))
+            await this.botUtils.deleteUserData(chatId);
+          if (admission === 'blocked') {
+            reply.text(`You're blacklisted \u{1F620}`);
+            return;
+          }
+
+          if (config.runningEnv === 'development' && !this.listsService.isAdmin(msg)) {
+            const displayName = sender.username ? `@${ sender.username }` : String(sender.id);
+            await this.botUtils.sendMessage(this.botUtils.adminChatId, `${ displayName } tried to use the bot while in development.`);
+          }
+          if (admission === 'development') {
             reply.text(`Our beautiful devs are developing the bot at the moment. Please don't send messages. If using it is urgent, text @tovawr`);
             return;
           }
+
+          await this.inRequestService.addInRequest({ id: sender.id, username: sender.username });
+          await next();
+        } catch (e) {
+          if (!(e instanceof BotError)) {
+            reply.text(`An error happened.`);
+            console.error(e.name, e.message);
+          } else {
+            this.botUtils.textHideLinks(reply, e.message);
+          }
         }
-      }
+      });
+      this.pendingByChat.set(chatId, pending);
 
       try {
-        await next();
-      } catch (e) {
-        if (e.name !== "BotError") reply.text(`An error happened.`);
-        this.botUtils.textHideLinks(reply, e.message);
-        console.log(e.stack);
+        await pending;
+      } finally {
+        if (this.pendingByChat.get(chatId) === pending) this.pendingByChat.delete(chatId);
       }
     });
 
@@ -129,7 +146,7 @@ more or less private bot.`, "HTML"));
     });
 
     bot.command(`report`, async (msg, reply) => {
-      if (!this.botUtils.msgIsFromAdmin(msg)) {
+      if (!this.listsService.isAdmin(msg)) {
         reply.text(`I can't report to you.`);
         return;
       }
@@ -196,7 +213,5 @@ more or less private bot.`, "HTML"));
     });
     //#endregion
 
-    // inform me that it's running
-    await this.botUtils.sendMessage(this.botUtils.adminChatId, 'Bot is running in ' + config.runningEnv);
   }
 }

@@ -1,17 +1,19 @@
 import axios from "axios";
 import FormData from 'form-data';
 import fs from "fs";
-import {Inject, Service} from "typedi";
+import { Inject, Service } from "typedi";
 import config from "../../../config";
-import {tempFolder} from "../../../config/constants";
+import { tempFolder } from "../../../config/constants";
 import IBotUtilsService from "../../i-service/telegram-bot/i-bot-utils.service";
-import IConvoMemoryService, {ConvoError} from "../../i-service/telegram-bot/i-convo-memory.service";
+import IConvoMemoryService, { ConvoError } from "../../i-service/telegram-bot/i-convo-memory.service";
 import IListsService from "../../i-service/telegram-bot/i-lists-service";
 import IPtService from "../../i-service/telegram-bot/i-pt.service";
 import BotError from "../bot-error";
 import * as textFormatting from "../text-formatting.service";
-import {Bot, ReplyQueue} from "../types/botgram";
-import {InputFile, messageAudio, messageCommand, messageText} from "../types/model";
+import { Bot, ReplyQueue } from "../types/botgram";
+import { InputFile, Message, messageAudio, messageCommand, messageText } from "../types/model";
+
+const mp3Duration: (path: string) => Promise<number> = require('mp3-duration');
 
 @Service()
 export default class PtService implements IPtService {
@@ -29,8 +31,8 @@ export default class PtService implements IPtService {
 
     bot.command(`pt`, async (msg, reply) => {
       reply.markdown(`Comandos disponíveis:
-/pt\\_testar - Mostra o funcionamento normal do bot, mas sem enviar mensagens${this.channel ? `
-/pt\\_enviar - Pede algumas informações e envia a mensagen para o canal de Telegram` : ''}
+/pt\\_testar - Mostra o funcionamento normal do bot, mas sem enviar mensagens${ this.channel ? `
+/pt\\_enviar - Pede algumas informações e envia a mensagen para o canal de Telegram` : '' }
 /pt\\_img - Gera uma capa para um vídeo do YouTube. Utilização: \`/pt_img texto\`, onde "texto" é o texto que será colocado na imagem.`);
     });
 
@@ -51,11 +53,8 @@ export default class PtService implements IPtService {
 
     if (this.channel)
       bot.command('pt_enviar', async (msg, reply) => {
-        if (msg.user?.username && await this.listsService.whitelist.contains(msg.user?.username)) {
-          await sending(msg, reply);
-          return;
-        }
-        reply.text('\u{1F6AB} Not allowed. \u{1F6AB}');
+        await this.listsService.ensureEditor(msg);
+        await sending(msg, reply);
       });
 
   }
@@ -73,10 +72,10 @@ export default class PtService implements IPtService {
 
     reply.text(`péràí... a baixar`);
     reply.text(`\u{1F4E5}`);
-    await this.botUtils.saveFile(bot, msg.file, `${tempFolder}/${chatId}`);
+    await this.botUtils.saveFile(bot, msg.file, `${ tempFolder }/${ chatId }`);
     await this.convoService.setAudio(chatId, true);
     if (await this.convoService.getText(chatId))
-      await this.finalResponse(chatId, reply);
+      await this.finalResponse(msg, reply);
     else reply.text(`já tá! ganda meditação`);
   }
 
@@ -85,47 +84,50 @@ export default class PtService implements IPtService {
     if (await this.convoService.hasAudio(chatId)) {
       // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
       await this.convoService.setText(chatId, textFormatting.getFullInfo(msg.text));
-      await this.finalResponse(chatId, reply);
+      await this.finalResponse(msg, reply);
     } else {
       if (await this.convoService.getText(chatId))
           // if we don't have audio but already have text, let the user know
         throw new BotError(`já tinhas mandado texto, agora tens de mandar áudio.\nou então /cancel`);
       const texts = textFormatting.getFullInfo(msg.text);
       await this.convoService.setText(chatId, texts);
-      reply.text(`boa escolha de emojis ${texts.descr1.split(` `)[0]}`);
+      reply.text(`boa escolha de emojis ${ texts.descr1.split(` `)[0] }`);
     }
   }
 
-  async finalResponse(chatId: number, reply: ReplyQueue) {
+  private async finalResponse(msg: Message, reply: ReplyQueue) {
+    const chatId = msg.chat.id;
     const texts = await this.convoService.getText(chatId);
     if (!texts) throw new BotError('Internal error: null values where should be text.');
     const badTitle = texts.descr1.trim();
     const title = badTitle.substring(badTitle.indexOf(` `) + 1, badTitle.length);
-    const mp3duration = require('mp3-duration');
-    mp3duration(`${tempFolder}/${chatId}`, async (err: any, duration: string) => {
-      if (err) throw new BotError(`Couldn't retrieve the audio duration.`);
-      const file = fs.createReadStream(`${tempFolder}/${chatId}`);
-      switch (await this.convoService.getCommand(chatId)) {
-        case `pt_testar`:
-          reply.audio(file as unknown as InputFile, parseInt(duration), texts.date, title, texts.telegram, `Markdown`);
-          break;
-        case `pt_enviar`:
-          if (!this.channel) throw new BotError('Variável CHANNEL devia estar definida.');
-
-          const fd = new FormData();
-          fd.append('audio', file);
-          await axios.post(`${this.botUtils.methodsUrl}/sendAudio`,
-              fd, {
-                params: {
-                  chat_id: `@${this.channel}`, caption: texts.telegram, parse_mode: 'Markdown',
-                  duration, title, performer: texts.date,
-                },
-              });
-          break;
-      }
-      this.botUtils.textHideLinks(reply, texts.signal);
-      await this.botUtils.deleteUserData(chatId);
+    const path = `${ tempFolder }/${ chatId }`;
+    const duration = await mp3Duration(path).catch(() => {
+      throw new BotError(`Couldn't retrieve the audio duration.`);
     });
+
+    switch (await this.convoService.getCommand(chatId)) {
+      case 'pt_testar':
+        await reply.audio(fs.createReadStream(path) as unknown as InputFile,
+            Math.trunc(duration), texts.date, title, texts.telegram, 'Markdown').then();
+        break;
+      case 'pt_enviar': {
+        if (!this.channel) throw new BotError('Variável CHANNEL devia estar definida.');
+
+        await this.listsService.ensureEditor(msg, true);
+        const fd = new FormData();
+        fd.append('audio', fs.createReadStream(path));
+        await axios.post(`${ this.botUtils.methodsUrl }/sendAudio`, fd, {
+          params: {
+            chat_id: `@${ this.channel }`, caption: texts.telegram, parse_mode: 'Markdown',
+            duration, title, performer: texts.date,
+          },
+        });
+        break;
+      }
+    }
+    this.botUtils.textHideLinks(reply, texts.signal);
+    await this.botUtils.deleteUserData(chatId);
   }
 
   isPtCommand(command?: string): boolean {
