@@ -44,6 +44,18 @@ jobs:
         run: >-
           FLY_CONFIG_DIR="$HOME/.fly-account3" flyctl deploy --app 10mcj-bot
           --local-only --depot=false --ha=false --no-public-ips --dns-checks=false --yes
+      - name: Start the worker if stopped
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          status=$(FLY_CONFIG_DIR="$HOME/.fly-account3" flyctl status --app 10mcj-bot --json)
+          worker=$(echo "$status" | jq -e '
+            [.Machines[]? | select(.config.metadata.fly_process_group == "bot")] |
+            if length == 1 then .[0] else error("Expected exactly one bot worker") end
+          ')
+          if [ "$(echo "$worker" | jq -r '.state')" = "stopped" ]; then
+            FLY_CONFIG_DIR="$HOME/.fly-account3" flyctl machine start "$(echo "$worker" | jq -r '.id')" --app 10mcj-bot
+          fi
       - name: Wait for worker readiness
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
