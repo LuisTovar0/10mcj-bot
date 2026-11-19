@@ -206,6 +206,15 @@ describe("Telegram permissions through Botgram", () => {
     assert.equal(notifications.length, 2);
   });
 
+  it("allows the admin to use editor commands without a whitelist entry", async () => {
+    assert.deepEqual(await whitelist.fullList(), []);
+    await send(adminId, "/img_add");
+    assert.equal(await memory.exists(adminId), true);
+    await Promise.all([ send(adminId, photo), send(adminId, "thumbnail-id") ]);
+    assert.equal(savedImages[0]?.file.id, "thumbnail-id");
+    assert.deepEqual(await whitelist.fullList(), []);
+  });
+
   it("restricts list management and reporting to the admin sender", async () => {
     for (const name of [ "whitelist", "blacklist" ]) {
       for (const operation of [ "add", "rm", "all" ]) {
