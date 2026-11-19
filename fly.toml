@@ -18,7 +18,13 @@ PORT = "15000"
 [processes]
 bot = "bun build/app.js"
 
-# Telegram uses outbound long polling; no public HTTP service is required.
+[http_service]
+internal_port = 15000
+force_https = true
+auto_stop_machines = "off"
+auto_start_machines = false
+processes = ["bot"]
+
 [checks]
 [checks.readiness]
 type = "http"

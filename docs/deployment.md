@@ -20,13 +20,13 @@ The worker starts with `bun build/app.js`. The TypeScript compilation preserves 
 existing module layout and erases interface imports in decorated services.
 `files/temp/` and generated media are disposable; MongoDB stores durable data.
 
-The image server is private. Fly checks `/health` on port `15000`; the endpoint returns
-200 when MongoDB is connected and 503 otherwise. There is no public HTTP service or
-traffic-based autostopping. The restart policy keeps the worker running after an exit.
+The image server is public at `https://10mcj-bot.fly.dev`. Fly routes HTTP and HTTPS
+to port `15000` and redirects HTTP to HTTPS. The `/health` endpoint returns 200 when
+MongoDB is connected and 503 otherwise. Traffic-based autostopping is disabled, and
+the restart policy keeps the worker running after an exit.
 
 The bot still contains legacy image-gallery links to the previous host and localhost.
-Use the private proxy below to inspect the gallery until those links and its access
-control are reworked.
+The gallery is publicly accessible at `https://10mcj-bot.fly.dev/images`.
 
 ## Configuration and secrets
 
@@ -53,7 +53,7 @@ running beyond the trial's five-minute limit.
 ```sh
 bun run typecheck
 bun run test
-FLY_CONFIG_DIR="$HOME/.fly-account3" fly deploy --app 10mcj-bot --remote-only --depot=false --wg=true --https-failover=false --ha=false --no-public-ips --dns-checks=false --yes
+FLY_CONFIG_DIR="$HOME/.fly-account3" fly deploy --app 10mcj-bot --remote-only --depot=false --wg=true --https-failover=false --ha=false --dns-checks=false --yes
 FLY_CONFIG_DIR="$HOME/.fly-account3" fly status --app 10mcj-bot
 FLY_CONFIG_DIR="$HOME/.fly-account3" fly checks list --app 10mcj-bot
 FLY_CONFIG_DIR="$HOME/.fly-account3" fly logs --app 10mcj-bot --no-tail
@@ -61,15 +61,6 @@ FLY_CONFIG_DIR="$HOME/.fly-account3" fly logs --app 10mcj-bot --no-tail
 
 The remote builder uses Fly's encrypted WireGuard transport. Confirm one running `bot` Machine,
 a passing readiness check, and successful database and Telegram startup messages.
-
-To access the private image server from your own computer:
-
-```sh
-FLY_CONFIG_DIR="$HOME/.fly-account3" fly proxy 15000:15000 --app 10mcj-bot
-```
-
-Then open `http://localhost:15000/images`. Use a different local port if another
-development instance is listening on port `15000`.
 
 See Fly's [app configuration](https://fly.io/docs/reference/configuration/) and
 [health check documentation](https://fly.io/docs/reference/health-checks/).
