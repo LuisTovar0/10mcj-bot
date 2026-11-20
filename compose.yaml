@@ -1,0 +1,30 @@
+services:
+  bot:
+    build: .
+    init: true
+    env_file: .env
+    environment:
+      NODE_ENV: development
+      RUNNING_ENV: development
+      DB_TYPE: mongodb
+      MONGODB_URL: mongodb://mongo:27017/10mcj-bot
+      PORT: "15000"
+    ports:
+      - "127.0.0.1:${PORT:-15000}:15000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:8.0
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--quiet", "--eval", "db.adminCommand({ ping: 1 })" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  mongo-data:

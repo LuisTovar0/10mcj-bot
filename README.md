@@ -7,18 +7,37 @@ The app is being reworked as a Telegram bot, with Fly.io as the deployment targe
 The existing code formats text for Telegram and Signal, handles audio, generates thumbnails,
 stores images, and tracks requests and access lists. Video creation is experimental.
 
-## Local development
+## Run locally with Docker
 
-Requirements: [Bun](https://bun.sh/docs/installation) 1.4.4 (pinned in `.bun-version` and `package.json`),
-MongoDB, and a Telegram bot token
-from [BotFather](https://t.me/BotFather). Use a separate bot for development.
+Install Docker with Compose and create `.env` from the example if needed.
+
+```sh
+test -f .env || cp .env.example .env
+```
+
+Set `BOT_TOKEN` to a development bot token from [BotFather](https://t.me/BotFather) and
+`ADMIN_CHAT_ID` to your Telegram user ID. Send `/start` to the bot before launching the stack.
+
+```sh
+docker compose up --build -d --wait
+docker compose logs -f bot
+```
+
+Compose builds the same image Fly uses and starts a local MongoDB. See the [Docker guide](docs/docker.md)
+for configuration, persistence, production runs, and lifecycle commands. Keep one poller per bot token.
+
+## Local development with Bun
+
+For live reload, install Bun 1.4.4 (pinned in `.bun-version` and `package.json`) and provide a MongoDB
+instance reachable from your host. Use the same development bot credentials.
+[Bun installation](https://bun.sh/docs/installation)
 
 ```sh
 bun install --frozen-lockfile
-cp .env.example .env
+test -f .env || cp .env.example .env
 ```
 
-Fill in `.env`, then run this command from the repository root:
+Set `MONGODB_URL` in `.env` to the host-accessible MongoDB URI, then run this command from the repository root.
 
 ```sh
 bun run dev
@@ -45,8 +64,9 @@ back to compilation, follow the [node-canvas build instructions](https://github.
 | `FILESTACK_API_KEY` | Only needed for the experimental video upload flow.                                           |
 | `SHOTSTACK_API_KEY` | Only needed for the experimental video render flow.                                           |
 
-Runtime configuration can come from `.env` locally or injected environment variables on Fly.io.
-Keep real credentials out of Git.
+Runtime configuration comes from `.env` locally, `.production.env` for a standalone Docker host, or
+injected environment variables on Fly.io. See the [Docker guide](docs/docker.md). Keep real credentials
+out of Git.
 
 ## Telegram permissions
 
@@ -143,6 +163,7 @@ These tests write records; never point them at production data.
 ## Project notes
 
 - [Architecture](docs/architecture.md): entry points, storage, and existing integrations.
+- [Docker](docs/docker.md): local Compose setup and production container runs.
 - [Fly.io deployment](docs/deployment.md): worker configuration, deployment, checks, and private gallery access.
 
 Licensed under the [MIT License](LICENSE.txt).

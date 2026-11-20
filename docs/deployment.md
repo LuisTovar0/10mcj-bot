@@ -6,10 +6,12 @@ Keep exactly one active Machine per bot token, including local development proce
 
 ## Container and runtime
 
-`Dockerfile` pins Bun 1.4.4, compiles TypeScript, installs production dependencies, and
-runs as the `bun` user. Its build generates a thumbnail to verify the native `canvas`
-addon, font, and media assets with the production dependencies. `.dockerignore` allows
-only source, dependency manifests, and the required checked-in assets into the build context.
+Fly and local Docker Compose build the same `Dockerfile`. See the [Docker guide](docker.md) for local
+Compose and standalone production container instructions. It pins Bun 1.4.4, compiles TypeScript,
+installs production dependencies, and runs as the `bun` user. Its build generates a thumbnail to
+verify the native `canvas` addon, font, and media assets with the production dependencies.
+`.dockerignore` allows only source, dependency manifests, and the required checked-in assets into
+the build context.
 
 After package-manager or lockfile changes, verify a clean installation with an empty
 `node_modules`. The initial Bun migration omitted executable metadata that an existing
