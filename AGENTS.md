@@ -32,9 +32,9 @@
 - Use **fly CLI** for managing deployments and reading deployment logs. Always prepend `fly`/`flyctl` commands with
   `FLY_CONFIG_DIR="$HOME/.fly-account3" ` so that the correct account is used.
 - **Code**:
-    - Try to reuse code if it's repeated more than 2 times.
-- **Secrets Protection:** Never read environment files directly nor check in real API keys, Supabase JWT secrets, or AWS
-  KMS credentials. Use Fly secrets or local `.env` setups. You may change env files using find & replace commands, but
-  never read them.
+    - Try to reuse code if it's repeated more than 3 times.
+- **Secrets Protection:** Never read environment files directly nor check in real API keys or Supabase JWT secrets. Use
+  Fly secrets or local `.env` setups. You may change env files using scripts or find & replace commands, but never read
+  them.
 - Pipegrind (verb): To wait for all running pipelines to finish, and if any are red, then figure out why they failed,
   implement and push a fix, and repeat the process until all pipelines are green.
