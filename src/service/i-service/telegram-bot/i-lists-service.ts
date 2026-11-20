@@ -1,4 +1,5 @@
-import { Bot, Message } from "../../telegram-bot/types/botgram";
+import type { PrivateChatUpdate } from "../../telegram-bot/telegram-user-id";
+import { Bot } from "../../telegram-bot/types/botgram";
 
 export default interface IListsService {
 
@@ -6,10 +7,10 @@ export default interface IListsService {
 
   admission(userId: number): Promise<'allowed' | 'blocked' | 'development'>;
 
-  isAdmin(msg: Message): boolean;
+  isAdmin(msg: PrivateChatUpdate): boolean;
 
-  canEdit(msg: Message): Promise<boolean>;
+  canEdit(msg: PrivateChatUpdate): Promise<boolean>;
 
-  ensureEditor(msg: Message, activeWorkflow?: boolean): Promise<void>;
+  ensureEditor(msg: PrivateChatUpdate, activeWorkflow?: boolean): Promise<void>;
 
 }

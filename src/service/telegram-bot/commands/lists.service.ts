@@ -6,8 +6,8 @@ import IWhitelistRepo from "../../i-repos/i-whitelist.repo";
 import IBotUtilsService from "../../i-service/telegram-bot/i-bot-utils.service";
 import IListsService from "../../i-service/telegram-bot/i-lists-service";
 import BotError from "../bot-error";
-import { parseTelegramUserId, privateSender } from "../telegram-user-id";
-import { Bot, Message } from "../types/botgram";
+import { parseTelegramUserId, privateSender, type PrivateChatUpdate } from "../telegram-user-id";
+import { Bot } from "../types/botgram";
 import { messageCommand } from "../types/model";
 
 @Service()
@@ -19,7 +19,7 @@ export default class ListsService implements IListsService {
       @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
   ) {}
 
-  isAdmin(msg: Message): boolean {
+  isAdmin(msg: PrivateChatUpdate): boolean {
     return privateSender(msg)?.id === this.botUtils.adminChatId;
   }
 
@@ -33,12 +33,12 @@ export default class ListsService implements IListsService {
     return 'development';
   }
 
-  async canEdit(msg: Message): Promise<boolean> {
+  async canEdit(msg: PrivateChatUpdate): Promise<boolean> {
     const sender = privateSender(msg);
     return !!sender && !(await this.blacklistRepo.contains(sender.id)) && await this.isApproved(sender.id);
   }
 
-  async ensureEditor(msg: Message, activeWorkflow = false): Promise<void> {
+  async ensureEditor(msg: PrivateChatUpdate, activeWorkflow = false): Promise<void> {
     if (await this.canEdit(msg)) return;
     if (activeWorkflow) await this.botUtils.deleteUserData(msg.chat.id);
     throw new BotError('Only approved editors can use this command.');

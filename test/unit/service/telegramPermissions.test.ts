@@ -2,6 +2,7 @@ import axios from "axios";
 import { after, afterEach, before, beforeEach, describe, it } from "mocha";
 import assert from "node:assert/strict";
 import { once } from "node:events";
+import type { ReadStream } from "node:fs";
 import { mkdir, rm, rmdir, stat } from "node:fs/promises";
 import { Container } from "typedi";
 import { tempFolder } from "../../../src/config/constants";
@@ -15,7 +16,8 @@ import type IInRequestService from "../../../src/service/i-service/i-in-request.
 import type ISimpleUserService from "../../../src/service/i-service/i-simpleUser.service";
 import LocalConvoMemoryService from "../../../src/service/telegram-bot/local-convo-memory.service";
 import { parseTelegramUserId } from "../../../src/service/telegram-bot/telegram-user-id";
-import type { Bot, ReplyQueue } from "../../../src/service/telegram-bot/types/botgram";
+import type { Bot } from "../../../src/service/telegram-bot/types/botgram";
+import type { InlineKeyboardButton } from "../../../src/service/telegram-bot/types/model";
 
 const adminId = 9000000401;
 const editorId = 9000000402;
@@ -29,8 +31,6 @@ class TestList extends ListLocalRepo {}
 
 interface TestBot extends Bot {
   processMessage(message: object): Promise<void>;
-
-  reply(): ReplyQueue;
 }
 
 describe("Telegram user IDs", () => {
@@ -68,10 +68,18 @@ describe("Telegram permissions through Botgram", () => {
   let blacklist: TestList;
   let bot: TestBot;
   let replies: string[];
+  let keyboard: InlineKeyboardButton[][] | undefined;
+  let messageId: number;
+  let keyboardEdits: { chat_id: number; message_id: number; reply_markup: { inline_keyboard: unknown[] } }[];
+  let rejectKeyboardEdits: boolean;
+  let rejectNextPrompt: boolean;
+  let callbackAnswers: { callback_query_id: string; text?: string; show_alert?: boolean }[];
+  let updateId: number;
   let activity: { id: number, username?: string }[];
   let notifications: string[];
   let savedImages: ImageDto[];
   let telegramMethods: string[];
+  let thumbnails: { title: string; offset?: number }[];
   let tempFolderCreated: boolean;
 
   before(async () => {
@@ -101,10 +109,18 @@ describe("Telegram permissions through Botgram", () => {
     whitelist = new TestList();
     blacklist = new TestList();
     replies = [];
+    keyboard = undefined;
+    messageId = 1;
+    keyboardEdits = [];
+    rejectKeyboardEdits = false;
+    rejectNextPrompt = false;
+    callbackAnswers = [];
+    updateId = 0;
     activity = [];
     notifications = [];
     savedImages = [];
     telegramMethods = [];
+    thumbnails = [];
     Container.set(config.deps.service.convoMemory.name, memory);
 
     const botUtils = new BotUtilsService();
@@ -119,7 +135,10 @@ describe("Telegram permissions through Botgram", () => {
     const lists = new ListsService(whitelist, blacklist, botUtils);
     const pt = new PtService(memory, botUtils, lists);
     const images = new ImageCommands(lists, memory, {
-      async generate() { return Buffer.from("thumbnail"); },
+      async generate(_photo, _date, title, options) {
+        thumbnails.push({ title, offset: options?.imgAlign });
+        return Buffer.from("thumbnail");
+      },
     } as IImageEditingService, {
       async save(image) {
         savedImages.push(image);
@@ -131,10 +150,54 @@ describe("Telegram permissions through Botgram", () => {
 
     bot = botgram(testEnv.BOT_TOKEN, { autodetect: false });
     bot.stop();
-    bot.reply = () => ({
-      text: (message: string) => { replies.push(message); },
-      sendGeneric: (_method: string, { text }: { text: string }) => { replies.push(text); },
-    }) as ReplyQueue;
+    bot.callMethod = (method, parameters, callback) => {
+      if (method === "answerCallbackQuery") {
+        callbackAnswers.push(parameters as typeof callbackAnswers[number]);
+        queueMicrotask(() => callback(null, true));
+        return;
+      }
+      if (method === "editMessageReplyMarkup") {
+        keyboardEdits.push(parameters as typeof keyboardEdits[number]);
+        queueMicrotask(() => callback(rejectKeyboardEdits ? {
+          req: {
+            method, parameters: [ parameters ], stack: "",
+          },
+        } : null));
+        return;
+      }
+      const payload = parameters as {
+        text: string; chat_id: number; reply_markup?: { inline_keyboard: InlineKeyboardButton[][] }
+      };
+      if (payload.reply_markup && rejectNextPrompt) {
+        rejectNextPrompt = false;
+        const error = Object.assign(new Error('Test prompt delivery failed'), {
+          req: {
+            method, parameters: [ parameters ], stack: '',
+          },
+        });
+        queueMicrotask(() => callback(error));
+        return;
+      }
+      replies.push(payload.text);
+      keyboard = payload.reply_markup?.inline_keyboard;
+      const sentId = ++messageId;
+      const respond = () => callback(null, {
+        message_id: sentId,
+        date: 1,
+        chat: { id: payload.chat_id, type: "private", first_name: "Test" },
+        from: { id: 100, first_name: "Bot" },
+        text: payload.text ?? "Media",
+      });
+      if (method === "sendAudio") {
+        telegramMethods.push(method);
+        const { audio: stream } = parameters as { audio: ReadStream };
+        stream.on("error", callback);
+        stream.on("end", respond);
+        stream.resume();
+      } else {
+        queueMicrotask(respond);
+      }
+    };
     bot.fileLoad = ((_file, callback) => callback(null, Buffer.from("file contents"))) as Bot["fileLoad"];
     axios.defaults.adapter = async request => {
       telegramMethods.push(request.url!.split("/").at(-1)!);
@@ -162,6 +225,170 @@ describe("Telegram permissions through Botgram", () => {
       ...(typeof input === "string" ? { text: input } : structuredClone(input)),
     });
   }
+
+  function press(id: number, button: { data: string; messageId: number }, {
+    chatId = id, type = "private", inaccessible = false,
+  } = {}): Promise<void> {
+    updateId++;
+    const update = {
+      update_id: updateId,
+      callback_query: {
+        id: String(updateId),
+        from: { id, first_name: "Test" },
+        data: button.data,
+        message: {
+          message_id: button.messageId,
+          date: inaccessible ? 0 : 1,
+          chat: { id: chatId, type, first_name: "Test", title: "Test" },
+          ...(inaccessible ? {} : { from: { id: 100, first_name: "Bot" }, text: "Menu" }),
+        },
+      },
+    };
+    return bot.processUpdate(update);
+  }
+
+  function button(label: string) {
+    const data = keyboard?.flat().find(key => key.text === label)?.callback_data;
+    assert.ok(data, `Expected a button labeled ${ label }`);
+    assert.ok(Buffer.byteLength(data) <= 64);
+    return { data, messageId };
+  }
+
+  it("opens help and generates a cover from a title sent after pressing the menu button", async () => {
+    await send(visitorId, "/start");
+    await press(visitorId, button("Ajuda"));
+    assert.match(replies.at(-1)!, /Telegram e Signal/);
+    await press(visitorId, button("Voltar ao menu"));
+    const cover = button("Criar capa para YouTube");
+    await Promise.all([ press(visitorId, cover), send(visitorId, "Meditação de hoje") ]);
+    assert.deepEqual(thumbnails, [ { title: "Meditação de hoje", offset: undefined } ]);
+    assert.deepEqual(telegramMethods, [ "sendPhoto" ]);
+    assert.equal(await memory.exists(visitorId), false);
+    assert.equal(callbackAnswers.length, 3);
+    assert.ok(activity.every(user => user.id === visitorId));
+
+    await send(visitorId, "/pt_img");
+    assert.match(replies.at(-1)!, /Envia o título/);
+    await send(visitorId, "/pt_img (0.5) Outro título");
+    assert.deepEqual(thumbnails.at(-1), { title: "Outro título", offset: 0.5 });
+    assert.equal(await memory.exists(visitorId), false);
+  });
+
+  it("delivers a preview in the chat after receiving audio and text", async () => {
+    await send(editorId, "/menu");
+    await press(editorId, button("Pré-visualizar meditação"));
+    await send(editorId, audio);
+    assert.match(replies.at(-1)!, /envia o texto/);
+    const cancel = button("Cancelar tarefa");
+    await send(editorId, text);
+    assert.deepEqual(telegramMethods, [ "sendAudio" ]);
+    assert.match(replies.at(-1)!, /youtu\.be\/example/);
+    assert.equal(keyboard, undefined);
+    assert.equal(await memory.exists(editorId), false);
+    await assert.rejects(stat(audioPath), { code: "ENOENT" });
+    assert.ok(keyboardEdits.some(edit => edit.message_id === cancel.messageId));
+    await press(editorId, cancel);
+    assert.equal(callbackAnswers.at(-1)?.show_alert, true);
+  });
+
+  it("allows cancellation only from the latest workflow prompt", async () => {
+    await send(visitorId, "/pt");
+    const preview = button("Pré-visualizar meditação");
+    await press(visitorId, preview);
+    const oldCancel = button("Cancelar tarefa");
+    await send(visitorId, text);
+    assert.match(replies.at(-1)!, /envia o áudio/);
+    const newCancel = button("Cancelar tarefa");
+    assert.notEqual(newCancel.messageId, oldCancel.messageId);
+    await press(visitorId, oldCancel);
+    assert.equal(callbackAnswers.at(-1)?.show_alert, true);
+    assert.equal(await memory.getCommand(visitorId), "pt_testar");
+    await press(visitorId, newCancel);
+    assert.equal(await memory.exists(visitorId), false);
+  });
+
+  it("only accepts one tap from the latest menu even when Telegram cannot remove old buttons", async () => {
+    rejectKeyboardEdits = true;
+    await send(visitorId, "/menu");
+    const previousCover = button("Criar capa para YouTube");
+    await send(visitorId, "/menu");
+    const cover = button("Criar capa para YouTube");
+    const preview = button("Pré-visualizar meditação");
+    assert.deepEqual(keyboardEdits[0], {
+      chat_id: visitorId, message_id: previousCover.messageId, reply_markup: { inline_keyboard: [] },
+    });
+
+    await Promise.all([ press(visitorId, previousCover), press(visitorId, cover), press(visitorId, preview), press(visitorId, cover) ]);
+    assert.deepEqual(callbackAnswers.map(answer => answer.show_alert), [ true, undefined, true, true ]);
+    assert.equal(await memory.getCommand(visitorId), "pt_img");
+    await send(visitorId, "Meditação de hoje");
+    await press(visitorId, preview);
+    assert.equal(callbackAnswers.at(-1)?.show_alert, true);
+    assert.equal(await memory.exists(visitorId), false);
+    assert.equal(activity.length, 4);
+  });
+
+  it("keeps the chat idle when sending the first workflow prompt fails", async () => {
+    await send(visitorId, "/menu");
+    rejectNextPrompt = true;
+    await press(visitorId, button("Criar capa para YouTube"));
+    assert.equal(await memory.exists(visitorId), false);
+    await send(visitorId, text);
+    assert.match(replies.at(-1)!, /youtu\.be\/example/);
+    assert.deepEqual(thumbnails, []);
+  });
+
+  it("rechecks an editor's access when a current menu button is pressed", async () => {
+    await whitelist.add(editorId);
+    await send(editorId, "/menu");
+    await press(editorId, button("Imagens"));
+    const upload = button("Adicionar imagem à galeria");
+    await press(editorId, upload);
+    await Promise.all([ send(editorId, photo), send(editorId, "thumbnail-id") ]);
+    assert.equal(savedImages[0]?.file.id, "thumbnail-id");
+
+    for (const [ command, label ] of [
+      [ "/menu", "Publicar meditação no canal" ],
+      [ "/images", "Adicionar imagem à galeria" ],
+    ]) {
+      await send(editorId, command);
+      const editorButton = button(label);
+      await whitelist.remove(editorId);
+      await press(editorId, editorButton);
+      assert.match(replies.at(-1)!, /approved editors/);
+      assert.equal(await memory.exists(editorId), false);
+      await whitelist.add(editorId);
+    }
+
+    await whitelist.remove(editorId);
+    await send(editorId, "/menu");
+    assert.ok(keyboard?.flat().every(key => key.text !== "Publicar meditação no canal"));
+    await press(editorId, button("Imagens"));
+    assert.ok(keyboard?.flat().every(key => key.callback_data !== upload.data));
+    assert.deepEqual(telegramMethods, []);
+  });
+
+  it("acknowledges invalid and inaccessible buttons and applies chat admission to valid buttons", async () => {
+    await send(visitorId, "/menu");
+    const preview = button("Pré-visualizar meditação");
+    await press(visitorId, preview, { chatId: editorId });
+    await press(visitorId, preview, { chatId: -42, type: "group" });
+    await press(visitorId, preview, { inaccessible: true });
+    await press(visitorId, { ...preview, data: "menu:unknown" });
+    assert.equal(callbackAnswers.length, 4);
+    assert.ok(callbackAnswers.every(answer => answer.show_alert && answer.text?.includes("/menu")));
+    await blacklist.add(visitorId);
+    await press(visitorId, preview);
+    assert.match(replies.at(-1)!, /blacklisted/);
+    await blacklist.remove(visitorId);
+    await send(visitorId, "/menu");
+    config.runningEnv = "development";
+    await press(visitorId, button("Pré-visualizar meditação"));
+    assert.match(replies.at(-1)!, /developing/);
+    assert.equal(await memory.exists(visitorId), false);
+    assert.equal(activity.length, 2);
+    assert.equal(callbackAnswers.length, 6);
+  });
 
   it("validates the configured admin user ID", () => {
     try {

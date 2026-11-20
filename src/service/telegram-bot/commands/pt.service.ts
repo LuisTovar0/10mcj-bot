@@ -9,9 +9,10 @@ import IConvoMemoryService, { ConvoError } from "../../i-service/telegram-bot/i-
 import IListsService from "../../i-service/telegram-bot/i-lists-service";
 import IPtService from "../../i-service/telegram-bot/i-pt.service";
 import BotError from "../bot-error";
+import { startWorkflow, type BotMenu, type RegisterMenuAction } from "../bot-menu";
 import * as textFormatting from "../text-formatting.service";
 import { Bot, ReplyQueue } from "../types/botgram";
-import { InputFile, Message, messageAudio, messageCommand, messageText } from "../types/model";
+import { InputFile, Message, messageAudio, messageText } from "../types/model";
 
 const mp3Duration: (path: string) => Promise<number> = require('mp3-duration');
 
@@ -27,46 +28,29 @@ export default class PtService implements IPtService {
   ) {
   }
 
-  registerCommands(bot: Bot): void {
-
-    bot.command(`pt`, async (msg, reply) => {
-      reply.markdown(`Comandos disponíveis:
-/pt\\_testar - Mostra o funcionamento normal do bot, mas sem enviar mensagens${ this.channel ? `
-/pt\\_enviar - Pede algumas informações e envia a mensagen para o canal de Telegram` : '' }
-/pt\\_img - Gera uma capa para um vídeo do YouTube. Utilização: \`/pt_img texto\`, onde "texto" é o texto que será colocado na imagem.`);
+  registerCommands(menu: BotMenu, registerMenuAction: RegisterMenuAction): void {
+    registerMenuAction('pt_testar', async msg => {
+      await startWorkflow(this.convoService, menu, msg.chat.id, { command: 'pt_testar', data: { audio: false } },
+          'Envia o áudio e o texto da meditação em duas mensagens. Receberás a pré-visualização aqui.');
     });
 
-    // para comandos de edição de áudios e textos
-    const sending = async (msg: messageCommand, reply: ReplyQueue) => {
-      const exists = await this.convoService.exists(msg.chat.id);
-      if (!exists) {
-        await this.convoService.set(msg.chat.id, {
-          command: msg.command, data: {
-            audio: false,
-          },
-        });
-        reply.text(`okapa. que venham o áudio e o texto`);
-      } else reply.text(`Já tinhas declarado o comando. Agora tem de ser um áudio e um texto, separados. Se não quiseres podes usar /cancel`);
-    };
-
-    bot.command('pt_testar', sending);
-
-    if (this.channel)
-      bot.command('pt_enviar', async (msg, reply) => {
+    if (this.channel) {
+      registerMenuAction('pt_enviar', async msg => {
         await this.listsService.ensureEditor(msg);
-        await sending(msg, reply);
+        await startWorkflow(this.convoService, menu, msg.chat.id, { command: 'pt_enviar', data: { audio: false } },
+            `Envia o áudio e o texto da meditação em duas mensagens. Quando receber os dois, o bot publica a meditação em @${ this.channel }.`);
       });
-
+    }
   }
 
-  async handleAudio(bot: Bot, msg: messageAudio, reply: ReplyQueue): Promise<void> {
+  async handleAudio(bot: Bot, msg: messageAudio, reply: ReplyQueue, menu: BotMenu): Promise<void> {
     const chatId = msg.chat.id;
     const hasAudio = await this.convoService.hasAudio(chatId);
     if (hasAudio === null)
       throw await ConvoError.new(this.convoService, chatId, 'hasAudio at handleAudio');
     if (hasAudio) {
       // audio was already received
-      reply.text(`já tinhas mandado áudio. manda aí texto`);
+      await menu.prompt(chatId, await this.convoService.wholeConvo(chatId), 'Já recebi o áudio. Envia o texto da meditação.');
       return;
     }
 
@@ -76,22 +60,23 @@ export default class PtService implements IPtService {
     await this.convoService.setAudio(chatId, true);
     if (await this.convoService.getText(chatId))
       await this.finalResponse(msg, reply);
-    else reply.text(`já tá! ganda meditação`);
+    else await menu.prompt(chatId, await this.convoService.wholeConvo(chatId), 'Áudio recebido. Agora envia o texto da meditação.');
   }
 
-  async handleText(msg: messageText, reply: ReplyQueue): Promise<void> {
+  async handleText(msg: messageText, reply: ReplyQueue, menu: BotMenu): Promise<void> {
     const chatId = msg.chat.id;
     if (await this.convoService.hasAudio(chatId)) {
       // if audio has been sent, join the audio and text, then reply with the formatted audio and Signal text
       await this.convoService.setText(chatId, textFormatting.getFullInfo(msg.text));
       await this.finalResponse(msg, reply);
     } else {
-      if (await this.convoService.getText(chatId))
-          // if we don't have audio but already have text, let the user know
-        throw new BotError(`já tinhas mandado texto, agora tens de mandar áudio.\nou então /cancel`);
+      if (await this.convoService.getText(chatId)) {
+        await menu.prompt(chatId, await this.convoService.wholeConvo(chatId), 'Já recebi o texto. Envia o áudio da meditação.');
+        return;
+      }
       const texts = textFormatting.getFullInfo(msg.text);
       await this.convoService.setText(chatId, texts);
-      reply.text(`boa escolha de emojis ${ texts.descr1.split(` `)[0] }`);
+      await menu.prompt(chatId, await this.convoService.wholeConvo(chatId), 'Texto recebido. Agora envia o áudio da meditação.');
     }
   }
 

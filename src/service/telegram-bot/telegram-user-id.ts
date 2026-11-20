@@ -1,4 +1,6 @@
-import { Message } from "./types/model";
+import type { Message } from "./types/model";
+
+export type PrivateChatUpdate = Pick<Message, 'chat' | 'from'>;
 
 const maxTelegramUserId = 2 ** 52 - 1;
 
@@ -13,7 +15,7 @@ export function parseTelegramUserId(value: string): number | undefined {
   return isTelegramUserId(id) ? id : undefined;
 }
 
-export function privateSender(msg: Message) {
+export function privateSender(msg: PrivateChatUpdate) {
   if (msg.chat.type === 'user' && msg.from && isTelegramUserId(msg.from.id)) return msg.from;
   return undefined;
 }

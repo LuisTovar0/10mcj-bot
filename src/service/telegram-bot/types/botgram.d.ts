@@ -1,6 +1,6 @@
 /// <reference types="node">
 
-import {Agent} from "https";
+import { Agent } from "https";
 import * as model from "./model";
 
 declare function botgram(authToken: string, options?: botgram.BotOptions): botgram.Bot;
@@ -27,7 +27,7 @@ declare namespace botgram {
 
     set(key: string, value: any): void;
 
-    callMethod(method: string, parameters: object[], callback: (error: RequestError | null, result?: any) => any): void;
+    callMethod(method: string, parameters: object, callback: (error: RequestError | null, result?: any) => any): void;
 
     autodetect(callback: (error: RequestError | null) => any): void;
 
@@ -67,11 +67,17 @@ declare namespace botgram {
 
     getChat(chat: model.ChatLike, callback: (error: RequestError | null, result?: Chat) => any): void;
 
-    getProfilePhotos(user: model.ChatLike, range?: [number, number] | null): Promise<model.Photo & { total: number; }>;
+    getProfilePhotos(user: model.ChatLike, range?: [ number, number ] | null): Promise<model.Photo & {
+      total: number;
+    }>;
 
-    getProfilePhotos(user: model.ChatLike, callback: (error: RequestError | null, result?: model.Photo & { total: number; }) => any): void;
+    getProfilePhotos(user: model.ChatLike, callback: (error: RequestError | null, result?: model.Photo & {
+      total: number;
+    }) => any): void;
 
-    getProfilePhotos(user: model.ChatLike, range: [number, number] | null, callback: (error: RequestError | null, result?: model.Photo & { total: number; }) => any): void;
+    getProfilePhotos(user: model.ChatLike, range: [ number, number ] | null, callback: (error: RequestError | null, result?: model.Photo & {
+      total: number;
+    }) => any): void;
 
     setChatPhoto(chat: model.ChatLike, file: model.InputFile): Promise<void>;
 
@@ -197,14 +203,18 @@ declare namespace botgram {
     stack: string;
   }
 
-  type Update = object;
+  interface Update {
+    callback_query?: { message?: { date?: number } };
+
+    [key: string]: unknown;
+  }
 
   interface PinChatMessageOptions {
     disableNotification?: boolean;
   }
 
   type GameScoreMessage =
-    { chat: model.ChatLike, message: model.MessageLike; } | { message: string; };
+      { chat: model.ChatLike, message: model.MessageLike; } | { message: string; };
 
   interface GameScoreOptions {
     disableEditMessage?: boolean;
@@ -389,16 +399,16 @@ declare namespace botgram {
 
   type ParseMode = null | "Markdown" | "HTML";
   type ChatAction =
-    "typing" |
-    "find_location" |
-    "upload_photo" |
-    "record_video" |
-    "upload_video" |
-    "record_audio" |
-    "upload_audio" |
-    "record_video_note" |
-    "upload_video_note" |
-    "upload_document";
+      "typing" |
+      "find_location" |
+      "upload_photo" |
+      "record_video" |
+      "upload_video" |
+      "record_audio" |
+      "upload_audio" |
+      "record_video_note" |
+      "upload_video_note" |
+      "upload_document";
 
   // Model
 

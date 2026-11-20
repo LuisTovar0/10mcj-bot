@@ -15,6 +15,7 @@ import IBotUtilsService from "../../i-service/telegram-bot/i-bot-utils.service";
 import IConvoMemoryService, { ConvoError } from "../../i-service/telegram-bot/i-convo-memory.service";
 import IListsService from "../../i-service/telegram-bot/i-lists-service";
 import BotError from "../bot-error";
+import { menuButton, startWorkflow, type BotMenu, type MenuHandler, type RegisterMenuAction } from "../bot-menu";
 import * as textFormatting from "../text-formatting.service";
 import { Bot, Message, ReplyQueue } from "../types/botgram";
 import { messagePhoto, messageText } from "../types/model";
@@ -31,66 +32,41 @@ export default class ImageCommands implements IImageCommandsService {
       @Inject(config.deps.service.simpleUser.name) private simpleUserService: ISimpleUserService,
   ) {}
 
-  registerCommands(bot: Bot) {
-
-    bot.command('images', async (msg, reply) => {
+  registerCommands(bot: Bot, menu: BotMenu, registerMenuAction: RegisterMenuAction): void {
+    registerMenuAction('images', async msg => {
       const canEdit = await this.listsService.canEdit(msg);
-      reply.markdown(`Image uploads are reserved for approved editors.${ canEdit ? `
-You can view the available images and their ID's [here](https://one0mcj.onrender.com/images)` : '' }
-/img\\_add - Add an image to the DB.
-/img\\_offset - Change the offset value that will be applied to an image in thumbnail generation.`);
+      const rows = [ [ menuButton('Criar capa para YouTube', 'pt_img') ] ];
+      if (canEdit) rows.push([ menuButton('Adicionar imagem à galeria', 'img_add') ]);
+      rows.push([ menuButton('Voltar ao menu', 'menu') ]);
+      await menu.send(msg.chat.id, 'Imagens para as capas dos vídeos.', rows);
     });
 
-    bot.command('img_add', async (msg, reply) => {
+    registerMenuAction('img_add', async msg => {
       await this.listsService.ensureEditor(msg);
-      const chatId = msg.chat.id;
-      const existingConvo = await this.convoService.wholeConvo(chatId);
-      if (existingConvo) {
-        reply.text(`You were using the ${ existingConvo.command } command. Wanna /cancel?`);
+      await startWorkflow(this.convoService, menu, msg.chat.id, { command: 'img_add', data: {} },
+          'Envia a foto e o identificador que queres dar-lhe em duas mensagens.');
+    });
+
+    const startThumbnail: MenuHandler = msg => startWorkflow(this.convoService, menu, msg.chat.id,
+        { command: 'pt_img', data: {} }, 'Envia o título que queres pôr na capa do vídeo.');
+    registerMenuAction('pt_img', startThumbnail, false);
+
+    bot.command('pt_img', async msg => {
+      const title = msg.args().trim();
+      if (!title) {
+        await startThumbnail(msg);
         return;
       }
 
-      await this.convoService.set(chatId, { command: msg.command, data: {} });
-      reply.text('OK. manda a imagem e o identificador');
-    });
-
-    bot.command(`pt_img`, async msg => {
-      const noCommand = msg.text.split(' ').slice(1);
-      let offset: number | undefined = undefined;
-      let title = noCommand.join(' ');
-      const maybeOffset = Number(noCommand[0].slice(1, -1));
-      if (noCommand[0].at(0) === '('
-          && noCommand[0].at(-1) === ')'
-          && !isNaN(maybeOffset)) {
-        offset = maybeOffset;
-        title = noCommand.slice(1).join(' ');
+      const offset = /^\((\S*?)\)(?:\s+|$)/.exec(title);
+      if (offset && !isNaN(Number(offset[1]))) {
+        const titleWithoutOffset = title.slice(offset[0].length);
+        if (!titleWithoutOffset) throw new BotError('Escreve o título da capa a seguir ao valor do alinhamento.');
+        await this.sendThumbnail(msg.chat.id, titleWithoutOffset, Number(offset[1]));
+      } else {
+        await this.sendThumbnail(msg.chat.id, title);
       }
-      const { day, month, year } = textFormatting.theDate();
-      moment.locale('pt-pt');
-      const date = moment().date(day).month(month - 1).year(year).format("DD MMMM YYYY").toString();
-
-      // getting the chosen photo or using the default photo
-      const user = await this.simpleUserService.getUserById(msg.chat.id);
-      const chosenPhotoId = user.chosenPhotoId;
-      let photo;
-      if (!chosenPhotoId)
-        photo = fs.readFileSync(`${ filesFolder }/rapaz.jpg`);
-      else {
-        const f = (await this.imageService.getById(chosenPhotoId))?.file.file;
-        if (f) photo = f;
-        else
-          photo = fs.readFileSync(`${ filesFolder }/rapaz.jpg`);
-      }
-
-      const generatedFile = await this.imageEditingService.generate(photo, date, title,
-          { imgAlign: offset });
-      const generatedFileName = `./${ moment().valueOf() }.png`;
-      fs.writeFileSync(generatedFileName, generatedFile);
-      const fd = new FormData();
-      fd.append('photo', fs.createReadStream(generatedFileName));
-      await axios.post(`${ this.botUtils.methodsUrl }/sendPhoto`,
-          fd, { params: { chat_id: msg.chat.id } });
-      fs.unlinkSync(generatedFileName);
+      if (await this.convoService.getCommand(msg.chat.id) === 'pt_img') await this.convoService.delete(msg.chat.id);
     });
 
     bot.command(`img_choose`, async (msg, reply) => {
@@ -123,14 +99,27 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
 
   }
 
-  private async imgAddHandlePhoto(msg: messagePhoto, reply: ReplyQueue, imgBuffer: Buffer) {
+  private async sendThumbnail(chatId: number, title: string, offset?: number): Promise<void> {
+    const { day, month, year } = textFormatting.theDate();
+    moment.locale('pt-pt');
+    const date = moment().date(day).month(month - 1).year(year).format('DD MMMM YYYY');
+    const { chosenPhotoId } = await this.simpleUserService.getUserById(chatId);
+    const chosenPhoto = chosenPhotoId ? (await this.imageService.getById(chosenPhotoId))?.file.file : undefined;
+    const photo = chosenPhoto ?? fs.readFileSync(`${ filesFolder }/rapaz.jpg`);
+    const thumbnail = await this.imageEditingService.generate(photo, date, title, { imgAlign: offset });
+    const form = new FormData();
+    form.append('photo', thumbnail, 'capa.png');
+    await axios.post(`${ this.botUtils.methodsUrl }/sendPhoto`, form, { params: { chat_id: chatId } });
+  }
+
+  private async imgAddHandlePhoto(msg: messagePhoto, menu: BotMenu, imgBuffer: Buffer) {
     const chatId = msg.chat.id;
     const res = await this.convoService.setImg(chatId, imgBuffer);
     if (!res) throw new BotError('Image could not be loaded.');
     const data = await this.convoService.getAddImageData(chatId);
     if (data && data.image && data.name)
-      await this.addImageToDb(msg, reply);
-    else reply.text('OK! falta o ID');
+      await this.addImageToDb(msg, menu);
+    else await menu.prompt(chatId, await this.convoService.wholeConvo(chatId), 'Foto recebida. Agora envia o identificador.');
   }
 
   async videoHandlePhoto(chatId: number, reply: ReplyQueue, imgBuffer: Buffer) {
@@ -139,10 +128,14 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     //todo
   }
 
-  async handlePhoto(bot: Bot, msg: messagePhoto, reply: ReplyQueue): Promise<void> {
+  async handlePhoto(bot: Bot, msg: messagePhoto, reply: ReplyQueue, menu: BotMenu): Promise<void> {
     const chatId = msg.chat.id;
     const command = await this.convoService.getCommand(chatId);
     if (command === null) throw await ConvoError.new(this.convoService, chatId, 'getCommand at handle photo');
+    if (command === 'pt_img') {
+      await menu.prompt(chatId, await this.convoService.wholeConvo(chatId), 'Envia o título da capa numa mensagem de texto.');
+      return;
+    }
 
     if (command !== 'img_add' && command !== 'video')
       throw new BotError(`Only images for the 'img_add' command are handled here.`);
@@ -150,37 +143,37 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     const buffer = await this.botUtils.loadFile(bot, msg.image.file);
 
     if (command === 'img_add')
-      await this.imgAddHandlePhoto(msg, reply, buffer);
+      await this.imgAddHandlePhoto(msg, menu, buffer);
     if (command === 'video')
       await this.videoHandlePhoto(chatId, reply, buffer);
   }
 
   isImageCommand(command: string) {
-    switch (command) {
-      case 'img_add':
-        return true;
-      default:
-        return false;
-    }
+    return command === 'img_add' || command === 'pt_img';
   }
 
-  async handleText(msg: messageText, reply: ReplyQueue): Promise<void> {
+  async handleText(msg: messageText, menu: BotMenu): Promise<void> {
     const chatId = msg.chat.id;
     const command = await this.convoService.getCommand(chatId);
-    if (command === null) throw await ConvoError.new(this.convoService, chatId, 'getCommand at handle photo');
+    if (command === null) throw await ConvoError.new(this.convoService, chatId, 'getCommand at handle text');
 
-    if (command === 'img_add') {
+    if (command === 'pt_img') {
+      const title = msg.text.trim();
+      if (!title) throw new BotError('Escreve o título que queres pôr na capa do vídeo.');
+      await this.sendThumbnail(chatId, title);
+      await this.convoService.delete(chatId);
+    } else if (command === 'img_add') {
       const res = await this.convoService.setImgName(chatId, msg.text);
       if (!res) throw new BotError(`Coudn't set the image name`);
 
       const data = await this.convoService.getAddImageData(chatId);
       if (data && data.image && data.name)
-        await this.addImageToDb(msg, reply);
-      else reply.text('OK! falta a foto');
+        await this.addImageToDb(msg, menu);
+      else await menu.prompt(chatId, await this.convoService.wholeConvo(chatId), 'Identificador recebido. Agora envia a foto.');
     }
   }
 
-  private async addImageToDb(msg: Message, reply: ReplyQueue) {
+  private async addImageToDb(msg: Message, menu: BotMenu) {
     const data = await this.convoService.getAddImageData(msg.chat.id);
     if (!data || !data.name || !data.image)
       throw new BotError('The image or the ID is missing.');
@@ -195,7 +188,7 @@ You can view the available images and their ID's [here](https://one0mcj.onrender
     await this.listsService.ensureEditor(msg, true);
     await this.imageService.save(dto);
     await this.botUtils.deleteUserData(msg.chat.id);
-    reply.text('Guardada!');
+    await menu.send(msg.chat.id, 'Imagem guardada.', [ [ menuButton('Voltar ao menu', 'menu') ] ]);
   }
 
 }
