@@ -9,7 +9,7 @@ export default interface IBotUtilsService {
   filesUrl: string;
   adminChatId: number;
 
-  apiMethod(method: string, params: any): Promise<void>;
+  apiMethod(method: string, params: Record<string, string | number> | FormData): Promise<void>;
 
   sendMessage(chatId: number, message: string): Promise<void>;
 

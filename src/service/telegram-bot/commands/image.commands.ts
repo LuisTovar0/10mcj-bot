@@ -1,5 +1,3 @@
-import axios from "axios";
-import FormData from "form-data";
 import fs from "fs";
 import moment from "moment";
 import { Inject, Service } from "typedi";
@@ -15,7 +13,7 @@ import IBotUtilsService from "../../i-service/telegram-bot/i-bot-utils.service";
 import IConvoMemoryService, { ConvoError } from "../../i-service/telegram-bot/i-convo-memory.service";
 import IListsService from "../../i-service/telegram-bot/i-lists-service";
 import BotError from "../bot-error";
-import { menuButton, startWorkflow, type BotMenu, type MenuHandler, type RegisterMenuAction } from "../bot-menu";
+import { type BotMenu, menuButton, type MenuHandler, type RegisterMenuAction, startWorkflow } from "../bot-menu";
 import * as textFormatting from "../text-formatting.service";
 import { Bot, Message, ReplyQueue } from "../types/botgram";
 import { messagePhoto, messageText } from "../types/model";
@@ -108,8 +106,9 @@ export default class ImageCommands implements IImageCommandsService {
     const photo = chosenPhoto ?? fs.readFileSync(`${ filesFolder }/rapaz.jpg`);
     const thumbnail = await this.imageEditingService.generate(photo, date, title, { imgAlign: offset });
     const form = new FormData();
-    form.append('photo', thumbnail, 'capa.png');
-    await axios.post(`${ this.botUtils.methodsUrl }/sendPhoto`, form, { params: { chat_id: chatId } });
+    form.set('photo', new Blob([ new Uint8Array(thumbnail) ], { type: 'image/png' }), 'capa.png');
+    form.set('chat_id', String(chatId));
+    await this.botUtils.apiMethod('sendPhoto', form);
   }
 
   private async imgAddHandlePhoto(msg: messagePhoto, menu: BotMenu, imgBuffer: Buffer) {

@@ -1,9 +1,11 @@
-import axios from "axios";
-import fs from "fs";
+import { createWriteStream, openAsBlob } from "node:fs";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { Subject } from "rxjs";
 import { Service } from "typedi";
 import { loadEnvVar } from "../config";
 import { tempFolder } from "../config/constants";
+import { fetchChecked } from "./fetch-checked";
 import IVideoService, { VideoCreation$ } from "./i-service/i-video.service";
 
 @Service()
@@ -18,14 +20,14 @@ export default class ShotstackService implements IVideoService {
   }
 
   async asyncCreateVideo(rxjsSubject: Subject<VideoCreation$>, image: string) {
-    const fileStackResp = await axios.post<{ url: string }>(
-        `https://www.filestackapi.com/api/store/S3?key=${ loadEnvVar('filestackApiKey') }`,
-        fs.createReadStream(image), {
-          headers: { accept: 'application/json', 'Content-Type': 'image/jpg' },
-        },
-    );
-
-    const imageUrl = fileStackResp.data.url;
+    const uploadUrl = new URL('https://www.filestackapi.com/api/store/S3');
+    uploadUrl.searchParams.set('key', loadEnvVar('filestackApiKey'));
+    const uploadResponse = await fetchChecked(uploadUrl, 'Filestack upload', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'Content-Type': 'image/jpg' },
+      body: await openAsBlob(image),
+    });
+    const { url: imageUrl } = await uploadResponse.json() as { url: string };
 
     const a = {
       output: {
@@ -59,28 +61,32 @@ export default class ShotstackService implements IVideoService {
       },
     };
 
-    const shotstackApiKey = loadEnvVar('shotstackApiKey');
-    const renderResp = await axios.post("https://api.shotstack.io/edit/stage/render", a,
-        { headers: { "x-api-key": shotstackApiKey } });
-    const id = renderResp.data.response.id;
+    const renderUrl = 'https://api.shotstack.io/edit/stage/render';
+    const headers = { 'x-api-key': loadEnvVar('shotstackApiKey') };
+    const renderResponse = await fetchChecked(renderUrl, 'Shotstack render', {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify(a),
+    });
+    const { response: { id } } = await renderResponse.json() as { response: { id: string } };
     let done = false;
     let url: string | undefined = undefined;
     const fileName = `${ tempFolder }/${ new Date().getTime() }.mp4`;
     while (!done) {
-      const statusResp = await axios.get(`https://api.shotstack.io/edit/stage/render/${ id }`,
-          { headers: { "x-api-key": shotstackApiKey } });
-      console.log(statusResp.data.response.status);
-      if (statusResp.data.response.status === 'done') {
+      const statusResponse = await fetchChecked(`${ renderUrl }/${ id }`, 'Shotstack render status', { headers });
+      const { response } = await statusResponse.json() as { response: { status: string; url?: string } };
+      console.log(response.status);
+      if (response.status === 'done') {
         done = true;
-        url = statusResp.data.response.url;
+        url = response.url;
       }
       if (!done)
         await new Promise(r => setTimeout(r, 2_000));
     }
     if (url) {
-      const file = await axios.get(url, { responseType: 'stream' });
-      const writer = fs.createWriteStream(fileName);
-      file.data.pipe(writer);
+      const file = await fetchChecked(url, 'Shotstack video download');
+      if (!file.body) throw new Error('Shotstack returned no video data.');
+      await pipeline(Readable.fromWeb(file.body), createWriteStream(fileName));
     }
 
   }

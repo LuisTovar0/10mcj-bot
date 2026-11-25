@@ -1,6 +1,4 @@
-import axios from "axios";
-import FormData from 'form-data';
-import fs from "fs";
+import { createReadStream, openAsBlob } from "node:fs";
 import { Inject, Service } from "typedi";
 import config from "../../../config";
 import { tempFolder } from "../../../config/constants";
@@ -9,7 +7,7 @@ import IConvoMemoryService, { ConvoError } from "../../i-service/telegram-bot/i-
 import IListsService from "../../i-service/telegram-bot/i-lists-service";
 import IPtService from "../../i-service/telegram-bot/i-pt.service";
 import BotError from "../bot-error";
-import { startWorkflow, type BotMenu, type RegisterMenuAction } from "../bot-menu";
+import { type BotMenu, type RegisterMenuAction, startWorkflow } from "../bot-menu";
 import * as textFormatting from "../text-formatting.service";
 import { Bot, ReplyQueue } from "../types/botgram";
 import { InputFile, Message, messageAudio, messageText } from "../types/model";
@@ -93,21 +91,22 @@ export default class PtService implements IPtService {
 
     switch (await this.convoService.getCommand(chatId)) {
       case 'pt_testar':
-        await reply.audio(fs.createReadStream(path) as unknown as InputFile,
+        await reply.audio(createReadStream(path) as unknown as InputFile,
             Math.trunc(duration), texts.date, title, texts.telegram, 'Markdown').then();
         break;
       case 'pt_enviar': {
         if (!this.channel) throw new BotError('Variável CHANNEL devia estar definida.');
 
         await this.listsService.ensureEditor(msg, true);
-        const fd = new FormData();
-        fd.append('audio', fs.createReadStream(path));
-        await axios.post(`${ this.botUtils.methodsUrl }/sendAudio`, fd, {
-          params: {
-            chat_id: `@${ this.channel }`, caption: texts.telegram, parse_mode: 'Markdown',
-            duration, title, performer: texts.date,
-          },
-        });
+        const form = new FormData();
+        form.set('audio', await openAsBlob(path, { type: 'application/octet-stream' }), String(chatId));
+        form.set('chat_id', `@${ this.channel }`);
+        form.set('caption', texts.telegram);
+        form.set('parse_mode', 'Markdown');
+        form.set('duration', String(Math.trunc(duration)));
+        form.set('title', title);
+        form.set('performer', texts.date);
+        await this.botUtils.apiMethod('sendAudio', form);
         break;
       }
     }

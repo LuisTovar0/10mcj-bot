@@ -1,5 +1,3 @@
-import {isBoolean, isBuffer, isString} from "lodash";
-
 export default interface IConvoMemoryService {
 
   exists(chatId: number): Promise<boolean>;
@@ -142,7 +140,7 @@ export function isVideoData(v: any): v is VideoData {
   if (!v) return false;
   const vd = v as VideoData;
   // noinspection SuspiciousTypeOfGuard
-  return isBoolean(vd.audio) && isString(vd.text) && isBuffer(vd.image);
+  return typeof vd.audio === 'boolean' && typeof vd.text === 'string' && Buffer.isBuffer(vd.image);
 }
 
 export type Data = TextData | AddImageData;
@@ -154,7 +152,7 @@ export interface Convo {
 
 export class ConvoError extends Error {
   private constructor(location: string) {
-    super(`An incoherence has occurred in the conversation (${location}). Please start over. Please report to @tovawr if this error keeps occurring.`);
+    super(`An incoherence has occurred in the conversation (${ location }). Please start over. Please report to @tovawr if this error keeps occurring.`);
     this.name = 'ConvoError';
   }
 

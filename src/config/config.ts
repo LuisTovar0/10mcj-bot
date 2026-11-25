@@ -1,8 +1,6 @@
-import dotenv from "dotenv";
 import { Dep } from "../loaders";
 import { camelCaseToMacroCase, repoDeps } from "./db";
 
-dotenv.config({ quiet: true });
 const envs = loadEnvVars({ runningEnv: '', dbType: '' });
 
 const config = {

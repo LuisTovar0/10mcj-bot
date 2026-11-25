@@ -1,9 +1,9 @@
-import axios from "axios";
 import fs from "fs";
 import { rm, writeFile } from "node:fs/promises";
 import { Container, Service } from "typedi";
 import config, { loadEnvVar } from "../../config";
 import { tempFolder } from "../../config/constants";
+import { fetchChecked } from "../fetch-checked";
 import IBotUtilsService from "../i-service/telegram-bot/i-bot-utils.service";
 import IConvoMemoryService from "../i-service/telegram-bot/i-convo-memory.service";
 import { parseTelegramUserId } from "./telegram-user-id";
@@ -25,10 +25,18 @@ export default class BotUtilsService implements IBotUtilsService {
     this.adminChatId = adminChatId;
   }
 
-  async apiMethod(method: string, params: any) {
-    // const apiFunc = `/${method}?${new URLSearchParams(params).toString()}`;
-    const axiosResponse = await axios.get<void>(`${ this.methodsUrl }/${ method }`, { params });
-    console.log(`posted: /${ axiosResponse.request.path.split('/')[2] }`);
+  async apiMethod(method: string, params: Record<string, string | number> | FormData): Promise<void> {
+    const url = new URL(`${ this.methodsUrl }/${ method }`);
+    let options: RequestInit | undefined;
+    if (params instanceof FormData) {
+      options = { method: "POST", body: params };
+    } else {
+      for (const [ key, value ] of Object.entries(params)) url.searchParams.set(key, String(value));
+    }
+    const response = await fetchChecked(url, `Telegram ${ method }`, options);
+    const result = await response.json() as { ok: boolean };
+    if (!result.ok) throw new Error(`Telegram ${ method } was rejected.`);
+    console.log(`posted: /${ method }`);
   }
 
   async sendMessage(chatId: number, message: string) {

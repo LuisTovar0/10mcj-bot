@@ -1,6 +1,6 @@
-import express, { Request, Response } from "express";
-import fs from "fs";
+import { serve } from "bun";
 import mongoose from "mongoose";
+import { readFile } from "node:fs/promises";
 import { Container } from "typedi";
 
 import config from "./config";
@@ -8,41 +8,29 @@ import { filesFolder } from "./config/constants";
 import IImageService from "./service/i-service/i-image.service";
 import IBotUtilsService from "./service/i-service/telegram-bot/i-bot-utils.service";
 
+const htmlHeaders = { 'Content-Type': 'text/html; charset=utf-8' };
+
 export default () => {
-
-  const app = express();
-
-  app.get('/health', (_req, res) => {
-    const connected = mongoose.connection.readyState === 1;
-    res.status(connected ? 200 : 503).json({ status: connected ? 'ok' : 'unavailable' });
-  });
-
-  app.get('/', (req, res) =>
-      fs.readFile(`${ filesFolder }/index.html`, 'utf8', (err, html) => {
-        if (err) res.status(500).send('Sorry, out of order');
-        res.send(html);
-      }),
-  );
 
   const imageService = Container.get(config.deps.service.image.name) as IImageService;
   const botUtils = Container.get(config.deps.service.botUtils.name) as IBotUtilsService;
 
-  const getImage = async (req: Request<{ id: string }>, res: Response) => {
-    if (!req.params.id)
-      return res.status(400).send('Bad ID');
-    const id = req.params.id;
+  const getImage = async (encodedId: string) => {
+    let id: string;
+    try {
+      id = decodeURIComponent(encodedId);
+    } catch {
+      return new Response('Bad ID', { status: 400 });
+    }
     const img = await imageService.getById(id);
     if (!img)
-      return res.status(404).send('Image not found');
-    res.send(img.file.file);
+      return new Response('Image not found', { status: 404 });
+    return new Response(new Uint8Array(img.file.file), { headers: { 'Content-Type': 'application/octet-stream' } });
   };
 
-  app.get('/image/:id.png', getImage);
-  app.get('/image/:id', getImage);
-
-  app.get('/images', async (req, res) => {
+  const getGallery = async () => {
     const allImages = await imageService.getAll();
-    res.send(`
+    return new Response(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -61,12 +49,45 @@ export default () => {
         </table>
     </div>
 </body>
-</html>`);
-  });
+</html>`, { headers: htmlHeaders });
+  };
 
-  const server = app.listen(process.env.PORT || 15000, async () => {
-    await botUtils.sendMessage(botUtils.adminChatId, 'Site is up in ' + config.runningEnv);
+  const server = serve({
+    port: Number(process.env.PORT || 15000),
+    hostname: '::',
+    async fetch(request) {
+      if (request.method !== 'GET' && request.method !== 'HEAD')
+        return new Response('Not found', { status: 404 });
+
+      const path = new URL(request.url).pathname.replace(/\/$/, '');
+      switch (path.toLowerCase()) {
+        case '': {
+          try {
+            const html = await readFile(`${ filesFolder }/index.html`, 'utf8');
+            return new Response(html, { headers: htmlHeaders });
+          } catch {
+            return new Response('Sorry, out of order', { status: 500 });
+          }
+        }
+        case '/health': {
+          const connected = mongoose.connection.readyState === 1;
+          return Response.json({ status: connected ? 'ok' : 'unavailable' }, { status: connected ? 200 : 503 });
+        }
+        case '/images':
+          return getGallery();
+        default: {
+          // Match the literal suffix before decoding an ID that may itself end in .png.
+          const imagePath = /^\/image\/([^/]+?)(?:\.png)?$/i.exec(path);
+          return imagePath ? getImage(imagePath[1]) : new Response('Not found', { status: 404 });
+        }
+      }
+    },
+    error(error) {
+      console.error(error);
+      return new Response('Internal Server Error', { status: 500 });
+    },
   });
 
   Container.set('server', server);
+  void botUtils.sendMessage(botUtils.adminChatId, 'Site is up in ' + config.runningEnv);
 }

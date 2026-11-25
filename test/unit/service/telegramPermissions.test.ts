@@ -1,7 +1,5 @@
-import axios from "axios";
 import { after, afterEach, before, beforeEach, describe, it } from "mocha";
 import assert from "node:assert/strict";
-import { once } from "node:events";
 import type { ReadStream } from "node:fs";
 import { mkdir, rm, rmdir, stat } from "node:fs/promises";
 import { Container } from "typedi";
@@ -61,7 +59,7 @@ describe("Telegram permissions through Botgram", () => {
     CHANNEL: "test_channel",
   };
   const previousEnv = new Map(Object.keys(testEnv).map(key => [ key, process.env[key] ]));
-  const originalAdapter = axios.defaults.adapter;
+  const originalFetch = globalThis.fetch;
   let originalRunningEnv: string;
   let memory: LocalConvoMemoryService;
   let whitelist: TestList;
@@ -79,8 +77,19 @@ describe("Telegram permissions through Botgram", () => {
   let notifications: string[];
   let savedImages: ImageDto[];
   let telegramMethods: string[];
+  let telegramUploads: Awaited<ReturnType<Request["formData"]>>[];
   let thumbnails: { title: string; offset?: number }[];
   let tempFolderCreated: boolean;
+
+  function mockFetch(handler: (request: Request) => Promise<Response>) {
+    globalThis.fetch = Object.assign(
+        (input: string | URL | Request, options?: RequestInit) => {
+          const request = input instanceof Request ? new Request(input, options) : new Request(String(input), options);
+          return handler(request);
+        },
+        { preconnect: originalFetch.preconnect },
+    );
+  }
 
   before(async () => {
     Object.assign(process.env, testEnv);
@@ -120,6 +129,7 @@ describe("Telegram permissions through Botgram", () => {
     notifications = [];
     savedImages = [];
     telegramMethods = [];
+    telegramUploads = [];
     thumbnails = [];
     Container.set(config.deps.service.convoMemory.name, memory);
 
@@ -199,20 +209,21 @@ describe("Telegram permissions through Botgram", () => {
       }
     };
     bot.fileLoad = ((_file, callback) => callback(null, Buffer.from("file contents"))) as Bot["fileLoad"];
-    axios.defaults.adapter = async request => {
-      telegramMethods.push(request.url!.split("/").at(-1)!);
-      const drained = once(request.data, "end");
-      request.data.resume();
-      await drained;
-      return { data: {}, status: 200, statusText: "OK", headers: {}, config: request };
-    };
+    mockFetch(async request => {
+      const url = new URL(request.url);
+      assert.equal(url.origin, "https://api.telegram.org");
+      assert.equal(request.method, "POST");
+      telegramMethods.push(url.pathname.split("/").at(-1)!);
+      telegramUploads.push(await request.formData());
+      return Response.json({ ok: true });
+    });
 
     new BotService(requests, botUtils, memory, lists, pt, images).registerCommands(bot);
   });
 
   afterEach(async () => {
     Container.remove(config.deps.service.convoMemory.name);
-    axios.defaults.adapter = originalAdapter;
+    globalThis.fetch = originalFetch;
     await rm(audioPath, { force: true });
   });
 
@@ -263,6 +274,12 @@ describe("Telegram permissions through Botgram", () => {
     await Promise.all([ press(visitorId, cover), send(visitorId, "Meditação de hoje") ]);
     assert.deepEqual(thumbnails, [ { title: "Meditação de hoje", offset: undefined } ]);
     assert.deepEqual(telegramMethods, [ "sendPhoto" ]);
+    assert.equal(telegramUploads[0].get("chat_id"), String(visitorId));
+    const uploadedPhoto = telegramUploads[0].get("photo");
+    assert.ok(uploadedPhoto instanceof File);
+    assert.equal(uploadedPhoto.name, "capa.png");
+    assert.equal(uploadedPhoto.type, "image/png");
+    assert.equal(await uploadedPhoto.text(), "thumbnail");
     assert.equal(await memory.exists(visitorId), false);
     assert.equal(callbackAnswers.length, 3);
     assert.ok(activity.every(user => user.id === visitorId));
@@ -289,6 +306,19 @@ describe("Telegram permissions through Botgram", () => {
     assert.ok(keyboardEdits.some(edit => edit.message_id === cancel.messageId));
     await press(editorId, cancel);
     assert.equal(callbackAnswers.at(-1)?.show_alert, true);
+  });
+
+  it("encodes Telegram message parameters and rejects an HTTP error", async () => {
+    const message = "Olá & bem-vindo?";
+    mockFetch(async request => {
+      const url = new URL(request.url);
+      assert.equal(request.method, "GET");
+      assert.equal(url.pathname, `/bot${ testEnv.BOT_TOKEN }/sendMessage`);
+      assert.equal(url.searchParams.get("chat_id"), String(adminId));
+      assert.equal(url.searchParams.get("text"), message);
+      return Response.json({ ok: false }, { status: 400 });
+    });
+    await assert.rejects(new BotUtilsService().sendMessage(adminId, message), /Telegram sendMessage failed with HTTP 400/);
   });
 
   it("allows cancellation only from the latest workflow prompt", async () => {
@@ -490,6 +520,15 @@ describe("Telegram permissions through Botgram", () => {
     await send(editorId, "/pt_enviar");
     await Promise.all([ send(editorId, audio), send(editorId, text) ]);
     assert.deepEqual(telegramMethods, [ "sendAudio" ]);
+    const upload = telegramUploads[0];
+    assert.equal(upload.get("chat_id"), "@test_channel");
+    assert.equal(upload.get("parse_mode"), "Markdown");
+    assert.match(String(upload.get("caption")), /youtu\.be\/example/);
+    assert.match(String(upload.get("duration")), /^\d+$/);
+    const uploadedAudio = upload.get("audio");
+    assert.ok(uploadedAudio instanceof File);
+    assert.equal(uploadedAudio.name, String(editorId));
+    assert.equal(await uploadedAudio.text(), "file contents");
     assert.equal(await memory.exists(editorId), false);
     await assert.rejects(stat(audioPath), { code: "ENOENT" });
   });
