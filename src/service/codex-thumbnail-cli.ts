@@ -10,7 +10,9 @@ export interface CodexPass {
   images: string[];
   prompt: string;
   signal: AbortSignal;
-  reviewOutput?: { schema: string; message: string };
+  generateImage: boolean;
+  structuredOutput?: { schema: string; message: string };
+
   reportExit(fields: CliExit): void;
 }
 
@@ -107,7 +109,9 @@ export class CodexThumbnailCli {
     await rm(this.artifacts, { recursive: true, force: true });
   }
 
-  async run({ directory, images, prompt, signal, reviewOutput, reportExit }: CodexPass): Promise<string | undefined> {
+  async run({
+              directory, images, prompt, signal, generateImage, structuredOutput, reportExit,
+            }: CodexPass): Promise<string | undefined> {
     signal.throwIfAborted();
     const started = performance.now();
     const args = [
@@ -123,9 +127,9 @@ export class CodexThumbnailCli {
       '-c', 'features.code_mode.direct_only_tool_namespaces=["image_gen"]',
       '--disable', 'shell_tool', '--disable', 'unified_exec', '--disable', 'plugins', '--disable', 'apps',
       '--disable', 'codex_hooks', '--disable', 'multi_agent', '--disable', 'multi_agent_v2',
-      reviewOutput ? '--disable' : '--enable', 'image_generation',
+      generateImage ? '--enable' : '--disable', 'image_generation',
     ];
-    if (reviewOutput) args.push('--output-schema', reviewOutput.schema, '--output-last-message', reviewOutput.message);
+    if (structuredOutput) args.push('--output-schema', structuredOutput.schema, '--output-last-message', structuredOutput.message);
     for (const image of images) args.push('--image', image);
     args.push('--', '-');
 
@@ -149,7 +153,10 @@ export class CodexThumbnailCli {
     } catch (error) {
       const reason = error.code === 'ENOENT' ? 'executable-not-found'
           : error.code === 'EACCES' ? 'executable-not-permitted' : 'spawn-error';
-      reportExit({ durationMs: Math.round(performance.now() - started), threadStarted: false, turn: 'not-started', model: 'unknown', reason });
+      reportExit({
+        durationMs: Math.round(performance.now() - started), threadStarted: false, turn: 'not-started',
+        model: 'unknown', reason,
+      });
       throw new ThumbnailError('cli', reason);
     }
 
@@ -218,9 +225,11 @@ export class CodexThumbnailCli {
       const reason = signal.aborted ? hint ?? 'deadline-exceeded' : streamFailure ?? (failed
           ? hint ?? (progress.turn === 'failed' ? 'turn-failed' : child.signalCode ? 'process-signaled' : `exit-${ code }`)
           : undefined);
-      reportExit({ durationMs: Math.round(performance.now() - started), exitCode: code,
+      reportExit({
+        durationMs: Math.round(performance.now() - started), exitCode: code,
         signal: child.signalCode ?? undefined, threadStarted: !!threadId, turn: progress.turn,
-        model: sessionModel ?? reroutedFrom ?? 'unknown', routedModel, reason, stderrHint });
+        model: sessionModel ?? reroutedFrom ?? 'unknown', routedModel, reason, stderrHint,
+      });
       if (signal.aborted) throw new ThumbnailError('timeout', reason);
       if (reason) throw new ThumbnailError('cli', reason);
       return threadId;

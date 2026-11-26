@@ -1,8 +1,8 @@
-import { createCanvas, loadImage } from "canvas";
+import { createCanvas } from "canvas";
 import { afterEach, beforeEach, describe, it } from "mocha";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import AiThumbnailService from "../../../src/service/ai-thumbnail.service";
 import CodexThumbnailService from "../../../src/service/codex-thumbnail.service";
 
@@ -27,6 +27,7 @@ describe('Codex thumbnail jobs', function () {
   let directory: string;
   let home: string;
   let temp: string;
+  let examples: string;
   let executable: string;
   let passes: { args: string[]; prompt: string; otherSecret: boolean; hasLoginCache: boolean }[];
 
@@ -34,9 +35,12 @@ describe('Codex thumbnail jobs', function () {
     directory = await mkdtemp(resolve('.thumbnail-tests-'));
     home = join(directory, 'home');
     temp = join(directory, 'jobs');
+    examples = join(directory, 'thumbnail-examples');
     executable = join(directory, 'codex-fixture');
     await mkdir(temp);
+    await mkdir(examples);
     await Promise.all([
+      writeFile(join(examples, 'pt-260103.png'), png('blue')),
       writeFile(join(directory, 'red.png'), png('red')),
       writeFile(join(directory, 'green.png'), png('green')),
       writeFile(join(directory, 'blue.png'), png('blue')),
@@ -49,7 +53,6 @@ const stamp = ${ JSON.stringify(directory) };
 const log = path.join(stamp, 'passes');
 const args = process.argv.slice(2);
 const count = fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trimEnd().split('\\n').length : 0;
-if (count === 0) fs.copyFileSync(args[args.lastIndexOf('--image') + 1], path.join(stamp, 'reference-sheet.png'));
 const step = JSON.parse(fs.readFileSync(path.join(stamp, 'steps.json'), 'utf8'))[count];
 if (step === undefined) process.exit(5);
 const prompt = fs.readFileSync(0, 'utf8');
@@ -75,7 +78,8 @@ const artifacts = path.join(process.env.CODEX_HOME, 'generated_images', thread);
 if (step.png || step.hang) fs.mkdirSync(artifacts, { recursive: true });
 if (step.png) fs.copyFileSync(path.join(stamp, step.png), path.join(artifacts, 'call_fixture.png'));
 if (step.hang) setInterval(() => {}, 1000);
-if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1], JSON.stringify(step.review));
+const output = step.selection ?? step.review;
+if (output) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1], JSON.stringify(output));
 `, { mode: 0o700 });
   });
 
@@ -90,8 +94,14 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
     return passes;
   }
 
-  function createService(options: { files?: string; timeoutMs?: number } = {}) {
-    return new AiThumbnailService(new CodexThumbnailService({ home, executable, authJson }), { temp, ...options });
+  function createService(options: { timeoutMs?: number } = {}) {
+    return new AiThumbnailService(new CodexThumbnailService({ home, executable, authJson }), {
+      files: directory, temp, ...options,
+    });
+  }
+
+  function attachmentNames(args: string[]) {
+    return args.filter((_, index) => args[index - 1] === '--image').map(path => basename(path));
   }
 
   function job(service: AiThumbnailService) {
@@ -105,9 +115,14 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
     await assert.rejects(stat(join(home, 'generated_images')), { code: 'ENOENT' });
   }
 
-  it('uses a reference sheet, isolated CLI passes, and feedback in the next generation', async () => {
+  it('selects from all original samples once and keeps the selection through review and retry', async () => {
+    await writeFile(join(examples, 'pt-260104.jpg'), png('yellow'));
     await setSteps([
-      { png: 'red.png' }, { review: { ...good, visualQuality: 3, feedback: 'Melhora o contraste do título' } },
+      { png: 'red.png', selection: { sampleNumber: 2 } }, {
+        review: {
+          ...good, visualQuality: 3, feedback: 'Melhora o contraste do título',
+        },
+      },
       { png: 'green.png' }, { review: good },
     ]);
     const service = createService();
@@ -132,39 +147,48 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
     for (const [ index, pass ] of passes.entries()) {
       const review = index % 2 === 1;
       assert.equal(pass.args[pass.args.indexOf('image_generation') - 1], review ? '--disable' : '--enable');
-      assert.equal(pass.args.includes('--output-schema'), review);
-      assert.deepEqual(pass.args.filter((_, argIndex) => pass.args[argIndex - 1] === '--image').map(path => path.split('/').at(-1)),
-          [ ...(review ? [ `candidate-${ (index + 1) / 2 }.png` ] : []), 'background.png', 'reference-examples.png' ]);
+      assert.equal(pass.args.includes('--output-schema'), review || index === 0);
+      assert.deepEqual(attachmentNames(pass.args),
+          [ ...(review ? [ `candidate-${ (index + 1) / 2 }.png` ] : []), 'background.png', 'pt-260103.png', 'pt-260104.jpg' ]);
+      if (index > 0) assert.match(pass.prompt, /sample 2/);
+      if (!review) {
+        const paths = pass.args.filter((_, argIndex) => pass.args[argIndex - 1] === '--image');
+        assert.ok(pass.prompt.includes(JSON.stringify({ backgroundPath: paths[0], samplePaths: paths.slice(1) })));
+        assert.match(pass.prompt, /referenced_image_paths.*every sample path/);
+      }
     }
     assert.match(passes[2].prompt, /Melhora o contraste do título/);
     await assertClean();
   });
 
   it('discovers images in the examples directory without a manifest', async () => {
-    const examples = join(directory, 'thumbnail-examples');
-    await mkdir(examples);
     for (const [ name, color ] of [
-      [ 'pt-260101.jpg', 'red' ], [ 'pt-260102.jpeg', 'green' ], [ 'pt-260103.png', 'blue' ],
+      [ 'pt-260101.jpg', 'red' ], [ 'pt-260102.jpeg', 'green' ],
       [ 'pt-260104.JPG', 'yellow' ], [ 'pt-260105.png', 'magenta' ], [ 'pt-999999.txt', 'black' ],
     ]) {
       await writeFile(join(examples, name), png(color));
     }
-    await setSteps([ { png: 'green.png' }, { review: good } ]);
-    const service = createService({ files: directory });
+    await setSteps([ { png: 'green.png', selection: { sampleNumber: 5 } }, { review: good } ]);
+    const service = createService();
     assert.equal((await job(service)).status, 'ready');
-    const [ generation ] = await readPasses();
-    assert.deepEqual(generation.args.filter((_, index) => generation.args[index - 1] === '--image').map(path => path.split('/').at(-1)),
-        [ 'background.png', 'reference-examples.png' ]);
-    const sheet = await loadImage(join(directory, 'reference-sheet.png'));
-    assert.equal(sheet.width, 1920);
-    assert.equal(sheet.height, 720);
-    const canvas = createCanvas(sheet.width, sheet.height);
-    const context = canvas.getContext('2d');
-    context.drawImage(sheet, 0, 0);
-    const pixels = [ [ 320, 180 ], [ 960, 180 ], [ 1600, 180 ], [ 320, 540 ], [ 960, 540 ] ]
-        .map(([ x, y ]) => Array.from(context.getImageData(x, y, 1, 1).data));
-    assert.deepEqual(pixels, [ [ 255, 0, 0, 255 ], [ 0, 128, 0, 255 ], [ 0, 0, 255, 255 ],
-      [ 255, 255, 0, 255 ], [ 255, 0, 255, 255 ] ]);
+    const [ generation, review ] = await readPasses();
+    assert.deepEqual(attachmentNames(generation.args), [ 'background.png',
+      'pt-260101.jpg', 'pt-260102.jpeg', 'pt-260103.png', 'pt-260104.JPG', 'pt-260105.png' ]);
+    assert.match(generation.prompt, /chosen sample path, and up to 3 other sample paths/);
+    assert.deepEqual(attachmentNames(review.args), [ 'candidate-1.png', ...attachmentNames(generation.args) ]);
+    assert.match(review.prompt, /sample 5 \(attachment 7\)/);
+    await assertClean();
+  });
+
+  it('retries generation when the reported sample is out of range', async () => {
+    await writeFile(join(examples, 'pt-260104.jpg'), png('red'));
+    await setSteps([ { png: 'blue.png', selection: { sampleNumber: 3 } }, {
+      png: 'red.png', selection: { sampleNumber: 1 },
+    }, { review: good } ]);
+    assert.equal((await job(createService())).status, 'ready');
+    const [ first, retry, review ] = await readPasses();
+    assert.deepEqual(attachmentNames(first.args), attachmentNames(retry.args));
+    assert.deepEqual(attachmentNames(review.args), [ 'candidate-2.png', ...attachmentNames(retry.args) ]);
     await assertClean();
   });
 
@@ -195,14 +219,11 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
   });
 
   it('kills a timed-out CLI, returns a prior reviewed candidate, and releases the job slot', async () => {
-    const examples = join(directory, 'thumbnail-examples');
-    await mkdir(examples);
-    await writeFile(join(examples, 'example.png'), png('red'));
     await setSteps([
       { png: 'red.png' }, { review: { ...good, styleMatch: 3 } }, { hang: true },
       { png: 'green.png' }, { review: good },
     ]);
-    const service = createService({ files: directory, timeoutMs: 1_000 });
+    const service = createService({ timeoutMs: 1_000 });
     assert.deepEqual(await job(service), { status: 'ready', png: png('red'), quality: 'below-target' });
     assert.equal((await readPasses()).length, 3);
     await assertClean();

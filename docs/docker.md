@@ -142,11 +142,11 @@ Editors and the admin can use `/pt_img_ai` and the **Criar capa com IA** button 
 provider has valid credentials. `chatgpt-web` currently does not work in headless Chromium, so do not
 select it for the bot. `AI_THUMBNAIL_PROVIDER=codex` uses the Codex CLI and is the default.
 
-| Variable | Value |
-|----------|-------|
+| Variable                 | Value                                                                                                                                                                                                     |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `CHATGPT_SESSION_COOKIE` | For `chatgpt-web`, the session cookie from a signed-in `chatgpt.com` browser, as `name=value`. If the browser splits the cookie into numbered parts, supply each part as `name=value`, separated by `; `. |
-| `CODEX_AUTH_JSON` | The complete Codex `auth.json` from a ChatGPT login, compacted to one line with `jq -c .`. The CLI reads and refreshes a private copy in the `bun` user's home. |
-| `CODEX_API_KEY` | API-billed Codex credentials. The pinned CLI requires a ChatGPT login for image generation. |
+| `CODEX_AUTH_JSON`        | The complete Codex `auth.json` from a ChatGPT login, compacted to one line with `jq -c .`. The CLI reads and refreshes a private copy in the `bun` user's home.                                           |
+| `CODEX_API_KEY`          | API-billed Codex credentials. The pinned CLI requires a ChatGPT login for image generation.                                                                                                               |
 
 For **Docker Compose**, set the selector and the corresponding credential in the ignored `.env`
 file used by the `bot` service. Wrap the credential value in single quotes so Compose preserves it
@@ -193,8 +193,8 @@ as the admin or an editor, select a recognizable background, and confirm the dra
 that the acknowledgement arrives promptly and the returned image includes the background,
 title, and Portuguese date.
 
-For debugging, find the `[thumbnail-ai]` lines in the Compose output or logs
-(`docker compose logs -f bot`). Follow one `jobId` from `job-start` to `job-finished`. A `cli-exit`
+For debugging, find the `[thumbnail-ai]` lines in the Compose output or logs (`docker compose logs -f bot`). Follow one
+`jobId` from `job-start` to `job-finished`. A `cli-exit`
 line shows the selected Codex model (`model`), whether Codex started a turn, its exit code, and a
 diagnostic hint when the bot recognizes the error. If Codex reports a model switch, the line also
 shows `routedModel`. The built-in image tool in CLI 0.172.0 uses `gpt-image-2` to generate the image.
@@ -202,8 +202,11 @@ Review lines give scores and whether the text matched. Share the lines for the a
 
 Put style examples under `files/thumbnail-examples/` with a JPG, JPEG or PNG extension.
 The ChatGPT web provider selects **High** effort and attaches the background first, followed by each
-style example as a separate file in filename order. Codex combines the style examples into a grid
-for generation and review.
+style example as a separate file in filename order. Codex also receives every original sample as a
+separate attachment during generation and review. It chooses a layout to suit the subject and text,
+then uses that choice for review and retries. The pinned image tool accepts five files per call.
+With up to four samples, Codex passes the background and every sample directly to the tool.
+With a larger library, Codex sees them all and chooses up to four to pass with the background.
 
 The image includes the compiled application, production dependencies, and required checked-in media.
 Generated files under `files/temp/` are cleared on startup and are not persistent storage.
