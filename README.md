@@ -26,30 +26,17 @@ docker compose logs -f bot
 Compose builds the same image Fly uses and starts a local MongoDB. See the [Docker guide](docs/docker.md)
 for configuration, persistence, production runs, and lifecycle commands. Keep one poller per bot token.
 
-## Local development with Bun
+## Local development with automatic rebuilds
 
-For live reload, install Bun 1.4.4 (pinned in `.bun-version` and `package.json`) and provide a MongoDB
-instance reachable from your host. Use the same development bot credentials.
-[Bun installation](https://bun.sh/docs/installation)
+After setting up the development credentials above, run Compose in watch mode:
 
 ```sh
-bun install --frozen-lockfile
-test -f .env || cp .env.example .env
+docker compose up --build --watch
 ```
 
-Set `MONGODB_URL` in `.env` to the host-accessible MongoDB URI, then run this command from the repository root.
-
-```sh
-bun run dev
-```
-
-Development compiles TypeScript and restarts the compiled app with Bun when it changes. The bot polls
-Telegram; the accompanying image server listens on `PORT` (default `15000`). Start a chat with
-your bot before running it, so it can send startup messages to `ADMIN_CHAT_ID`.
-
-`canvas` needs native libraries. Prebuilt binaries cover common platforms; if installation falls
-back to compilation, follow the [node-canvas build instructions](https://github.com/Automattic/node-canvas#compiling).
-`trustedDependencies` in `package.json` allows its native install script.
+Compose rebuilds and recreates the bot container when application source or image inputs change.
+The bot and its subprocesses run inside the container; MongoDB runs in its own container. Press
+Ctrl+C to stop the stack.
 
 ## Configuration
 

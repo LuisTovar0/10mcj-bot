@@ -32,11 +32,17 @@ even if `.env` contains a different `MONGODB_URL` or `RUNNING_ENV`.
 Set `PORT` in `.env` to choose a different host port. The app still listens on port `15000` inside
 the container. The published port is bound to `127.0.0.1` on the host.
 
-After changing application source, rebuild and recreate the container.
+For automatic rebuilds during development, run Compose in the foreground with watch enabled:
 
 ```sh
-docker compose up --build -d --wait
+docker compose up --build --watch
 ```
+
+Changes to application source, included media, dependency manifests, TypeScript configuration,
+the Dockerfile, or `.dockerignore` rebuild the image and recreate the bot container. Changes to
+Compose configuration or `.env` require restarting the command. TypeScript is compiled during the
+image build, so build errors are reported before the replacement container starts. Press Ctrl+C to
+stop the stack. Without watch mode, rerun `docker compose up --build -d --wait` after changes.
 
 Useful lifecycle commands:
 

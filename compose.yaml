@@ -14,6 +14,22 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+    develop:
+      watch:
+        - action: rebuild
+          path: ./src
+        - action: rebuild
+          path: ./files
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./bun.lock
+        - action: rebuild
+          path: ./tsconfig.json
+        - action: rebuild
+          path: ./Dockerfile
+        - action: rebuild
+          path: ./.dockerignore
 
   mongo:
     image: mongo:8.0
