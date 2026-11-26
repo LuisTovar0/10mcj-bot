@@ -1,10 +1,16 @@
 import Entity from "./core/entity";
 import UniqueEntityID from "./core/unique-entity-id";
 
+export type ThumbnailBackground =
+  | { kind: 'built-in' }
+  | { kind: 'gallery'; id: string }
+  | { kind: 'telegram'; id: string };
+
 export interface SimpleUserProps {
   id: number;
   username?: string;
   chosenPhotoId?: string;
+  lastThumbnailBackground?: ThumbnailBackground;
 }
 
 export default class SimpleUser extends Entity<SimpleUserProps> {
@@ -27,6 +33,10 @@ export default class SimpleUser extends Entity<SimpleUserProps> {
 
   set chosenPhotoId(value: string | undefined) {
     this.props.chosenPhotoId = value;
+  }
+
+  get lastThumbnailBackground() {
+    return this.props.lastThumbnailBackground;
   }
 
 }

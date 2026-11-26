@@ -70,11 +70,23 @@ out of Git.
 
 ## Telegram permissions
 
-In production, users can format messages and generate thumbnail previews unless they are
-blocked. The admin and allowlisted editors can also use `/img_add` and, when `CHANNEL` is set,
-`/pt_enviar`. Development admits only the admin and allowlisted editors. A block takes precedence
-over a grant. Editors can get their own Telegram user ID from [@userinfobot](https://t.me/userinfobot)
-and send it to the admin. Usernames can change without affecting permissions.
+In production, users can format messages and generate thumbnail previews with `/pt_img` unless they are
+blocked. The admin and allowlisted editors can use `/pt_img_ai <title>` or **Criar capa com IA** in
+the Images menu when [AI thumbnail credentials](docs/docker.md#ai-thumbnail-credentials) are configured.
+Both commands accept a title. If you omit it or start from the menu, the bot asks for it first.
+Review the background photo, title, and date, then press **CRIAR IMAGEM** to generate the cover.
+To change the date, tap **Alterar data** and reply in `DD/MM/YYYY` format. You can also edit the
+title or send a Telegram photo or gallery ID for the background. `/img_choose <ID>` changes the
+background of an active draft.
+
+The bot suggests the background from your last successfully delivered cover for either command.
+If that background is unavailable, it tries your previous gallery choice and then the bundled
+`rapaz.jpg`. Use `/chosen_img` to check which background the bot will suggest.
+
+The admin and allowlisted editors can also use `/img_add` and, when `CHANNEL` is set, `/pt_enviar`.
+Development admits only the admin and allowlisted editors. A block takes precedence over a grant.
+Editors can get their own Telegram user ID from [@userinfobot](https://t.me/userinfobot) and send it
+to the admin. Usernames can change without affecting permissions.
 
 Only the admin can manage lists or run `/report`.
 

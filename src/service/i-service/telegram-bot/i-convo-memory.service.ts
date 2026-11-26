@@ -1,3 +1,5 @@
+import type { ThumbnailBackground } from "../../../domain/simple-user";
+
 export default interface IConvoMemoryService {
 
   exists(chatId: number): Promise<boolean>;
@@ -143,7 +145,16 @@ export function isVideoData(v: any): v is VideoData {
   return typeof vd.audio === 'boolean' && typeof vd.text === 'string' && Buffer.isBuffer(vd.image);
 }
 
-export type Data = TextData | AddImageData;
+export interface ThumbnailDraft {
+  step: 'title' | 'date' | 'background' | 'review';
+  title?: string;
+  date: string;
+  alignment?: number;
+  background?: ThumbnailBackground;
+  reviewedPhotoHash?: string;
+}
+
+export type Data = TextData | AddImageData | { thumbnail: ThumbnailDraft };
 
 export interface Convo {
   command: string;

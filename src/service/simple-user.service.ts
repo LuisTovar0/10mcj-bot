@@ -1,7 +1,7 @@
 import {Inject, Service} from "typedi";
 
 import config from "../config";
-import SimpleUser, {SimpleUserProps} from "../domain/simple-user";
+import SimpleUser, { SimpleUserProps, ThumbnailBackground } from "../domain/simple-user";
 import * as mapper from '../mappers/simple-user.mapper';
 import ISimpleUserRepo from "./i-repos/i-simple-user.repo";
 import ISimpleUserService from "./i-service/i-simpleUser.service";
@@ -56,6 +56,10 @@ export default class SimpleUserService implements ISimpleUserService {
     const user = await this.getUserById(chatId);
     user.chosenPhotoId = photoId;
     await this.repo.updateUser(mapper.domainToDataModel(user));
+  }
+
+  async setLastThumbnailBackground(chatId: number, background: ThumbnailBackground): Promise<void> {
+    await this.repo.setLastThumbnailBackground(chatId, background);
   }
 
 }

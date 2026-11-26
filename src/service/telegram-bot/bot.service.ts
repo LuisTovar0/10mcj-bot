@@ -131,7 +131,12 @@ Contact @tovawr for an implementation in your language!`, await menuKeyboard(msg
     const showHelp: MenuHandler = msg => {
       return menu.send(msg.chat.id,
           'Para pré-visualizar uma meditação, envia o áudio e o texto em duas mensagens. Também podes enviar só o texto para receber as versões formatadas para Telegram e Signal.\n\n' +
-          'Para criar uma capa para YouTube, envia o título quando o bot o pedir ou escreve /pt_img seguido do título.\n\n' +
+          'Para criar uma capa para YouTube, escolhe uma opção em Imagens ou usa /pt_img ou /pt_img_ai. ' +
+          'Podes escrever o título no comando ou enviá-lo quando o bot o pedir. Revê a foto de fundo, o título e a data, ' +
+          'altera o que precisares e carrega em CRIAR IMAGEM.\n\n' +
+          'Para mudar a data, toca em Alterar data e envia a nova data no formato DD/MM/AAAA.\n\n' +
+          'Para mudar o fundo, envia uma foto ou indica um ID da galeria. Também podes usar /img_choose ID durante a tarefa. ' +
+          'O bot volta a sugerir o fundo da última capa que recebeste. Usa /chosen_img para veres o fundo predefinido.\n\n' +
           'Usa /menu para veres as opções e /cancel para cancelares uma tarefa.\n\n' +
           'O bot regista a tua atividade para contar as interações. Para ajuda, fala com @tovawr.',
           [ [ menuButton('Voltar ao menu', 'menu') ] ],
@@ -186,7 +191,9 @@ Contact @tovawr for an implementation in your language!`, await menuKeyboard(msg
       const command = await this.convoService.getCommand(chatId) as string;
       if (this.pt.isPtCommand(command)) {
         await this.pt.handleAudio(bot, msg, reply, menu);
-      } else reply.text('Esta tarefa não aceita áudio. Segue as instruções da tarefa ou usa /cancel.');
+      } else if (!await this.imageCommands.handleOtherInput(bot, msg, menu)) {
+        reply.text('Esta tarefa não aceita áudio. Segue as instruções da tarefa ou usa /cancel.');
+      }
     });
 
     bot.photo(async (msg, reply) => {
@@ -224,9 +231,11 @@ Contact @tovawr for an implementation in your language!`, await menuKeyboard(msg
       if (this.pt.isPtCommand(command))
         await this.pt.handleText(msg, reply, menu);
       else if (this.imageCommands.isImageCommand(command))
-        await this.imageCommands.handleText(msg, menu);
+        await this.imageCommands.handleText(bot, msg, menu);
       else reply.text(`Command incompatible with media. Use /info to learn how to use the bot.`);
     });
+
+    bot.message(msg => this.imageCommands.handleOtherInput(bot, msg, menu));
     //#endregion
 
   }

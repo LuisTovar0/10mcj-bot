@@ -1,6 +1,7 @@
 # Only application source, dependency manifests, and checked-in media enter the build context.
 **
 !Dockerfile
+!.dockerignore
 !package.json
 !bun.lock
 !tsconfig.json
@@ -14,6 +15,8 @@
 !files/index.html
 !files/rapaz.jpg
 !files/symbol.png
+!files/thumbnail-examples/
+!files/thumbnail-examples/**
 **/.env
 **/.env.*
 **/*.env

@@ -1,4 +1,4 @@
-import SimpleUser, {SimpleUserProps} from "../../domain/simple-user";
+import SimpleUser, { SimpleUserProps, ThumbnailBackground } from "../../domain/simple-user";
 
 export default interface ISimpleUserService {
 
@@ -11,5 +11,7 @@ export default interface ISimpleUserService {
   getByUsername(username: string): Promise<SimpleUser>;
 
   choosePhoto(chatId: number, photoId: string): Promise<void>;
+
+  setLastThumbnailBackground(chatId: number, background: ThumbnailBackground): Promise<void>;
 
 }

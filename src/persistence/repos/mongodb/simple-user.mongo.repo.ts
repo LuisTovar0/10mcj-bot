@@ -1,6 +1,7 @@
 import { model, Schema } from 'mongoose';
 import { Service } from "typedi";
 
+import type { ThumbnailBackground } from "../../../domain/simple-user";
 import ISimpleUserRepo from "../../../service/i-repos/i-simple-user.repo";
 import SimpleUserDataModel from "../../data-model/simple-user.data-model";
 import { MongoRepo } from "./general/mongo-repo";
@@ -29,7 +30,12 @@ export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> im
   }
 
   async updateUser(dataModel: SimpleUserDataModel): Promise<void> {
-    await this.schema.updateOne({ domainId: dataModel.domainId }, dataModel, {});
+    const { domainId, id, username, chosenPhotoId } = dataModel;
+    await this.schema.updateOne({ domainId }, { $set: { id, username, chosenPhotoId } });
+  }
+
+  async setLastThumbnailBackground(id: number, background: ThumbnailBackground): Promise<void> {
+    await this.schema.updateOne({ id }, { $set: { lastThumbnailBackground: background } });
   }
 
 }
@@ -47,6 +53,10 @@ const schema = model<SimpleUserDataModel>(`Simple User`, new Schema({
   },
   username: String,
   chosenPhotoId: String,
+  lastThumbnailBackground: new Schema({
+    kind: { type: String, enum: [ 'built-in', 'gallery', 'telegram' ], required: true },
+    id: String,
+  }, { _id: false }),
   // firstname: {
   //   type: String,
   //   required: [true, `MongoDB requires a SimpleUser first name.`]

@@ -36,6 +36,24 @@ The gallery is publicly accessible at `https://10mcj-bot.fly.dev/images`.
 `PORT=15000`. Store `BOT_TOKEN`, `ADMIN_CHAT_ID`, and `MONGODB_URL` as Fly secrets.
 The experimental video flow additionally needs `FILESTACK_API_KEY` and `SHOTSTACK_API_KEY`.
 
+For AI thumbnails, set `CODEX_AUTH_JSON` as a Fly secret using the setup in the Docker guide.
+Stage a ChatGPT login cache from a trusted Codex installation with this Bash command.
+
+```sh
+jq -cr '"CODEX_AUTH_JSON=" + tojson' "${CODEX_HOME:-$HOME/.codex}/auth.json" \
+  | FLY_CONFIG_DIR="$HOME/.fly-account3" fly secrets import --stage --app 10mcj-bot
+```
+
+If the app already has a `CODEX_API_KEY` secret, stage its removal before switching to the ChatGPT
+login cache. The next deployment applies the staged changes.
+
+```sh
+FLY_CONFIG_DIR="$HOME/.fly-account3" fly secrets unset --stage --app 10mcj-bot CODEX_API_KEY
+```
+
+Rotate the ChatGPT login secret before replacing the Machine if the current cache has refreshed.
+[AI thumbnail credentials](docker.md#ai-thumbnail-credentials)
+
 Atlas must permit the Fly worker's outbound IP address. Local Proton VPN connectivity
 does not test the Fly Machine's connection; verify the database readiness check after deployment.
 
