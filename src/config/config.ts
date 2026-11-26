@@ -19,8 +19,8 @@ const config = {
         path: './service/canvas.service',
       } as Dep,
       aiThumbnails: {
-        name: 'CodexThumbnailService',
-        path: './service/codex-thumbnail.service',
+        name: 'AiThumbnailService',
+        path: './service/ai-thumbnail.service',
       } as Dep,
       simpleUser: {
         name: 'SimpleUserService',

@@ -24,6 +24,7 @@ jobs:
         with:
           bun-version: 1.4.4
       - run: bun install --frozen-lockfile
+      - run: bun --bun run playwright install --with-deps --only-shell chromium
       - run: bun run typecheck
       - run: bun run test
 

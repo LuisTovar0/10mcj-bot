@@ -20,9 +20,11 @@
   "dependencies": {
     "botgram": "^2.2.0",
     "canvas": "^3.2.3",
+    "image-size": "2.2.0",
     "moment": "^2.31.0",
     "mongoose": "^9.12.1",
     "mp3-duration": "^1.1.0",
+    "playwright": "1.65.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typedi": "^0.10.0"

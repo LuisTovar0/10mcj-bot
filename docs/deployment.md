@@ -36,7 +36,23 @@ The gallery is publicly accessible at `https://10mcj-bot.fly.dev/images`.
 `PORT=15000`. Store `BOT_TOKEN`, `ADMIN_CHAT_ID`, and `MONGODB_URL` as Fly secrets.
 The experimental video flow additionally needs `FILESTACK_API_KEY` and `SHOTSTACK_API_KEY`.
 
-For AI thumbnails, set `CODEX_AUTH_JSON` as a Fly secret using the setup in the Docker guide.
+For AI thumbnails, use the default Codex provider as described in the
+[Docker guide](docker.md#ai-thumbnail-credentials). The `chatgpt-web` provider currently does not
+work in headless Chromium and must not be enabled on Fly.
+
+The following command is retained for staging a ChatGPT web session cookie after the headless
+provider limitation has been fixed. Do not deploy this configuration while it remains unsupported.
+
+```sh
+(
+  read -rs -p 'ChatGPT session cookie: ' thumbnail_cookie || exit 1
+  printf '\n' >&2
+  printf 'AI_THUMBNAIL_PROVIDER=chatgpt-web\nCHATGPT_SESSION_COOKIE=%s\n' "$thumbnail_cookie" \
+    | FLY_CONFIG_DIR="$HOME/.fly-account3" fly secrets import --stage --app 10mcj-bot
+)
+```
+
+For the default Codex provider, set `CODEX_AUTH_JSON` as a Fly secret.
 Stage a ChatGPT login cache from a trusted Codex installation with this Bash command.
 
 ```sh
@@ -53,6 +69,10 @@ FLY_CONFIG_DIR="$HOME/.fly-account3" fly secrets unset --stage --app 10mcj-bot C
 
 Rotate the ChatGPT login secret before replacing the Machine if the current cache has refreshed.
 [AI thumbnail credentials](docker.md#ai-thumbnail-credentials)
+
+To switch a worker back to Codex, stage `AI_THUMBNAIL_PROVIDER=codex` with
+`FLY_CONFIG_DIR="$HOME/.fly-account3" fly secrets set --stage --app 10mcj-bot AI_THUMBNAIL_PROVIDER=codex`.
+Confirm the Codex login secret is current before deploying.
 
 Atlas must permit the Fly worker's outbound IP address. Local Proton VPN connectivity
 does not test the Fly Machine's connection; verify the database readiness check after deployment.

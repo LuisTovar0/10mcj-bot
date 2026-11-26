@@ -1,18 +1,9 @@
 import { spawn, type Subprocess } from "bun";
-import { loadImage } from "canvas";
 import { randomUUID } from "node:crypto";
-import { constants } from "node:fs";
-import { link, lstat, mkdir, open, readdir, rm, writeFile } from "node:fs/promises";
+import { link, lstat, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export type ThumbnailFailure = 'configuration' | 'acknowledgement' | 'setup' | 'cli' | 'artifact' | 'review' | 'quality'
-    | 'timeout' | 'cleanup';
-
-export class ThumbnailError extends Error {
-  constructor(readonly category: ThumbnailFailure, readonly reason?: string) {
-    super(category);
-  }
-}
+import { maxPhotoBytes, readRegularFile, ThumbnailError, validateThumbnailPng } from "./thumbnail-job";
 
 export interface CodexPass {
   directory: string;
@@ -39,8 +30,6 @@ const threadIdPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const modelSlug = '[a-z0-9][a-z0-9._-]{0,79}';
 const sessionModelPattern = new RegExp(`\\bcodex_core::session::session: Configuring session: model=(${ modelSlug }); provider=`);
 const modelReroutePattern = new RegExp(`^model rerouted: (${ modelSlug }) -> (${ modelSlug }) \\(`);
-export const pngSignature = Buffer.from('89504e470d0a1a0a', 'hex');
-const maxPhotoBytes = 10_000_000;
 const maxEventLength = 4096;
 
 function codexFailureReason(message: unknown): string | undefined {
@@ -248,13 +237,7 @@ export class CodexThumbnailCli {
       const pngs = entries.filter(entry => entry.isFile() && entry.name.endsWith('.png'));
       if (pngs.length !== 1) throw new ThumbnailError('artifact', pngs.length ? 'multiple-pngs' : 'no-png');
       const png = await readRegularFile(join(directory, pngs[0].name), maxPhotoBytes);
-      if (png.length < 33 || !png.subarray(0, 8).equals(pngSignature) || png.toString('ascii', 12, 16) !== 'IHDR')
-        throw new ThumbnailError('artifact', 'invalid-png-header');
-      const width = png.readUInt32BE(16);
-      const height = png.readUInt32BE(20);
-      if (height === 0 || width <= height || width + height > 10_000 || width / height > 20 || width * height > 10_000_000)
-        throw new ThumbnailError('artifact', 'invalid-dimensions');
-      await loadImage(png);
+      await validateThumbnailPng(png);
       return png;
     } catch (error) {
       if (error instanceof ThumbnailError) throw error;
@@ -262,24 +245,5 @@ export class CodexThumbnailCli {
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
-  }
-}
-
-export async function readRegularFile(path: string, maxBytes: number): Promise<Buffer> {
-  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
-  try {
-    const stats = await file.stat();
-    const { size } = stats;
-    if (!stats.isFile() || size === 0 || size > maxBytes) throw new Error('Unexpected file type or size');
-    const buffer = Buffer.alloc(size);
-    let offset = 0;
-    while (offset < size) {
-      const { bytesRead } = await file.read(buffer, offset, size - offset, offset);
-      if (bytesRead === 0) throw new Error('Unexpected end of file');
-      offset += bytesRead;
-    }
-    return buffer;
-  } finally {
-    await file.close();
   }
 }

@@ -7,7 +7,8 @@ import { filesFolder } from "../../../config/constants";
 import UniqueEntityID from "../../../domain/core/unique-entity-id";
 import type { ThumbnailBackground } from "../../../domain/simple-user";
 import ImageDto from "../../../dto/image.dto";
-import type CodexThumbnailService from "../../codex-thumbnail.service";
+import type AiThumbnailService from "../../ai-thumbnail.service";
+import type { ThumbnailState } from "../../i-service/i-ai-thumbnail.provider";
 import IImageCommandsService from "../../i-service/i-image-commands.service";
 import IImageEditingService from "../../i-service/i-image-editing.service";
 import IImageService from "../../i-service/i-image.service";
@@ -70,7 +71,7 @@ export default class ImageCommands implements IImageCommandsService {
       @Inject(config.deps.service.image.name) private imageService: IImageService,
       @Inject(config.deps.service.botUtils.name) private botUtils: IBotUtilsService,
       @Inject(config.deps.service.simpleUser.name) private simpleUserService: ISimpleUserService,
-      @Inject(config.deps.service.aiThumbnails.name) private aiThumbnails: Pick<CodexThumbnailService, 'state' | 'start'>,
+      @Inject(config.deps.service.aiThumbnails.name) private aiThumbnails: Pick<AiThumbnailService, 'state' | 'start'>,
   ) {}
 
   registerCommands(bot: Bot, menu: BotMenu, registerMenuAction: RegisterMenuAction): void {
@@ -301,11 +302,11 @@ export default class ImageCommands implements IImageCommandsService {
         return;
       }
 
-      // The chat can prepare another draft while Codex works.
+      // The chat can prepare another draft while the provider works.
       void job.result.then(async result => {
         if (result.status === 'failed') await this.botUtils.sendMessage(chatId, aiRetry);
         else await this.deliverThumbnail(chatId, result.png, background,
-            result.metQualityTarget ? undefined : 'A melhor capa gerada ficou abaixo do objetivo de qualidade.');
+            result.quality === 'below-target' ? 'A melhor capa gerada ficou abaixo do objetivo de qualidade.' : undefined);
       }).catch(async () => {
         console.warn('[thumbnail-ai] failure=delivery');
         await this.botUtils.sendMessage(chatId, 'Não consegui enviar a capa com IA. Tenta novamente daqui a pouco.');
@@ -343,7 +344,7 @@ export default class ImageCommands implements IImageCommandsService {
     }
   }
 
-  private aiUnavailableMessage(state: CodexThumbnailService['state']): string | undefined {
+  private aiUnavailableMessage(state: ThumbnailState): string | undefined {
     switch (state) {
       case 'misconfigured': return 'A criação de capas com IA tem um erro de configuração.';
       case 'api-key-unsupported': return 'Esta versão do Codex precisa de uma sessão ChatGPT para criar capas com IA.';

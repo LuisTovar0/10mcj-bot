@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, it } from "mocha";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import AiThumbnailService from "../../../src/service/ai-thumbnail.service";
 import CodexThumbnailService from "../../../src/service/codex-thumbnail.service";
 
 const title = 'A oração: "Confia", com fé';
@@ -89,7 +90,11 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
     return passes;
   }
 
-  function job(service: CodexThumbnailService) {
+  function createService(options: { files?: string; timeoutMs?: number } = {}) {
+    return new AiThumbnailService(new CodexThumbnailService({ home, executable, authJson }), { temp, ...options });
+  }
+
+  function job(service: AiThumbnailService) {
     const started = service.start({ title, date, async acknowledge() {}, async background() { return png('gray'); } });
     assert.equal(started.status, 'started');
     return started.result;
@@ -105,14 +110,14 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
       { png: 'red.png' }, { review: { ...good, visualQuality: 3, feedback: 'Melhora o contraste do título' } },
       { png: 'green.png' }, { review: good },
     ]);
-    const service = new CodexThumbnailService({ home, temp, executable, authJson });
+    const service = createService();
     process.env.THUMBNAIL_UNRELATED_SECRET = 'isolated';
     try {
       const running = job(service);
       assert.deepEqual(service.start({
         title, date, async acknowledge() {}, async background() { return png('gray'); },
       }), { status: 'busy' });
-      assert.deepEqual(await running, { status: 'ready', png: png('green'), metQualityTarget: true });
+      assert.deepEqual(await running, { status: 'ready', png: png('green'), quality: 'accepted' });
     } finally {
       delete process.env.THUMBNAIL_UNRELATED_SECRET;
     }
@@ -145,7 +150,7 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
       await writeFile(join(examples, name), png(color));
     }
     await setSteps([ { png: 'green.png' }, { review: good } ]);
-    const service = new CodexThumbnailService({ home, temp, executable, authJson, files: directory });
+    const service = createService({ files: directory });
     assert.equal((await job(service)).status, 'ready');
     const [ generation ] = await readPasses();
     assert.deepEqual(generation.args.filter((_, index) => generation.args[index - 1] === '--image').map(path => path.split('/').at(-1)),
@@ -173,8 +178,8 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
       { png: 'green.png' }, { review: { ...good, visualQuality: 2 } },
       { png: 'blue.png' }, { review: { ...good, visualQuality: 3 } },
     ]);
-    const service = new CodexThumbnailService({ home, temp, executable, authJson });
-    assert.deepEqual(await job(service), { status: 'ready', png: png('blue'), metQualityTarget: false });
+    const service = createService();
+    assert.deepEqual(await job(service), { status: 'ready', png: png('blue'), quality: 'below-target' });
     await assertClean();
   });
 
@@ -183,7 +188,7 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
     await mkdir(stale, { recursive: true });
     await writeFile(join(stale, 'call_stale.png'), png('red'));
     await setSteps([ {}, { png: 'invalid.png' }, { png: 'blue.png' }, { review: { ...good, styleMatch: 6 } } ]);
-    const service = new CodexThumbnailService({ home, temp, executable, authJson });
+    const service = createService();
     assert.deepEqual(await job(service), { status: 'failed' });
     assert.equal((await readPasses()).length, 4);
     await assertClean();
@@ -197,24 +202,24 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
       { png: 'red.png' }, { review: { ...good, styleMatch: 3 } }, { hang: true },
       { png: 'green.png' }, { review: good },
     ]);
-    const service = new CodexThumbnailService({ home, temp, executable, authJson, files: directory, timeoutMs: 1_000 });
-    assert.deepEqual(await job(service), { status: 'ready', png: png('red'), metQualityTarget: false });
+    const service = createService({ files: directory, timeoutMs: 1_000 });
+    assert.deepEqual(await job(service), { status: 'ready', png: png('red'), quality: 'below-target' });
     assert.equal((await readPasses()).length, 3);
     await assertClean();
-    assert.deepEqual(await job(service), { status: 'ready', png: png('green'), metQualityTarget: true });
+    assert.deepEqual(await job(service), { status: 'ready', png: png('green'), quality: 'accepted' });
     await assertClean();
   });
 
   it('seeds private ChatGPT credentials once and retains subsequent refreshes', async () => {
     await setSteps([ { png: 'green.png' }, { review: good }, { png: 'blue.png' }, { review: good } ]);
-    const service = new CodexThumbnailService({ home, temp, executable, authJson });
+    const service = createService();
     assert.equal((await job(service)).status, 'ready');
     const auth = join(home, 'auth.json');
     assert.equal((await stat(home)).mode & 0o777, 0o700);
     assert.equal((await stat(auth)).mode & 0o777, 0o600);
     assert.equal(await readFile(auth, 'utf8'), authJson);
     await writeFile(auth, '{"refreshed":true}');
-    assert.equal((await job(new CodexThumbnailService({ home, temp, executable, authJson }))).status, 'ready');
+    assert.equal((await job(createService())).status, 'ready');
     assert.equal(await readFile(auth, 'utf8'), '{"refreshed":true}');
     assert.ok((await readPasses()).every(pass => !pass.otherSecret && pass.hasLoginCache));
     await assertClean();
@@ -235,7 +240,7 @@ if (step.review) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1
     const { info, warn } = console;
     try {
       console.info = console.warn = (line: string) => { lines.push(line); };
-      const service = new CodexThumbnailService({ home, temp, executable, authJson });
+      const service = createService();
       assert.deepEqual(await job(service), { status: 'failed' });
     } finally {
       console.info = info;

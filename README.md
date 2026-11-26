@@ -148,6 +148,8 @@ bun run start
 
 `bun run test` runs the domain and service tests, including thumbnail generation, without a database
 or Telegram credentials. Tests are compiled before Mocha runs them on Bun, preserving TypeDI decorator metadata.
+Install headless Chromium with `bun --bun run playwright install --only-shell chromium` before running
+the browser provider fixtures.
 Use `bun run test` for this Mocha suite; `bun test` invokes Bun's separate built-in test runner.
 `bun run start` runs the existing build; compile during deployment, before starting the process.
 Keep the TypeScript build: it erases interface imports in decorated services before Bun runs them.

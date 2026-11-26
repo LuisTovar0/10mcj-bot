@@ -138,43 +138,60 @@ ignored env files or the deployment platform's secret store, never in the image 
 
 ## AI thumbnail credentials
 
-Set `CODEX_AUTH_JSON` to enable `/pt_img_ai` and the **Criar capa com IA** button for editors and the
-admin. Use a ChatGPT login with access to Codex image generation. Codex CLI 0.172.0 makes its built-in
-image tool available through the Codex backend. `CODEX_API_KEY` alone leaves AI thumbnails unavailable.
-[Pinned CLI tool availability](https://github.com/openai/codex/blob/rust-v0.172.0/codex-rs/core/src/tools/spec_plan.rs#L821-L856)
+Editors and the admin can use `/pt_img_ai` and the **Criar capa com IA** button when the selected
+provider has valid credentials. `chatgpt-web` currently does not work in headless Chromium, so do not
+select it for the bot. `AI_THUMBNAIL_PROVIDER=codex` uses the Codex CLI and is the default.
 
 | Variable | Value |
 |----------|-------|
+| `CHATGPT_SESSION_COOKIE` | For `chatgpt-web`, the session cookie from a signed-in `chatgpt.com` browser, as `name=value`. If the browser splits the cookie into numbered parts, supply each part as `name=value`, separated by `; `. |
 | `CODEX_AUTH_JSON` | The complete Codex `auth.json` from a ChatGPT login, compacted to one line with `jq -c .`. The CLI reads and refreshes a private copy in the `bun` user's home. |
-| `CODEX_API_KEY` | API-billed Codex credentials. This mode cannot run the pinned CLI's built-in image tool. |
+| `CODEX_API_KEY` | API-billed Codex credentials. The pinned CLI requires a ChatGPT login for image generation. |
 
-For **Docker Compose**, set `CODEX_AUTH_JSON` in the ignored `.env` file used by the `bot` service.
-Wrap compact ChatGPT login JSON in single quotes so Compose preserves it literally. Recreate the
-bot with `docker compose up -d --force-recreate --no-deps bot`.
+For **Docker Compose**, set the selector and the corresponding credential in the ignored `.env`
+file used by the `bot` service. Wrap the credential value in single quotes so Compose preserves it
+literally. Recreate the bot with `docker compose up -d --force-recreate --no-deps bot`.
 
-For **standalone Docker**, set `CODEX_AUTH_JSON` in `.production.env` and use `docker run --env-file` as
-shown above. Put compact ChatGPT login JSON directly after `CODEX_AUTH_JSON=` since Docker's
-`--env-file` preserves outer quotes. Replace the container after updating the file.
+For **standalone Docker**, set the selector and credential in `.production.env` and use
+`docker run --env-file` as shown above. Put the credential directly after the variable's `=` since
+Docker's `--env-file` preserves outer quotes. Replace the container after updating the file.
 
-With no credential the AI command is unavailable. With both variables set it reports a configuration
-error. The rest of the bot continues serving requests. Codex writes `auth.json` with owner-only
-permissions and reuses it across jobs and process restarts in the same container. Container replacement
-reloads `CODEX_AUTH_JSON` from the supplied secret. Rotate that secret if the cached credentials have
-refreshed and the original login cache is no longer valid. Treat the whole login cache like a password.
+The **ChatGPT web** provider is currently unsupported in the bot because it does not work in
+headless Chromium. The cookie and troubleshooting details below are retained for diagnosing that
+provider while this limitation is being addressed. Do not deploy it for thumbnail generation.
+
+For **ChatGPT web** diagnostics, sign in normally and use your browser's developer tools to find the
+session cookie for `https://chatgpt.com`. Include each numbered part when applicable. Treat the value
+like a password. When sign-in fails, use the job's `sign-in-response` log to check its HTTP status and
+whether the page asked for verification.
+
+- For `session-expired`, rotate the secret from a fresh signed-in ChatGPT session.
+- For `verification-required`, check ChatGPT in a regular browser for an interactive verification step.
+- For `access-denied`, the worker received HTTP 403 without a recognized verification prompt.
+
+Use `AI_THUMBNAIL_PROVIDER=codex` with current Codex credentials for thumbnail generation.
+[ChatGPT login verification](https://help.openai.com/en/articles/9889414-why-am-i-being-asked-to-verify-my-login)
+
+For **Codex**, use `CODEX_AUTH_JSON` and leave `CODEX_API_KEY` unset. The CLI writes `auth.json` with
+owner-only permissions and reuses it across jobs and restarts in the same container. Container
+replacement reloads `CODEX_AUTH_JSON` from the supplied secret. Rotate the secret when the cached
+credentials refresh and the original login cache expires.
 [Codex authentication](https://learn.chatgpt.com/docs/auth) · [Non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode)
 
-Build the image and verify the bundled CLI and assets as the runtime user.
+The image build verifies Chromium, the bundled CLI, and the media assets as the runtime user.
+Install the matching headless browser before running the offline browser fixtures directly on Linux.
 
 ```sh
+bun --bun run playwright install --only-shell chromium
 docker build -t 10mcj-bot .
 docker run --rm --entrypoint codex 10mcj-bot --version
 ```
 
-For an authenticated smoke test, use a development bot and a fresh container with `CODEX_AUTH_JSON`.
-In Telegram, send `/pt_img_ai Uma vida de oração` as the admin or an editor, then send a recognizable
-photo as the background. Verify that the acknowledgement arrives promptly after the photo, then check
-the returned image for that background, title and Portuguese date. You can also start with
-`/pt_img_ai` or **Criar capa com IA** and send the title in the photo caption or a separate message.
+Before enabling `chatgpt-web` on Fly, use a development bot and run its container with
+`--memory=512m` to match the worker limit. In Telegram, send `/pt_img_ai Uma vida de oração`
+as the admin or an editor, select a recognizable background, and confirm the draft. Verify
+that the acknowledgement arrives promptly and the returned image includes the background,
+title, and Portuguese date.
 
 For debugging, find the `[thumbnail-ai]` lines in the Compose output or logs
 (`docker compose logs -f bot`). Follow one `jobId` from `job-start` to `job-finished`. A `cli-exit`
@@ -183,8 +200,10 @@ diagnostic hint when the bot recognizes the error. If Codex reports a model swit
 shows `routedModel`. The built-in image tool in CLI 0.172.0 uses `gpt-image-2` to generate the image.
 Review lines give scores and whether the text matched. Share the lines for the affected job.
 
-Put style examples under `files/thumbnail-examples/` with a JPG, JPEG or PNG extension. Each job
-combines every image in that directory into a reference grid for generation and review.
+Put style examples under `files/thumbnail-examples/` with a JPG, JPEG or PNG extension.
+The ChatGPT web provider selects **High** effort and attaches the background first, followed by each
+style example as a separate file in filename order. Codex combines the style examples into a grid
+for generation and review.
 
 The image includes the compiled application, production dependencies, and required checked-in media.
 Generated files under `files/temp/` are cleared on startup and are not persistent storage.

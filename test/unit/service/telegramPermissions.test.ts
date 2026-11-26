@@ -10,7 +10,7 @@ import InRequest from "../../../src/domain/in-request";
 import SimpleUser, { type ThumbnailBackground } from "../../../src/domain/simple-user";
 import type ImageDto from "../../../src/dto/image.dto";
 import ListLocalRepo from "../../../src/persistence/repos/local/list.local.repo";
-import type CodexThumbnailService from "../../../src/service/codex-thumbnail.service";
+import type AiThumbnailService from "../../../src/service/ai-thumbnail.service";
 import type IImageEditingService from "../../../src/service/i-service/i-image-editing.service";
 import type IImageService from "../../../src/service/i-service/i-image.service";
 import type IInRequestService from "../../../src/service/i-service/i-in-request.service";
@@ -87,8 +87,8 @@ describe("Telegram permissions through Botgram", () => {
   let thumbnails: { title: string; date: string; photo: Buffer; offset?: number }[];
   let failGeneration: boolean;
   let failUpload: boolean;
-  let ai: Pick<CodexThumbnailService, 'state' | 'start'>;
-  let aiRequests: Parameters<CodexThumbnailService['start']>[0][];
+  let ai: Pick<AiThumbnailService, 'state' | 'start'>;
+  let aiRequests: Parameters<AiThumbnailService['start']>[0][];
   let nextUpload: Promise<void>;
   let legacyBackgrounds: Map<number, string>;
   let savedBackgrounds: Map<number, ThumbnailBackground>;
@@ -164,7 +164,7 @@ describe("Telegram permissions through Botgram", () => {
       start(request) {
         aiRequests.push(request);
         return { status: 'started', result: request.acknowledge().then(() => {
-          return { status: 'ready', png: Buffer.from('ai-thumbnail'), metQualityTarget: false };
+          return { status: 'ready', png: Buffer.from('ai-thumbnail'), quality: 'below-target' };
         }) };
       },
     };
@@ -538,6 +538,17 @@ describe("Telegram permissions through Botgram", () => {
     assert.match(replies.at(-1)!, /Foto enviada no Telegram/);
   });
 
+  it('delivers an unreviewed AI thumbnail with no quality caption', async () => {
+    ai.start = () => ({
+      status: 'started', result: Promise.resolve({ status: 'ready', png: Buffer.from('ai-thumbnail'), quality: 'unreviewed' }),
+    });
+    await send(adminId, '/pt_img_ai Uma capa');
+    await press(adminId, button('CRIAR IMAGEM'));
+    await nextUpload;
+    assert.equal(telegramUploads[0].get('caption'), null);
+    assert.equal(await (telegramUploads[0].get('photo') as File).text(), 'ai-thumbnail');
+  });
+
   it('keeps an AI draft while busy and rechecks availability when the user retries', async () => {
     let finish!: (result: { status: 'failed' }) => void;
     const result = new Promise<{ status: 'failed' }>(resolve => { finish = resolve; });
@@ -573,7 +584,7 @@ describe("Telegram permissions through Botgram", () => {
     ai.start = request => {
       aiRequests.push(request);
       return { status: 'started', result: Promise.resolve({
-        status: 'ready', png: Buffer.from('ai-thumbnail'), metQualityTarget: true,
+        status: 'ready', png: Buffer.from('ai-thumbnail'), quality: 'accepted',
       }) };
     };
     await press(adminId, button('CRIAR IMAGEM'));
@@ -697,7 +708,7 @@ describe("Telegram permissions through Botgram", () => {
     const aiCanFinish = new Promise<void>(resolve => { finishAi = resolve; });
     ai.start = () => ({
       status: 'started', result: aiCanFinish.then(() => ({
-        status: 'ready' as const, png: Buffer.from('ai-thumbnail'), metQualityTarget: true,
+        status: 'ready' as const, png: Buffer.from('ai-thumbnail'), quality: 'accepted',
       })),
     });
     let beginWrite!: () => void;
