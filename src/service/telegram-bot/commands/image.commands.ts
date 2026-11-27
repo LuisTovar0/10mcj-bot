@@ -5,7 +5,9 @@ import { Inject, Service } from "typedi";
 import config from "../../../config";
 import { filesFolder } from "../../../config/constants";
 import UniqueEntityID from "../../../domain/core/unique-entity-id";
+import type SimpleUser from "../../../domain/simple-user";
 import type { ThumbnailBackground } from "../../../domain/simple-user";
+import { defaultThumbnailStyle, parseSeparatorColor, separatorColors, type ThumbnailStyle } from "../../../domain/thumbnail-style";
 import ImageDto from "../../../dto/image.dto";
 import type AiThumbnailService from "../../ai-thumbnail.service";
 import type { ThumbnailState } from "../../i-service/i-ai-thumbnail.provider";
@@ -35,6 +37,7 @@ const draftPrompts = {
   title: 'Envia o título que queres pôr na capa do vídeo.',
   date: 'Envia a nova data no formato DD/MM/AAAA.',
   background: 'Envia uma foto para o fundo da capa ou escreve um identificador válido da galeria.',
+  color: 'Escolhe uma cor para a linha ou escreve um nome (por exemplo, verde) ou um código hexadecimal (#33AA77).',
 };
 const unavailableBackground = 'A imagem de fundo não está disponível.';
 const aiRetry = 'Não consegui criar a capa com IA. Tenta novamente daqui a pouco.';
@@ -62,7 +65,7 @@ function displayDate(date: string): string {
 @Service()
 export default class ImageCommands implements IImageCommandsService {
 
-  private readonly backgroundWrites = new Map<number, Promise<void>>();
+  private readonly preferenceWrites = new Map<number, Promise<void>>();
 
   constructor(
       @Inject(config.deps.service.lists.name) private listsService: IListsService,
@@ -98,17 +101,47 @@ export default class ImageCommands implements IImageCommandsService {
     }
 
     registerMenuAction('thumbnail_create', msg => this.confirmThumbnail(bot, menu, msg), false);
-    for (const field of [ 'title', 'date', 'background' ] as const) {
+    for (const direction of [ 'prev', 'next' ] as const) {
+      registerMenuAction(`thumbnail_${ direction }`, async msg => {
+        const workflow = await this.activeThumbnail(msg);
+        if (workflow?.command !== 'pt_img_ai' || workflow.data.thumbnail.step !== 'review') return;
+        const page = (workflow.data.thumbnail.reviewPage ?? 0) + (direction === 'next' ? 1 : -1);
+        await this.showReview(bot, menu, msg.chat.id, workflow, undefined, undefined, page);
+      }, false);
+    }
+    for (const field of [ 'title', 'date', 'background', 'color' ] as const) {
       registerMenuAction(`thumbnail_${ field }`, async msg => {
         const workflow = await this.activeThumbnail(msg);
         if (workflow?.data.thumbnail.step !== 'review') return;
+        if (field === 'color' && !workflow.data.thumbnail.style) return;
         await this.promptForDraftField(menu, msg.chat.id, workflow, field);
       }, false);
     }
-    registerMenuAction('thumbnail_date_back', async msg => {
-      const workflow = await this.activeThumbnail(msg);
-      if (workflow?.data.thumbnail.step === 'date') await this.showReview(bot, menu, msg.chat.id, workflow);
-    }, false);
+    for (const field of [ 'layout', 'template' ] as const) {
+      registerMenuAction(`thumbnail_${ field }`, async msg => {
+        const workflow = await this.activeThumbnail(msg);
+        if (workflow?.data.thumbnail.step !== 'review') return;
+        const style = workflow.data.thumbnail.style;
+        if (!style) return;
+        if (field === 'layout') style.layout = style.layout === 'vertical' ? 'horizontal' : 'vertical';
+        else style.template = style.template === 'regular' ? 'special' : 'regular';
+        await this.showReview(bot, menu, msg.chat.id, workflow);
+      }, false);
+    }
+    for (const preset of [ 'yellow', 'blue' ] as const) {
+      registerMenuAction(`thumbnail_${ preset }`, async msg => {
+        const workflow = await this.activeThumbnail(msg);
+        if (workflow?.data.thumbnail.step !== 'color' || !workflow.data.thumbnail.style) return;
+        workflow.data.thumbnail.style.separatorColor = separatorColors[preset];
+        await this.showReview(bot, menu, msg.chat.id, workflow);
+      }, false);
+    }
+    for (const field of [ 'date', 'color' ] as const) {
+      registerMenuAction(`thumbnail_${ field }_back`, async msg => {
+        const workflow = await this.activeThumbnail(msg);
+        if (workflow?.data.thumbnail.step === field) await this.showReview(bot, menu, msg.chat.id, workflow);
+      }, false);
+    }
 
     bot.command('img_choose', async (msg, reply) => {
       const workflow = await this.activeThumbnail(msg);
@@ -120,7 +153,7 @@ export default class ImageCommands implements IImageCommandsService {
     });
 
     bot.command('chosen_img', async (msg, reply) => {
-      const background = await this.defaultBackground(bot, msg.chat.id);
+      const background = await this.defaultBackground(bot, await this.thumbnailUser(msg.chat.id));
       reply.text(background ? `Fundo para a próxima capa: ${ backgroundLabel(background.source) }` : unavailableBackground);
     });
 
@@ -189,14 +222,14 @@ export default class ImageCommands implements IImageCommandsService {
                                     field: keyof typeof draftPrompts, notice?: string): Promise<void> {
     const prompt = notice ? `${ notice } ${ draftPrompts[field] }` : draftPrompts[field];
     workflow.data.thumbnail.step = field;
-    if (field === 'date') {
-      const current = moment.utc(workflow.data.thumbnail.date, draftDateFormat, true).format(inputDateFormat);
-      await menu.send(chatId, `${ prompt }\nData atual: ${ current }`, [
-        [ menuButton('Voltar à revisão', 'thumbnail_date_back'), menuButton('Cancelar tarefa', 'cancel') ],
-      ], workflow);
-      return;
-    }
-    await menu.prompt(chatId, workflow, prompt);
+    const rows = [];
+    let text = prompt;
+    if (field === 'color') rows.push([ menuButton('Amarela', 'thumbnail_yellow'), menuButton('Azul', 'thumbnail_blue') ]);
+    if (field === 'date') text += `\nData atual: ${ moment.utc(workflow.data.thumbnail.date, draftDateFormat, true).format(inputDateFormat) }`;
+    const back = field === 'date' || field === 'color' ? [ menuButton('Voltar à revisão', `thumbnail_${ field }_back`) ] : [];
+    rows.push([ ...back, menuButton('Cancelar tarefa', 'cancel') ]);
+    if (workflow.command === 'pt_img_ai') await menu.updateThumbnailMenu(chatId, workflow, text, rows);
+    else await menu.send(chatId, text, rows, workflow);
   }
 
   private async loadBackground(bot: Bot, background: ThumbnailBackground): Promise<Buffer | undefined> {
@@ -210,9 +243,12 @@ export default class ImageCommands implements IImageCommandsService {
     }
   }
 
-  private async defaultBackground(bot: Bot, chatId: number) {
-    await this.backgroundWrites.get(chatId);
-    const { lastThumbnailBackground, chosenPhotoId } = await this.simpleUserService.getUserById(chatId);
+  private async thumbnailUser(chatId: number) {
+    await this.preferenceWrites.get(chatId);
+    return this.simpleUserService.getUserById(chatId);
+  }
+
+  private async defaultBackground(bot: Bot, { lastThumbnailBackground, chosenPhotoId }: SimpleUser) {
     const legacy: ThumbnailBackground | undefined = chosenPhotoId ? { kind: 'gallery', id: chosenPhotoId } : undefined;
     for (const source of [ lastThumbnailBackground, legacy, bundledBackground ]) {
       if (!source) continue;
@@ -222,20 +258,24 @@ export default class ImageCommands implements IImageCommandsService {
   }
 
   private async showReview(bot: Bot, menu: BotMenu, chatId: number, workflow: ThumbnailWorkflow,
-                           photo?: Buffer, notice?: string): Promise<void> {
+                           photo?: Buffer, notice?: string, page = 0): Promise<void> {
     const draft = workflow.data.thumbnail;
     if (!draft.title) {
       await this.promptForDraftField(menu, chatId, workflow, 'title');
       return;
     }
 
-    if (draft.background) {
-      photo ??= await this.loadBackground(bot, draft.background);
-    } else {
-      const resolved = await this.defaultBackground(bot, chatId);
-      draft.background = resolved?.source;
-      photo = resolved?.photo;
+    const needsStyle = workflow.command === 'pt_img_ai' && !draft.style;
+    if (!draft.background || needsStyle) {
+      const user = await this.thumbnailUser(chatId);
+      if (needsStyle) draft.style = { ...(user.lastAiThumbnailStyle ?? defaultThumbnailStyle) };
+      if (!draft.background) {
+        const resolved = await this.defaultBackground(bot, user);
+        draft.background = resolved?.source;
+        photo = resolved?.photo;
+      }
     }
+    if (draft.background) photo ??= await this.loadBackground(bot, draft.background);
     if (!photo?.length || !draft.background) {
       await this.promptForDraftField(menu, chatId, workflow, 'background', unavailableBackground);
       return;
@@ -243,13 +283,39 @@ export default class ImageCommands implements IImageCommandsService {
 
     const summary = [
       notice, `Título: ${ draft.title }`, `Data: ${ displayDate(draft.date) }`, `Fundo: ${ backgroundLabel(draft.background) }`,
-    ].filter(Boolean).join('\n');
-    await menu.sendPhoto(chatId, photo, summary, [
+    ];
+    const rows = [
       [ menuButton('CRIAR IMAGEM', 'thumbnail_create') ],
       [ menuButton('Alterar título', 'thumbnail_title'), menuButton('Alterar data', 'thumbnail_date') ],
-      [ menuButton('Alterar imagem', 'thumbnail_background'), menuButton('Cancelar', 'cancel') ],
-    ], workflow);
-    draft.reviewedPhotoHash = photoHash(photo);
+    ];
+    const backgroundButton = menuButton('Alterar imagem', 'thumbnail_background');
+    const cancelButton = menuButton('Cancelar', 'cancel');
+    if (draft.style) {
+      const { layout, template, separatorColor } = draft.style;
+      const lineLabel = separatorColor === separatorColors.blue ? 'Azul'
+          : separatorColor === separatorColors.yellow ? 'Amarela' : separatorColor;
+      summary.push(`Modelo: ${ layout === 'vertical' ? 'Vertical' : 'Horizontal' } · ${ template === 'regular' ? 'Regular' : 'Especial' }`,
+          `Linha separadora: ${ lineLabel }`);
+      rows.push([ backgroundButton, menuButton('Cor da linha', 'thumbnail_color') ],
+          [ menuButton(layout === 'vertical' ? 'Usar horizontal' : 'Usar vertical', 'thumbnail_layout'),
+            menuButton(template === 'regular' ? 'Usar especial' : 'Usar regular', 'thumbnail_template') ],
+          [ cancelButton ]);
+    } else rows.push([ backgroundButton, cancelButton ]);
+    const caption = summary.filter(Boolean).join('\n');
+    const hash = photoHash(photo);
+    if (workflow.command === 'pt_img_ai') {
+      const pages = caption.match(/[\s\S]{1,1024}/gu)!;
+      page = Math.max(0, Math.min(page, pages.length - 1));
+      if (pages.length > 1) {
+        const navigation = [];
+        if (page > 0) navigation.push(menuButton(`Anterior (${ page }/${ pages.length })`, 'thumbnail_prev'));
+        if (page + 1 < pages.length) navigation.push(menuButton(`Seguinte (${ page + 2 }/${ pages.length })`, 'thumbnail_next'));
+        rows.unshift(navigation);
+      }
+      await menu.updateThumbnailMenu(chatId, workflow, pages[page], rows, { bytes: photo, hash });
+      draft.reviewPage = page;
+    } else await menu.sendPhoto(chatId, photo, caption, rows, workflow);
+    draft.reviewedPhotoHash = hash;
     draft.step = 'review';
   }
 
@@ -268,7 +334,7 @@ export default class ImageCommands implements IImageCommandsService {
     const chatId = msg.chat.id;
     const workflow = await this.activeThumbnail(msg);
     if (!workflow) return;
-    const { step, title, background, alignment, reviewedPhotoHash } = workflow.data.thumbnail;
+    const { step, title, background, alignment, reviewedPhotoHash, style } = workflow.data.thumbnail;
     if (step !== 'review' || !title || !background) return;
 
     const photo = await this.loadBackground(bot, background);
@@ -289,8 +355,9 @@ export default class ImageCommands implements IImageCommandsService {
         await this.showReview(bot, menu, chatId, workflow, photo, unavailable);
         return;
       }
+      const confirmedStyle = { ...(style ?? defaultThumbnailStyle) };
       const job = this.aiThumbnails.start({
-        title, date,
+        title, date, style: confirmedStyle,
         acknowledge: () => this.botUtils.sendMessage(chatId, 'Vou criar a capa com IA.'),
         background: async () => photo,
       });
@@ -305,7 +372,7 @@ export default class ImageCommands implements IImageCommandsService {
       // The chat can prepare another draft while the provider works.
       void job.result.then(async result => {
         if (result.status === 'failed') await this.botUtils.sendMessage(chatId, aiRetry);
-        else await this.deliverThumbnail(chatId, result.png, background,
+        else await this.deliverThumbnail(chatId, result.png, background, confirmedStyle,
             result.quality === 'below-target' ? 'A melhor capa gerada ficou abaixo do objetivo de qualidade.' : undefined);
       }).catch(async () => {
         console.warn('[thumbnail-ai] failure=delivery');
@@ -325,7 +392,7 @@ export default class ImageCommands implements IImageCommandsService {
   }
 
   private async deliverThumbnail(chatId: number, thumbnail: Buffer, background: ThumbnailBackground,
-                                 caption?: string): Promise<void> {
+                                 style?: ThumbnailStyle, caption?: string): Promise<void> {
     const form = new FormData();
     form.set('photo', new Blob([ new Uint8Array(thumbnail) ], { type: 'image/png' }), 'capa.png');
     form.set('chat_id', String(chatId));
@@ -333,14 +400,14 @@ export default class ImageCommands implements IImageCommandsService {
     await this.botUtils.apiMethod('sendPhoto', form);
 
     // Queue writes after Telegram accepts each photo so a slow write cannot overwrite a newer delivery.
-    const pending = (this.backgroundWrites.get(chatId) ?? Promise.resolve())
-        .then(() => this.simpleUserService.setLastThumbnailBackground(chatId, background))
-        .catch(() => { console.warn('[thumbnail] failure=save-background'); });
-    this.backgroundWrites.set(chatId, pending);
+    const pending = (this.preferenceWrites.get(chatId) ?? Promise.resolve())
+        .then(() => this.simpleUserService.saveThumbnailPreferences(chatId, background, style))
+        .catch(() => { console.warn('[thumbnail] failure=save-preferences'); });
+    this.preferenceWrites.set(chatId, pending);
     try {
       await pending;
     } finally {
-      if (this.backgroundWrites.get(chatId) === pending) this.backgroundWrites.delete(chatId);
+      if (this.preferenceWrites.get(chatId) === pending) this.preferenceWrites.delete(chatId);
     }
   }
 
@@ -371,6 +438,15 @@ export default class ImageCommands implements IImageCommandsService {
           draft.date = date.format(draftDateFormat);
           await this.showReview(bot, menu, chatId, workflow);
         } else await this.promptForDraftField(menu, chatId, workflow, 'date', 'Data inválida.');
+        break;
+      }
+      case 'color': {
+        if (!draft.style) break;
+        const color = parseSeparatorColor(input.text ?? '');
+        if (color) {
+          draft.style.separatorColor = color;
+          await this.showReview(bot, menu, chatId, workflow);
+        } else await this.promptForDraftField(menu, chatId, workflow, 'color', 'Cor inválida.');
         break;
       }
       case 'background':

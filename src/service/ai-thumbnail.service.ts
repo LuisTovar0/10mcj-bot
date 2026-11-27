@@ -3,6 +3,7 @@ import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { Service } from "typedi";
 import { filesFolder, tempFolder } from "../config/constants";
+import { defaultThumbnailStyle, type ThumbnailStyle } from "../domain/thumbnail-style";
 import ChatGptThumbnailProvider from "./chatgpt-thumbnail.provider";
 import CodexThumbnailService from "./codex-thumbnail.service";
 import type { AiThumbnailProvider, ThumbnailImage, ThumbnailState, ThumbnailText } from "./i-service/i-ai-thumbnail.provider";
@@ -11,6 +12,7 @@ import { pngSignature, ThumbnailError, thumbnailLog } from "./thumbnail-job";
 const jobTimeoutMs = 8 * 60_000;
 
 interface ThumbnailRequest extends ThumbnailText {
+  style?: ThumbnailStyle;
   acknowledge(): Promise<void>;
   background(): Promise<Buffer>;
 }
@@ -79,7 +81,8 @@ export default class AiThumbnailService {
       signal.throwIfAborted();
       stage = 'provider';
       image = await this.provider.generate({
-        title: request.title, date: request.date, directory, backgroundPath, referencePaths: references, log,
+        title: request.title, date: request.date, style: request.style ?? defaultThumbnailStyle,
+        directory, backgroundPath, ...references, log,
       }, signal);
     } catch (error) {
       log('stage-failed', {
@@ -101,7 +104,7 @@ export default class AiThumbnailService {
   }
 }
 
-async function referenceImages(directory: string): Promise<string[]> {
+async function referenceImages(directory: string) {
   let names: string[];
   try {
     names = (await readdir(directory, { withFileTypes: true }))
@@ -110,8 +113,10 @@ async function referenceImages(directory: string): Promise<string[]> {
     const reason = error.code === 'ENOENT' ? 'missing-reference-directory' : 'unreadable-reference-directory';
     throw new ThumbnailError('setup', reason);
   }
-  if (!names.length) throw new ThumbnailError('setup', 'insufficient-reference-images');
-  return names.sort().map(name => join(directory, name));
+  const guide = names.find(name => name.toLowerCase() === 'instructions.jpg');
+  const referencePaths = names.filter(name => name.toLowerCase() !== 'instructions.jpg').sort().map(name => join(directory, name));
+  if (!referencePaths.length) throw new ThumbnailError('setup', 'insufficient-reference-images');
+  return { referencePaths, guidePath: guide && join(directory, guide) };
 }
 
 async function beforeDeadline<T>(signal: AbortSignal, work: () => Promise<T>): Promise<T> {

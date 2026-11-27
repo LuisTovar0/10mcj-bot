@@ -1,3 +1,5 @@
+import type { ThumbnailStyle } from "../../domain/thumbnail-style";
+
 export type ThumbnailState = 'enabled' | 'disabled' | 'misconfigured' | 'api-key-unsupported';
 export type ThumbnailQuality = 'unreviewed' | 'accepted' | 'below-target';
 
@@ -7,9 +9,11 @@ export interface ThumbnailText {
 }
 
 export interface ThumbnailProviderRequest extends ThumbnailText {
+  style: ThumbnailStyle;
   directory: string;
   backgroundPath: string;
   referencePaths: string[];
+  guidePath?: string;
   log: ThumbnailLog;
 }
 

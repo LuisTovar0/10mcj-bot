@@ -1,4 +1,5 @@
 import SimpleUser, { SimpleUserProps, ThumbnailBackground } from "../../domain/simple-user";
+import type { ThumbnailStyle } from "../../domain/thumbnail-style";
 
 export default interface ISimpleUserService {
 
@@ -12,6 +13,6 @@ export default interface ISimpleUserService {
 
   choosePhoto(chatId: number, photoId: string): Promise<void>;
 
-  setLastThumbnailBackground(chatId: number, background: ThumbnailBackground): Promise<void>;
+  saveThumbnailPreferences(chatId: number, background: ThumbnailBackground, style?: ThumbnailStyle): Promise<void>;
 
 }

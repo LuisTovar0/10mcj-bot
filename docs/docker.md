@@ -13,7 +13,8 @@ the checked-in example if you do not already have one.
 test -f .env || cp .env.example .env
 ```
 
-Set `BOT_TOKEN` to a development bot token and `ADMIN_CHAT_ID` to your Telegram user ID. Open a chat
+Set `BOT_TOKEN` to a development bot token from [BotFather](https://t.me/BotFather) and
+`ADMIN_CHAT_ID` to your Telegram user ID. Open a chat
 with the development bot and send `/start` before starting the stack. Keep a separate bot token for
 development and production.
 
@@ -201,12 +202,21 @@ shows `routedModel`. The built-in image tool in CLI 0.172.0 uses `gpt-image-2` t
 Review lines give scores and whether the text matched. Share the lines for the affected job.
 
 Put style examples under `files/thumbnail-examples/` with a JPG, JPEG or PNG extension.
-The ChatGPT web provider selects **High** effort and attaches the background first, followed by each
-style example as a separate file in filename order. Codex also receives every original sample as a
-separate attachment during generation and review. It chooses a layout to suit the subject and text,
-then uses that choice for review and retries. The pinned image tool accepts five files per call.
-With up to four samples, Codex passes the background and every sample directly to the tool.
-With a larger library, Codex sees them all and chooses up to four to pass with the background.
+Use a `horizontal-` or `vertical-` prefix and include `-especial` or `-special` for special
+templates. For new artwork, label the separator color with a filename suffix such as `-yellow`,
+`-blue` or `-654321` before the extension.
+
+Codex receives up to four artwork references in the requested orientation. It prefers samples
+matching the template and separator color. If the matching template lacks the requested color,
+Codex can receive one other sample in the same orientation as a color reference. The prompt
+always includes the chosen color. If the catalog has no samples in that orientation, Codex can
+use examples without an orientation prefix or work from the design guide and background.
+The chosen layout sample stays the same for review and retries.
+
+Keep `instructions.jpg` in the examples directory. Codex requires it as the final attachment
+for generation and review. The image tool receives the background and selected artwork.
+The ChatGPT web provider selects **High** effort and receives the background, all artwork in
+filename order, and the design guide as separate attachments.
 
 The image includes the compiled application, production dependencies, and required checked-in media.
 Generated files under `files/temp/` are cleared on startup and are not persistent storage.

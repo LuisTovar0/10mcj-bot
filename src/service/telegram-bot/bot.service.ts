@@ -83,7 +83,8 @@ export default class BotService implements IBotService {
       const { chat } = message;
       const update = { chat, from: query.from };
       const reply = bot.reply(chat.id);
-      const action = menuActions.get(data);
+      // Editable menus suffix each action with a revision. consume() checks the complete callback data.
+      const action = menuActions.get(data.split('#', 1)[0]);
       return this.handlePrivateUpdate(update, reply, menu, () => action?.(update), () => {
         const accepted = menu.consume(chat.id, message.id, data) && !!action;
         answer(accepted);
@@ -134,6 +135,8 @@ Contact @tovawr for an implementation in your language!`, await menuKeyboard(msg
           'Para criar uma capa para YouTube, escolhe uma opção em Imagens ou usa /pt_img ou /pt_img_ai. ' +
           'Podes escrever o título no comando ou enviá-lo quando o bot o pedir. Revê a foto de fundo, o título e a data, ' +
           'altera o que precisares e carrega em CRIAR IMAGEM.\n\n' +
+          'Com /pt_img_ai, também podes escolher um modelo horizontal ou vertical, regular ou especial. Em Cor da linha, escolhe amarela ou azul, ou escreve uma cor como verde ou #33AA77. ' +
+          'A próxima capa com IA começa com o modelo e a cor da última capa com IA que recebeste.\n\n' +
           'Para mudar a data, toca em Alterar data e envia a nova data no formato DD/MM/AAAA.\n\n' +
           'Para mudar o fundo, envia uma foto ou indica um ID da galeria. Também podes usar /img_choose ID durante a tarefa. ' +
           'O bot volta a sugerir o fundo da última capa que recebeste. Usa /chosen_img para veres o fundo predefinido.\n\n' +

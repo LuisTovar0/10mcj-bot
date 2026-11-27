@@ -2,8 +2,8 @@ import { imageSize } from "image-size";
 import type { BrowserType, Locator, Page } from "playwright";
 import type { AiThumbnailProvider, ThumbnailImage, ThumbnailLog, ThumbnailProviderRequest, ThumbnailState } from "./i-service/i-ai-thumbnail.provider";
 import {
-  maxPhotoBytes, pngSignature, readRegularFile, ThumbnailError, type ThumbnailFailure, thumbnailLog,
-  thumbnailTextPrompt, validateThumbnailDimensions, validateThumbnailPng,
+  matchingSampleNumbers, maxPhotoBytes, pngSignature, readRegularFile, ThumbnailError, type ThumbnailFailure, thumbnailLog,
+  thumbnailStylePrompt, thumbnailTextPrompt, validateThumbnailDimensions, validateThumbnailPng,
 } from "./thumbnail-job";
 
 const chatGptUrl = 'https://chatgpt.com/';
@@ -66,13 +66,15 @@ export default class ChatGptThumbnailProvider implements AiThumbnailProvider {
       await selectHighEffort(page, form);
       beginStage('upload');
       const attachments = [ request.backgroundPath, ...request.referencePaths ];
+      if (request.guidePath) attachments.push(request.guidePath);
       await uploadImages(page, form, attachments);
       const lastAttachment = page.getByRole('button', { name: /^Remove /i }).nth(attachments.length - 1);
       const readyForm = form.filter({ has: lastAttachment });
       await readyForm.waitFor({ state: 'visible' });
       await composer.fill([
         'Create one opaque landscape YouTube thumbnail for a Portuguese meditation. Use a 16:9 composition.',
-        'Use the first attachment as the background photo. Each remaining attachment is a separate style example. Match their composition, typography, date treatment, and branding. Preserve the provided background and use the title and date below.',
+        `Use the first attachment as the background. The next ${ request.referencePaths.length } attachments are samples numbered from 1. Choose the closest layout from sample numbers ${ matchingSampleNumbers(request).join(', ') } and match its typography, date treatment and branding.`,
+        thumbnailStylePrompt(request),
         thumbnailTextPrompt(request),
       ].join('\n\n'));
 

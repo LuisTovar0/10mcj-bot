@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, it } from "mocha";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
+import { separatorColors, type ThumbnailStyle } from "../../../src/domain/thumbnail-style";
 import AiThumbnailService from "../../../src/service/ai-thumbnail.service";
 import CodexThumbnailService from "../../../src/service/codex-thumbnail.service";
 
@@ -41,6 +42,7 @@ describe('Codex thumbnail jobs', function () {
     await mkdir(examples);
     await Promise.all([
       writeFile(join(examples, 'pt-260103.png'), png('blue')),
+      writeFile(join(examples, 'instructions.jpg'), png('gray')),
       writeFile(join(directory, 'red.png'), png('red')),
       writeFile(join(directory, 'green.png'), png('green')),
       writeFile(join(directory, 'blue.png'), png('blue')),
@@ -104,8 +106,8 @@ if (output) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1], JS
     return args.filter((_, index) => args[index - 1] === '--image').map(path => basename(path));
   }
 
-  function job(service: AiThumbnailService) {
-    const started = service.start({ title, date, async acknowledge() {}, async background() { return png('gray'); } });
+  function job(service: AiThumbnailService, style?: ThumbnailStyle) {
+    const started = service.start({ title, date, style, async acknowledge() {}, async background() { return png('gray'); } });
     assert.equal(started.status, 'started');
     return started.result;
   }
@@ -115,7 +117,7 @@ if (output) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1], JS
     await assert.rejects(stat(join(home, 'generated_images')), { code: 'ENOENT' });
   }
 
-  it('selects from all original samples once and keeps the selection through review and retry', async () => {
+  it('selects a layout once and keeps the selection and guide through review and retry', async () => {
     await writeFile(join(examples, 'pt-260104.jpg'), png('yellow'));
     await setSteps([
       { png: 'red.png', selection: { sampleNumber: 2 } }, {
@@ -149,11 +151,12 @@ if (output) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1], JS
       assert.equal(pass.args[pass.args.indexOf('image_generation') - 1], review ? '--disable' : '--enable');
       assert.equal(pass.args.includes('--output-schema'), review || index === 0);
       assert.deepEqual(attachmentNames(pass.args),
-          [ ...(review ? [ `candidate-${ (index + 1) / 2 }.png` ] : []), 'background.png', 'pt-260103.png', 'pt-260104.jpg' ]);
+          [ ...(review ? [ `candidate-${ (index + 1) / 2 }.png` ] : []),
+            'background.png', 'pt-260103.png', 'pt-260104.jpg', 'instructions.jpg' ]);
       if (index > 0) assert.match(pass.prompt, /sample 2/);
       if (!review) {
         const paths = pass.args.filter((_, argIndex) => pass.args[argIndex - 1] === '--image');
-        assert.ok(pass.prompt.includes(JSON.stringify({ backgroundPath: paths[0], samplePaths: paths.slice(1) })));
+        assert.ok(pass.prompt.includes(JSON.stringify({ backgroundPath: paths[0], samplePaths: paths.slice(1, -1) })));
         assert.match(pass.prompt, /referenced_image_paths.*every sample path/);
       }
     }
@@ -161,22 +164,105 @@ if (output) fs.writeFileSync(args[args.indexOf('--output-last-message') + 1], JS
     await assertClean();
   });
 
-  it('discovers images in the examples directory without a manifest', async () => {
+  it('caps unclassified artwork at the image tool limit and attaches the guide to the CLI', async () => {
     for (const [ name, color ] of [
       [ 'pt-260101.jpg', 'red' ], [ 'pt-260102.jpeg', 'green' ],
       [ 'pt-260104.JPG', 'yellow' ], [ 'pt-260105.png', 'magenta' ], [ 'pt-999999.txt', 'black' ],
     ]) {
       await writeFile(join(examples, name), png(color));
     }
-    await setSteps([ { png: 'green.png', selection: { sampleNumber: 5 } }, { review: good } ]);
+    await setSteps([ { png: 'green.png', selection: { sampleNumber: 4 } }, { review: good } ]);
     const service = createService();
     assert.equal((await job(service)).status, 'ready');
     const [ generation, review ] = await readPasses();
     assert.deepEqual(attachmentNames(generation.args), [ 'background.png',
-      'pt-260101.jpg', 'pt-260102.jpeg', 'pt-260103.png', 'pt-260104.JPG', 'pt-260105.png' ]);
-    assert.match(generation.prompt, /chosen sample path, and up to 3 other sample paths/);
+      'pt-260101.jpg', 'pt-260102.jpeg', 'pt-260103.png', 'pt-260104.JPG', 'instructions.jpg' ]);
+    assert.match(generation.prompt, /referenced_image_paths.*every sample path/);
     assert.deepEqual(attachmentNames(review.args), [ 'candidate-1.png', ...attachmentNames(generation.args) ]);
-    assert.match(review.prompt, /sample 5 \(attachment 7\)/);
+    assert.match(review.prompt, /sample 4 \(attachment 6\)/);
+    await assertClean();
+  });
+
+  it('keeps the design guide outside the samples and reviews against the requested template', async () => {
+    for (const file of [ 'horizontal-especial.jpg', 'horizontal-1-line.jpg', 'vertical-special.png', 'vertical-yellow.png' ])
+      await writeFile(join(examples, file), png('red'));
+    await setSteps([ { png: 'green.png' }, { review: good } ]);
+    assert.equal((await job(createService(), {
+      layout: 'horizontal', template: 'special', separatorColor: '#654321',
+    })).status, 'ready');
+    const [ generation, review ] = await readPasses();
+    const attachments = attachmentNames(generation.args);
+    assert.deepEqual(attachments, [
+      'background.png', 'horizontal-especial.jpg', 'instructions.jpg',
+    ]);
+    assert.deepEqual(attachmentNames(review.args), [ 'candidate-1.png', ...attachments ]);
+    assert.ok(!generation.args.includes('--output-schema'));
+    assert.ok(!generation.prompt.split('\n').find(line => line.startsWith('{"backgroundPath"'))!.includes('instructions.jpg'));
+    for (const pass of [ generation, review ]) {
+      assert.match(pass.prompt, /sample 1/);
+      assert.match(pass.prompt, /1 numbered style samples/);
+      assert.match(pass.prompt, /instructions.jpg, is the design guide/);
+      assert.match(pass.prompt, /horizontal separator/);
+      assert.match(pass.prompt, /special template/);
+      assert.match(pass.prompt, /#654321/);
+    }
+  });
+
+  it('uses a same-orientation color reference when the matching template lacks the requested color', async () => {
+    for (const file of [ 'horizontal-especial-yellow.jpg', 'vertical-special.png', 'vertical-2-lines.png', 'vertical-1-line.jpg' ])
+      await writeFile(join(examples, file), png('red'));
+    await setSteps([ { png: 'green.png' }, { review: good } ]);
+    assert.equal((await job(createService(), {
+      layout: 'vertical', template: 'special', separatorColor: separatorColors.yellow,
+    })).status, 'ready');
+    const [ generation, review ] = await readPasses();
+    assert.deepEqual(attachmentNames(generation.args), [
+      'background.png', 'vertical-special.png', 'vertical-2-lines.png', 'instructions.jpg',
+    ]);
+    assert.deepEqual(attachmentNames(review.args), [ 'candidate-1.png', ...attachmentNames(generation.args) ]);
+    for (const pass of [ generation, review ]) {
+      assert.match(pass.prompt, /Use it only for the separator color/);
+      assert.match(pass.prompt, /sample 1/);
+    }
+    assert.match(generation.prompt, /"colorReferencePath":"[^"]*vertical-2-lines.png"/);
+  });
+
+  it('keeps just examples matching the orientation, template and color when available', async () => {
+    for (const file of [ 'horizontal-1-line.jpg', 'vertical-1-line.jpg', 'vertical-2-lines.png',
+      'vertical-special-yellow.png', 'vertical-yellow.png' ])
+      await writeFile(join(examples, file), png('red'));
+    await setSteps([ { png: 'green.png', selection: { sampleNumber: 2 } }, { review: good } ]);
+    assert.equal((await job(createService(), {
+      layout: 'vertical', template: 'regular', separatorColor: separatorColors.yellow,
+    })).status, 'ready');
+    const [ generation, review ] = await readPasses();
+    assert.deepEqual(attachmentNames(generation.args), [ 'background.png', 'vertical-2-lines.png', 'vertical-yellow.png', 'instructions.jpg' ]);
+    assert.deepEqual(attachmentNames(review.args), [ 'candidate-1.png', ...attachmentNames(generation.args) ]);
+    assert.match(review.prompt, /sample 2 \(attachment 4\)/);
+  });
+
+  it('uses the guide and background when all tagged references have the opposite orientation', async () => {
+    await rm(join(examples, 'pt-260103.png'));
+    await writeFile(join(examples, 'horizontal-1-line.jpg'), png('blue'));
+    await setSteps([ { png: 'green.png' }, { review: good } ]);
+    assert.equal((await job(createService())).status, 'ready');
+    const [ generation, review ] = await readPasses();
+    assert.deepEqual(attachmentNames(generation.args), [ 'background.png', 'instructions.jpg' ]);
+    assert.deepEqual(attachmentNames(review.args), [ 'candidate-1.png', 'background.png', 'instructions.jpg' ]);
+    assert.ok(!generation.args.includes('--output-schema'));
+  });
+
+  it('requires at least one actual sample even when the guide exists', async () => {
+    await rm(join(examples, 'pt-260103.png'));
+    assert.deepEqual(await job(createService()), { status: 'failed' });
+    await assert.rejects(stat(join(directory, 'passes')), { code: 'ENOENT' });
+    await assertClean();
+  });
+
+  it('fails before starting Codex if the guide is missing', async () => {
+    await rm(join(examples, 'instructions.jpg'));
+    assert.deepEqual(await job(createService()), { status: 'failed' });
+    await assert.rejects(stat(join(directory, 'passes')), { code: 'ENOENT' });
     await assertClean();
   });
 

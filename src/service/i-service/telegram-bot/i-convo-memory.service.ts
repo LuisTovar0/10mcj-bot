@@ -1,4 +1,5 @@
 import type { ThumbnailBackground } from "../../../domain/simple-user";
+import type { ThumbnailStyle } from "../../../domain/thumbnail-style";
 
 export default interface IConvoMemoryService {
 
@@ -146,12 +147,14 @@ export function isVideoData(v: any): v is VideoData {
 }
 
 export interface ThumbnailDraft {
-  step: 'title' | 'date' | 'background' | 'review';
+  step: 'title' | 'date' | 'background' | 'color' | 'review';
+  style?: ThumbnailStyle;
   title?: string;
   date: string;
   alignment?: number;
   background?: ThumbnailBackground;
   reviewedPhotoHash?: string;
+  reviewPage?: number;
 }
 
 export type Data = TextData | AddImageData | { thumbnail: ThumbnailDraft };

@@ -2,6 +2,7 @@ import {Inject, Service} from "typedi";
 
 import config from "../config";
 import SimpleUser, { SimpleUserProps, ThumbnailBackground } from "../domain/simple-user";
+import type { ThumbnailStyle } from "../domain/thumbnail-style";
 import * as mapper from '../mappers/simple-user.mapper';
 import ISimpleUserRepo from "./i-repos/i-simple-user.repo";
 import ISimpleUserService from "./i-service/i-simpleUser.service";
@@ -58,8 +59,8 @@ export default class SimpleUserService implements ISimpleUserService {
     await this.repo.updateUser(mapper.domainToDataModel(user));
   }
 
-  async setLastThumbnailBackground(chatId: number, background: ThumbnailBackground): Promise<void> {
-    await this.repo.setLastThumbnailBackground(chatId, background);
+  async saveThumbnailPreferences(chatId: number, background: ThumbnailBackground, style?: ThumbnailStyle): Promise<void> {
+    await this.repo.saveThumbnailPreferences(chatId, background, style);
   }
 
 }

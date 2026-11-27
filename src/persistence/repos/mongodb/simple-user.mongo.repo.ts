@@ -2,6 +2,7 @@ import { model, Schema } from 'mongoose';
 import { Service } from "typedi";
 
 import type { ThumbnailBackground } from "../../../domain/simple-user";
+import type { ThumbnailStyle } from "../../../domain/thumbnail-style";
 import ISimpleUserRepo from "../../../service/i-repos/i-simple-user.repo";
 import SimpleUserDataModel from "../../data-model/simple-user.data-model";
 import { MongoRepo } from "./general/mongo-repo";
@@ -34,8 +35,11 @@ export default class SimpleUserMongoDb extends MongoRepo<SimpleUserDataModel> im
     await this.schema.updateOne({ domainId }, { $set: { id, username, chosenPhotoId } });
   }
 
-  async setLastThumbnailBackground(id: number, background: ThumbnailBackground): Promise<void> {
-    await this.schema.updateOne({ id }, { $set: { lastThumbnailBackground: background } });
+  async saveThumbnailPreferences(id: number, background: ThumbnailBackground, style?: ThumbnailStyle): Promise<void> {
+    await this.schema.updateOne({ id }, { $set: {
+      lastThumbnailBackground: background,
+      ...(style && { lastAiThumbnailStyle: style }),
+    } });
   }
 
 }
@@ -56,6 +60,11 @@ const schema = model<SimpleUserDataModel>(`Simple User`, new Schema({
   lastThumbnailBackground: new Schema({
     kind: { type: String, enum: [ 'built-in', 'gallery', 'telegram' ], required: true },
     id: String,
+  }, { _id: false }),
+  lastAiThumbnailStyle: new Schema({
+    layout: { type: String, enum: [ 'horizontal', 'vertical' ], required: true },
+    template: { type: String, enum: [ 'regular', 'special' ], required: true },
+    separatorColor: { type: String, required: true },
   }, { _id: false }),
   // firstname: {
   //   type: String,

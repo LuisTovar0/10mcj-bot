@@ -1,5 +1,6 @@
 import Entity from "./core/entity";
 import UniqueEntityID from "./core/unique-entity-id";
+import type { ThumbnailStyle } from "./thumbnail-style";
 
 export type ThumbnailBackground =
   | { kind: 'built-in' }
@@ -11,6 +12,7 @@ export interface SimpleUserProps {
   username?: string;
   chosenPhotoId?: string;
   lastThumbnailBackground?: ThumbnailBackground;
+  lastAiThumbnailStyle?: ThumbnailStyle;
 }
 
 export default class SimpleUser extends Entity<SimpleUserProps> {
@@ -37,6 +39,10 @@ export default class SimpleUser extends Entity<SimpleUserProps> {
 
   get lastThumbnailBackground() {
     return this.props.lastThumbnailBackground;
+  }
+
+  get lastAiThumbnailStyle() {
+    return this.props.lastAiThumbnailStyle;
   }
 
 }

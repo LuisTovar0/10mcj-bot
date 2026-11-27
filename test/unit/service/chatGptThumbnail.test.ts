@@ -30,6 +30,7 @@ describe('ChatGPT browser thumbnail jobs', function () {
     await mkdir(jobs);
     await writeFile(join(examples, 'second.png'), png);
     await writeFile(join(examples, 'first.jpg'), createCanvas(48, 27).toBuffer('image/jpeg'));
+    await writeFile(join(examples, 'instructions.jpg'), png);
     browser = undefined;
     sessionHeader = null;
     submissions = [];
@@ -103,9 +104,12 @@ describe('ChatGPT browser thumbnail jobs', function () {
     assert.deepEqual(await job(fixture()), { status: 'ready', png, quality: 'unreviewed' });
     assert.equal(sessionHeader, session);
     assert.equal(submissions.length, 1);
-    assert.deepEqual(submissions[0].images, [ 'background.png', 'first.jpg', 'second.png' ]);
+    assert.deepEqual(submissions[0].images, [ 'background.png', 'first.jpg', 'second.png', 'instructions.jpg' ]);
     assert.equal(submissions[0].effort, 'High');
     assert.ok(submissions[0].prompt.includes(JSON.stringify({ title, date })));
+    assert.match(submissions[0].prompt, /next 2 attachments are samples/);
+    assert.match(submissions[0].prompt, /instructions.jpg, is the design guide/);
+    assert.match(submissions[0].prompt, /vertical separator/);
     assert.deepEqual(downloads, [ '/generated' ]);
     await assertClean();
   });

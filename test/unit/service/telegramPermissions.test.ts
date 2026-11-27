@@ -8,6 +8,7 @@ import { Container } from "typedi";
 import { filesFolder, tempFolder } from "../../../src/config/constants";
 import InRequest from "../../../src/domain/in-request";
 import SimpleUser, { type ThumbnailBackground } from "../../../src/domain/simple-user";
+import type { ThumbnailStyle } from "../../../src/domain/thumbnail-style";
 import type ImageDto from "../../../src/dto/image.dto";
 import ListLocalRepo from "../../../src/persistence/repos/local/list.local.repo";
 import type AiThumbnailService from "../../../src/service/ai-thumbnail.service";
@@ -72,6 +73,9 @@ describe("Telegram permissions through Botgram", () => {
   let replies: string[];
   let keyboard: InlineKeyboardButton[][] | undefined;
   let messageId: number;
+  let keyboardMessageId: number;
+  let menuEdits: { method: string; messageId: number }[];
+  let missingNextEdit: boolean;
   let keyboardEdits: { chat_id: number; message_id: number; reply_markup: { inline_keyboard: unknown[] } }[];
   let rejectKeyboardEdits: boolean;
   let rejectNextPrompt: boolean;
@@ -92,7 +96,8 @@ describe("Telegram permissions through Botgram", () => {
   let nextUpload: Promise<void>;
   let legacyBackgrounds: Map<number, string>;
   let savedBackgrounds: Map<number, ThumbnailBackground>;
-  let writeBackground: ISimpleUserService['setLastThumbnailBackground'];
+  let savedStyles: Map<number, ThumbnailStyle>;
+  let writePreferences: ISimpleUserService['saveThumbnailPreferences'];
   let gallery: Map<string, Buffer>;
   let unavailableFiles: Set<string>;
   const galleryPhoto = Buffer.from('selected gallery photo');
@@ -138,6 +143,9 @@ describe("Telegram permissions through Botgram", () => {
     replies = [];
     keyboard = undefined;
     messageId = 1;
+    keyboardMessageId = 1;
+    menuEdits = [];
+    missingNextEdit = false;
     keyboardEdits = [];
     rejectKeyboardEdits = false;
     rejectNextPrompt = false;
@@ -156,7 +164,11 @@ describe("Telegram permissions through Botgram", () => {
     aiRequests = [];
     legacyBackgrounds = new Map();
     savedBackgrounds = new Map();
-    writeBackground = async (id, background) => { savedBackgrounds.set(id, background); };
+    savedStyles = new Map();
+    writePreferences = async (id, background, style) => {
+      savedBackgrounds.set(id, background);
+      if (style) savedStyles.set(id, style);
+    };
     gallery = new Map([ [ 'gallery', galleryPhoto ] ]);
     unavailableFiles = new Set();
     ai = {
@@ -202,9 +214,10 @@ describe("Telegram permissions through Botgram", () => {
       async getUserById(id) {
         return new SimpleUser({
           id, chosenPhotoId: legacyBackgrounds.get(id), lastThumbnailBackground: savedBackgrounds.get(id),
+          lastAiThumbnailStyle: savedStyles.get(id),
         });
       },
-      async setLastThumbnailBackground(id, background) { await writeBackground(id, background); },
+      async saveThumbnailPreferences(id, background, style) { await writePreferences(id, background, style); },
     } as ISimpleUserService, ai);
 
     bot = botgram(testEnv.BOT_TOKEN, { autodetect: false });
@@ -225,7 +238,8 @@ describe("Telegram permissions through Botgram", () => {
         return;
       }
       const payload = parameters as {
-        text?: string; caption?: string; photo?: Buffer; chat_id: number;
+        text?: string; caption?: string; photo?: Buffer; chat_id: number; message_id?: number;
+        media?: { type: string; media: string; caption: string }; background?: Buffer;
         reply_markup?: { inline_keyboard: InlineKeyboardButton[][] };
       };
       if (payload.reply_markup && rejectNextPrompt) {
@@ -238,13 +252,30 @@ describe("Telegram permissions through Botgram", () => {
         queueMicrotask(() => callback(error));
         return;
       }
-      if (method === 'sendPhoto') {
+      if (payload.message_id !== undefined) {
+        menuEdits.push({ method, messageId: payload.message_id });
+        if (missingNextEdit) {
+          missingNextEdit = false;
+          const error = Object.assign(new Error('Bad Request: message to edit not found'), {
+            req: { method, parameters: [ parameters ], stack: '' },
+          });
+          queueMicrotask(() => callback(error));
+          return;
+        }
+      }
+      if (method === 'editMessageMedia') {
+        assert.equal(payload.media?.type, 'photo');
+        assert.equal(payload.media.media, 'attach://background');
+        assert.ok(Buffer.isBuffer(payload.background));
+        reviewPhotos.push({ chatId: payload.chat_id, photo: Buffer.from(payload.background), caption: payload.media.caption });
+      } else if (method === 'sendPhoto') {
         assert.ok(Buffer.isBuffer(payload.photo));
         reviewPhotos.push({ chatId: payload.chat_id, photo: Buffer.from(payload.photo), caption: payload.caption });
       }
-      replies.push(payload.caption ?? payload.text ?? 'Media');
+      replies.push(payload.media?.caption ?? payload.caption ?? payload.text ?? 'Media');
       keyboard = payload.reply_markup?.inline_keyboard;
-      const sentId = ++messageId;
+      const sentId = payload.message_id ?? ++messageId;
+      keyboardMessageId = sentId;
       const respond = () => callback(null, {
         message_id: sentId,
         date: 1,
@@ -324,7 +355,7 @@ describe("Telegram permissions through Botgram", () => {
     const data = keyboard?.flat().find(key => key.text === label)?.callback_data;
     assert.ok(data, `Expected a button labeled ${ label }`);
     assert.ok(Buffer.byteLength(data) <= 64);
-    return { data, messageId };
+    return { data, messageId: keyboardMessageId };
   }
 
   it("asks for a title from the standard menu and generates only after confirmation", async () => {
@@ -386,6 +417,58 @@ describe("Telegram permissions through Botgram", () => {
     assert.equal(thumbnails[0]?.offset, 0.5);
   });
 
+  it('remembers the delivered AI style per user, including a custom separator color', async () => {
+    await send(adminId, '/pt_img_ai Uma capa');
+    const firstCreate = button('CRIAR IMAGEM');
+    await press(adminId, button('Usar horizontal'));
+    await press(adminId, button('Usar especial'));
+    await press(adminId, button('Cor da linha'));
+    await press(adminId, button('Amarela'));
+    assert.match(replies.at(-1)!, /Modelo: Horizontal · Especial\nLinha separadora: Amarela/);
+    await press(adminId, button('Cor da linha'));
+    await press(adminId, button('Azul'));
+    assert.match(replies.at(-1)!, /Linha separadora: Azul/);
+    await press(adminId, button('Cor da linha'));
+    await send(adminId, 'verde');
+    assert.match(replies.at(-1)!, /Linha separadora: #008000/);
+    await press(adminId, button('Cor da linha'));
+    await send(adminId, '#badcolor');
+    assert.match(replies.at(-1)!, /Cor inválida/);
+    await press(adminId, button('Voltar à revisão'));
+    assert.match(replies.at(-1)!, /Linha separadora: #008000/);
+    await press(adminId, button('Cor da linha'));
+    await send(adminId, '#A3F');
+    await press(adminId, button('Alterar título'));
+    await send(adminId, 'Título final');
+    assert.match(replies.at(-1)!, /Modelo: Horizontal · Especial\nLinha separadora: #aa33ff/);
+    assert.equal(messageId, firstCreate.messageId);
+    assert.ok(menuEdits.length > 0);
+    assert.ok(menuEdits.every(edit => edit.messageId === firstCreate.messageId && edit.method === 'editMessageCaption'));
+    await press(adminId, firstCreate);
+    assert.equal(thumbnails.length + aiRequests.length, 0);
+    assert.ok(keyboardEdits.every(edit => edit.message_id !== firstCreate.messageId));
+    await press(adminId, button('CRIAR IMAGEM'));
+    const generated = aiRequests[0];
+    assert.deepEqual(generated.style, { layout: 'horizontal', template: 'special', separatorColor: '#aa33ff' });
+    assert.equal(generated.title, 'Título final');
+    await nextUpload;
+    await send(adminId, '/pt_img_ai Outra capa');
+    assert.match(replies.at(-1)!, /Modelo: Horizontal · Especial\nLinha separadora: #aa33ff/);
+    await press(adminId, button('Usar regular'));
+    await press(adminId, button('Cancelar'));
+    await send(adminId, '/pt_img Capa normal');
+    assert.doesNotMatch(replies.at(-1)!, /Modelo:|Linha separadora:/);
+    await press(adminId, button('CRIAR IMAGEM'));
+    await send(adminId, '/pt_img_ai');
+    await send(adminId, '/img_choose gallery');
+    await send(adminId, 'Nova capa com IA');
+    assert.match(replies.at(-1)!, /Modelo: Horizontal · Especial\nLinha separadora: #aa33ff/);
+
+    await whitelist.add(editorId);
+    await send(editorId, '/pt_img_ai Outra conta');
+    assert.match(replies.at(-1)!, /Modelo: Vertical · Regular\nLinha separadora: Azul/);
+  });
+
   it('accepts a typed leap day and requires a fresh review before rendering', async () => {
     await send(visitorId, '/pt_img Uma capa');
     const oldCreate = button('CRIAR IMAGEM');
@@ -425,6 +508,37 @@ describe("Telegram permissions through Botgram", () => {
     assert.ok(replies.slice(1).join('').startsWith(`Título: ${ title }\n`));
     await press(visitorId, button('CRIAR IMAGEM'));
     assert.equal(thumbnails[0]?.title, title);
+  });
+
+  it('pages a long AI review on the same photo and rejects a tap from the previous page', async () => {
+    const title = '🙏'.repeat(1200) + ' fim';
+    await send(adminId, `/pt_img_ai ${ title }`);
+    const first = replies.at(-1)!;
+    const create = button('CRIAR IMAGEM');
+    await press(adminId, button('Seguinte (2/2)'));
+    assert.ok((first + replies.at(-1)).startsWith(`Título: ${ title }\n`));
+    assert.equal(button('Anterior (1/2)').messageId, create.messageId);
+    await press(adminId, create);
+    assert.equal(callbackAnswers.at(-1)?.show_alert, true);
+    assert.equal(aiRequests.length, 0);
+    await press(adminId, button('Anterior (1/2)'));
+    assert.equal(replies.at(-1), first);
+    assert.equal(messageId, create.messageId);
+  });
+
+  it('replaces a missing AI review and continues editing the replacement', async () => {
+    await send(adminId, '/pt_img_ai Uma capa');
+    const original = button('Usar especial');
+    missingNextEdit = true;
+    await press(adminId, original);
+    const replacement = button('Usar regular');
+    assert.notEqual(replacement.messageId, original.messageId);
+    assert.equal(reviewPhotos.length, 2);
+    await press(adminId, original);
+    assert.equal(callbackAnswers.at(-1)?.show_alert, true);
+    await press(adminId, replacement);
+    assert.equal(button('CRIAR IMAGEM').messageId, replacement.messageId);
+    assert.equal(messageId, replacement.messageId);
   });
 
   it("delivers a preview in the chat after receiving audio and text", async () => {
@@ -491,6 +605,7 @@ describe("Telegram permissions through Botgram", () => {
     legacyBackgrounds.set(adminId, 'gallery');
     await send(adminId, '/images');
     await press(adminId, button('Criar capa com IA'));
+    const promptId = button('Cancelar tarefa').messageId;
     assert.match(replies.at(-1)!, /Envia o título/);
     await send(adminId, { ...photo, caption: 'Isto está na legenda' });
     assert.match(replies.at(-1)!, /Envia o título/);
@@ -515,6 +630,11 @@ describe("Telegram permissions through Botgram", () => {
     await send(adminId, photo);
     assert.deepEqual(reviewPhotos.at(-1)?.photo, uploadedBackground);
     assert.match(replies.at(-1)!, /Título: O valor da oração\nData: 29 fevereiro 2024\nFundo: Foto enviada no Telegram/);
+    assert.equal(button('CRIAR IMAGEM').messageId, promptId);
+    assert.equal(messageId, promptId);
+    assert.deepEqual(menuEdits.filter(edit => edit.method === 'editMessageMedia'), [
+      { method: 'editMessageMedia', messageId: promptId }, { method: 'editMessageMedia', messageId: promptId },
+    ]);
     assert.equal(aiRequests.length, 0);
     assert.equal(telegramUploads.length, 0);
 
@@ -579,6 +699,7 @@ describe("Telegram permissions through Botgram", () => {
     await setImmediate();
     assert.match(notifications.at(-1)!, /Não consegui criar a capa/);
     assert.equal(savedBackgrounds.has(adminId), false);
+    assert.equal(savedStyles.has(adminId), false);
 
     Object.assign(ai, { state: 'enabled' });
     ai.start = request => {
@@ -716,16 +837,18 @@ describe("Telegram permissions through Botgram", () => {
     const firstWriteStarted = new Promise<void>(resolve => { beginWrite = resolve; });
     const firstWriteCanFinish = new Promise<void>(resolve => { releaseWrite = resolve; });
     const writes: ThumbnailBackground[] = [];
-    writeBackground = async (id, background) => {
+    const save = writePreferences;
+    writePreferences = async (id, background, style) => {
       writes.push(background);
       if (writes.length === 1) {
         beginWrite();
         await firstWriteCanFinish;
       }
-      savedBackgrounds.set(id, background);
+      await save(id, background, style);
     };
 
     await send(adminId, '/pt_img_ai Capa demorada');
+    await press(adminId, button('Usar especial'));
     await press(adminId, button('Alterar imagem'));
     await send(adminId, photo);
     await press(adminId, button('CRIAR IMAGEM'));
@@ -745,14 +868,20 @@ describe("Telegram permissions through Botgram", () => {
     await send(adminId, '/pt_img Próxima capa');
     assert.deepEqual(writes, [ standardBackground, aiBackground ]);
     assert.deepEqual(savedBackgrounds.get(adminId), aiBackground);
+    assert.equal(savedStyles.get(adminId)?.template, 'special');
     assert.deepEqual(reviewPhotos.at(-1)?.photo, uploadedBackground);
   });
 
-  it('keeps the previous background when an asynchronous AI upload fails', async () => {
+  it('keeps the previous background and style when an asynchronous AI upload fails', async () => {
     const previous: ThumbnailBackground = { kind: 'gallery', id: 'gallery' };
+    const previousStyle: ThumbnailStyle = { layout: 'vertical', template: 'special', separatorColor: '#ab7722' };
     savedBackgrounds.set(adminId, previous);
+    savedStyles.set(adminId, { ...previousStyle });
     failUpload = true;
     await send(adminId, '/pt_img_ai Capa com IA');
+    await press(adminId, button('Usar horizontal'));
+    await press(adminId, button('Cor da linha'));
+    await press(adminId, button('Amarela'));
     await press(adminId, button('Alterar imagem'));
     await send(adminId, photo);
     await press(adminId, button('CRIAR IMAGEM'));
@@ -760,6 +889,7 @@ describe("Telegram permissions through Botgram", () => {
     await setImmediate();
     assert.match(notifications.at(-1)!, /Não consegui enviar a capa/);
     assert.deepEqual(savedBackgrounds.get(adminId), previous);
+    assert.deepEqual(savedStyles.get(adminId), previousStyle);
   });
 
   it("encodes Telegram message parameters and rejects an HTTP error", async () => {

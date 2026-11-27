@@ -60,7 +60,7 @@ USER bun
 
 RUN test "$(id -u)" -ne 0 \
     && test "$(codex --version)" = 'codex-cli 0.172.0' \
-    && bun --no-env-file -e 'const fs = require("node:fs"); const dir = "files/thumbnail-examples"; const examples = fs.readdirSync(dir, { withFileTypes: true }).filter(entry => entry.isFile() && /\.(?:jpe?g|png)$/i.test(entry.name)); if (!examples.length) throw new Error("Missing thumbnail examples"); for (const entry of examples) fs.accessSync(`${dir}/${entry.name}`, fs.constants.R_OK);'
+    && bun --no-env-file -e 'const fs = require("node:fs"); const dir = "files/thumbnail-examples"; const images = fs.readdirSync(dir, { withFileTypes: true }).filter(entry => entry.isFile() && /\.(?:jpe?g|png)$/i.test(entry.name)); const isGuide = entry => entry.name.toLowerCase() === "instructions.jpg"; if (!images.some(isGuide)) throw new Error("Missing thumbnail design guide"); if (images.every(isGuide)) throw new Error("Missing thumbnail examples"); for (const entry of images) fs.accessSync(`${dir}/${entry.name}`, fs.constants.R_OK);'
 
 RUN bun --no-env-file -e 'const { chromium } = require("playwright"); const browser = await chromium.launch({ headless: true }); try { await (await browser.newPage()).goto("about:blank"); } finally { await browser.close(); }'
 

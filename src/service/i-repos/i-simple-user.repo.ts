@@ -1,4 +1,5 @@
 import type { ThumbnailBackground } from "../../domain/simple-user";
+import type { ThumbnailStyle } from "../../domain/thumbnail-style";
 import SimpleUserDataModel from "../../persistence/data-model/simple-user.data-model";
 
 export default interface ISimpleUserRepo {
@@ -16,6 +17,6 @@ export default interface ISimpleUserRepo {
 
   updateUser(dataModel: SimpleUserDataModel): Promise<void>;
 
-  setLastThumbnailBackground(id: number, background: ThumbnailBackground): Promise<void>;
+  saveThumbnailPreferences(id: number, background: ThumbnailBackground, style?: ThumbnailStyle): Promise<void>;
 
 }

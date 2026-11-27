@@ -8,11 +8,17 @@ export function domainToDataModel(user: SimpleUser): SimpleUserDataModel {
     username: user.username,
     chosenPhotoId: user.chosenPhotoId,
     lastThumbnailBackground: user.lastThumbnailBackground,
+    lastAiThumbnailStyle: user.lastAiThumbnailStyle,
   };
 }
 
 export function dataModelToDomain(
-    { domainId, id, username, chosenPhotoId, lastThumbnailBackground }: SimpleUserDataModel,
+    { domainId, id, username, chosenPhotoId, lastThumbnailBackground, lastAiThumbnailStyle }: SimpleUserDataModel,
 ): SimpleUser {
-  return new SimpleUser({ id, username, chosenPhotoId, lastThumbnailBackground }, domainId);
+  return new SimpleUser({
+    id, username, chosenPhotoId, lastThumbnailBackground,
+    lastAiThumbnailStyle: lastAiThumbnailStyle && {
+      layout: lastAiThumbnailStyle.layout, template: lastAiThumbnailStyle.template, separatorColor: lastAiThumbnailStyle.separatorColor,
+    },
+  }, domainId);
 }
