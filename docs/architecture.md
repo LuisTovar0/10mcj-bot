@@ -27,15 +27,33 @@ Downloaded media is temporary and kept in `files/temp/`, which is cleared at sta
 The Shotstack service contains an experimental video workflow using Filestack and Shotstack.
 Formatting text for Signal does not send messages to Signal.
 
-## HTTP server and tests
+## HTTP server
 
 `src/server.ts` serves `/`, `/images`, and `/image/:id` (also with a `.png` suffix).
 These image routes have no authentication, so the Fly deployment keeps the server private.
 `/health` reports whether MongoDB is connected and is used by Fly's readiness check.
 
-`test/unit/domain/` and `test/unit/service/` run offline. Tests under `test/**/repo/` connect
-to MongoDB, including files historically labelled as unit tests. Both sets compile using
-`tsconfig.test.json` before Mocha executes them on Bun.
+## Builds and tests
+
+Install dependencies and the headless Chromium used by the browser provider tests, then run the checks.
+
+```sh
+bun install --frozen-lockfile
+bun --bun run playwright install --only-shell chromium
+bun run typecheck
+bun run test
+```
+
+`bun run test` compiles the domain and service tests with `tsconfig.test.json` and runs them
+offline with Mocha. This preserves the decorator metadata used by TypeDI. Use `bun run test-services`
+for the service suite alone. The shorter `bun test` command invokes Bun's built-in test runner.
+
+For the repository tests, create an ignored `.test.env` with `RUNNING_ENV=test`, `DB_TYPE=mongodb`,
+and a `MONGODB_URL` pointing to a disposable database. Run `bun run test-repos`. This command
+overrides inherited settings with values from `.test.env`. The tests write records to that database.
+
+For a production build, run `bun run build` to compile the application. With the
+[runtime configuration](docker.md#configuration) in place, `bun run start` launches the compiled bot.
 
 The Mocha-only `glob` and `minimatch` overrides in `package.json` preserve security fixes.
 Keep them scoped to Mocha because Botgram uses an older minimatch API. Remove the overrides
